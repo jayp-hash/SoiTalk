@@ -15,7 +15,7 @@
 // Slot colours follow the topic colours on the word cards
 export const SLOT_COLOURS = {
   who: '#E8604C', doing: '#8B5CF6', place: '#21A867', when: '#2B86E8',
-  thing: '#F08A1C', number: '#11A79A', counter: '#B0743F', fixed: '#1D4FA0',
+  thing: '#F08A1C', number: '#11A79A', counter: '#B0743F', fixed: '#1D4FA0', ending: '#1D4FA0',
 };
 
 // ---- Pattern 1: ชอบ / ไม่ชอบ (Jay's pattern) -------------------------
@@ -93,8 +93,9 @@ const amount = (n, thing, c) => (thing.many ? `${n} ${thing.many}` : `${n} ${c.p
 function orderSentence({ thing, number, ask, short, also }) {
   const c = counterOf(thing);
   if (ask) {
-    if (short) return { parts: [{ slot: 'fixed', th: 'เอา' }, { slot: 'fixed', th: 'กี่' }, { slot: 'counter', th: c.th }], en: `How many ${c.plural} do you want?` };
+    if (short) return { q: true, parts: [{ slot: 'fixed', th: 'เอา' }, { slot: 'fixed', th: 'กี่' }, { slot: 'counter', th: c.th }], en: `How many ${c.plural} do you want?` };
     return {
+      q: true,
       parts: [{ slot: 'thing', th: thing.th }, { slot: 'fixed', th: 'กี่' }, { slot: 'counter', th: c.th }],
       en: thing.many ? `How many ${thing.many}?` : `How many ${c.plural} of ${thing.en}?`,
     };
@@ -199,4 +200,16 @@ export function allPatternSentences() {
   }
   cache = out;
   return out;
+}
+
+// Patterns in the learner's register (lib/register.js): ฉัน -> ผม for men, and the
+// polite ending (ครับ / ค่ะ / คะ) as the last piece of every sentence.
+export function inRegister(patterns, reg, particleFor) {
+  const wrap = (make) => (v) => {
+    const s = make(v); if (!s) return s;
+    const parts = s.parts.map((x) => (reg === 'male' && x.th === 'ฉัน' ? { ...x, th: 'ผม' } : x));
+    const e = particleFor(reg, !!s.q);
+    return { ...s, parts: [...parts, { slot: 'ending', th: e.th, rom: e.rom }] };
+  };
+  return patterns.map((p) => ({ ...p, levels: p.levels.map((l) => ({ ...l, make: wrap(l.make) })) }));
 }

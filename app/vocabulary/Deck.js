@@ -2,6 +2,7 @@
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import Tour, { tourSteps, TOUR_KEY, HINT_BACK_KEY } from './Tour';
 import { TOPIC_GROUPS } from '../lib/categories';
+import { renderSentence, setRegister } from '../lib/register';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const SET_SIZE = 20;
@@ -166,9 +167,10 @@ const ROMAN_OPTIONS = [
   { id: 'tap', label: 'Blur' },
   { id: 'hide', label: 'Hide' },
 ];
+// "I speak as": picks the voice AND the forms you see (ผม/ครับ or ฉัน/ค่ะ), see lib/register.js
 const VOICE_OPTIONS = [
-  { id: 'female', label: 'Female' },
-  { id: 'male', label: 'Male' },
+  { id: 'female', label: 'A woman (ค่ะ)' },
+  { id: 'male', label: 'A man (ครับ)' },
 ];
 const ENGLISH_OPTIONS = [
   { id: 'auto', label: 'Auto' },
@@ -194,9 +196,9 @@ function useHelpSettings() {
 const TIPS_KEY = 'tsc-tips-seen';
 const TIPS = {
   'ไม่เป็นไร': 'See the little marks in mâi-bpen-rai? They show whether your voice goes up or down. Don\'t worry about them yet: just copy the audio.',
-  'ครับ': 'Men end polite sentences with ครับ, women with ค่ะ (คะ in questions). Example lines leave them off: add your own.',
+  'ครับ': 'Men end polite sentences with ครับ, women with ค่ะ (คะ in questions). The example sentences use the one you chose in Aa.',
   'ผม': 'ผม is "I" for men. Women usually say ฉัน.',
-  'ฉัน': 'ฉัน is "I". Women use it most, men usually say ผม. The example sentences use ฉัน.',
+  'ฉัน': 'ฉัน is "I". Women use it most, men usually say ผม.',
 };
 
 const Check = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
@@ -497,7 +499,8 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
   );
   const cards = order || setWords;
   const word = cards[cardIndex];
-  const sentence = word?.sentences?.[0];
+  // The sample sentence in the learner's own register (ผม/ครับ or ฉัน/ค่ะ/คะ)
+  const sentence = useMemo(() => renderSentence(word?.sentences?.[0], help.voice === 'male' ? 'male' : 'female'), [word, help.voice]);
   const isLastCard = cardIndex === cards.length - 1;
   const hasNextSet = setIndex < setCount - 1;
 
@@ -678,7 +681,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
           </button>
           {panelOpen && (
             <div className="fc-panel" role="dialog" aria-label="Help settings">
-              <Segmented label="Voice" options={VOICE_OPTIONS} value={help.voice} onChange={(v) => { player.stop(); setHelp('voice', v); }} />
+              <Segmented label="I speak as" options={VOICE_OPTIONS} value={help.voice} onChange={(v) => { player.stop(); setHelp('voice', v); setRegister(v); }} />
               <Segmented label="Romanization" options={ROMAN_OPTIONS} value={help.roman} onChange={(v) => { setHelp('roman', v); setRevealed(new Set()); }} />
               <Segmented label="English sentence" options={ENGLISH_OPTIONS} value={help.english} onChange={(v) => { setHelp('english', v); setRevealed(new Set()); }} />
               <p className="fc-panel-note">Auto gives less help on a card each time you mark it &ldquo;Got it&rdquo;.</p>

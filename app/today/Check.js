@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { readStore } from '../lib/progress';
+import { renderSentence, getRegister } from '../lib/register';
 
 // Listen-and-choose checks: the only thing that makes a word stronger in
 // memory (see lib/memory.js). You hear the word (or its sample sentence)
@@ -64,7 +65,7 @@ function buildItem(word, entry, allWords, progress) {
     const options = shuffle([answer, ...pool.slice(0, OPTIONS - 1).map((w) => shortMeaning(w.english))]);
     return { word, kind, audio: word.thai, answer, options, reveal: { th: word.thai, rom: word.romanization, en: answer } };
   }
-  const s = word.sentences[0];
+  const s = renderSentence(word.sentences[0], getRegister()); // in the learner's register
   const answer = s.english;
   const used = new Set([answer.toLowerCase()]);
   const pool = metFirst(shuffle(allWords.slice(0, 500))).filter((w) => {

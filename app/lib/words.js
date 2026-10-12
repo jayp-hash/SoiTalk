@@ -13,7 +13,7 @@ export async function loadWords() {
     // each link to the sentence itself — a JOIN across both tables.
     const { data, error } = await supabasePublic
       .from('vocabulary')
-      .select('id, thai, romanization, english, frequency_rank, category, word_sentences(is_sample, sentences(id, thai, romanization, english, review_status, words))')
+      .select('id, thai, romanization, english, frequency_rank, category, word_sentences(is_sample, sentences(id, thai, romanization, english, review_status, words, sentence_type))')
       // Learner order (survival → everyday → formal), set in the workbook
       .order('course_order', { ascending: true, nullsFirst: false })
       .order('frequency_rank', { ascending: true, nullsFirst: false })

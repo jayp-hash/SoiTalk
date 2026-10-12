@@ -3,9 +3,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import { stageOf } from '../lib/memory';
 import {
-  PATTERNS, SLOT_COLOURS, patternById, memoryKey, slotOptions, levelWords, randomValues, isValid, sentenceThai, isFlag, wrongCountersFor,
+  PATTERNS, SLOT_COLOURS, memoryKey, slotOptions, levelWords, randomValues, isValid, sentenceThai, isFlag, wrongCountersFor, inRegister,
 } from '../lib/patterns';
-import { dayKey } from '../lib/progress';
+import { dayKey, endOfToday } from '../lib/progress';
+import { getRegister, particleFor } from '../lib/register';
+
+// The patterns as this learner sees them (ผม/ครับ or ฉัน/ค่ะ/คะ)
+const usePatterns = () => useMemo(() => inRegister(PATTERNS, getRegister(), particleFor), []);
 
 // Patterns: see a sentence frame, spin it, build it, hear it.
 // Three ways to practise each level:
@@ -51,6 +55,7 @@ function readUrl() {
 
 export default function Patterns({ lex }) {
   const { progress, check } = useProgressStore();
+  const PATS = usePatterns();
   const [view, setView] = useState(null);
   const [preview, setPreviewState] = useState(false);
   useEffect(() => {
@@ -67,8 +72,8 @@ export default function Patterns({ lex }) {
   // A word is usable once you've met it on Today (or anything, in preview)
   const can = (th) => preview || !!progress[th];
   if (!view) return null;
-  const pattern = view.p && patternById(view.p);
-  if (!pattern) return <PatternList lex={lex} can={can} progress={progress} preview={preview} setPreview={setPreview} onOpen={open} />;
+  const pattern = view.p && PATS.find((x) => x.id === view.p);
+  if (!pattern) return <PatternList pats={PATS} lex={lex} can={can} progress={progress} preview={preview} setPreview={setPreview} onOpen={open} />;
   return <PatternView key={`${pattern.id}-${view.l}-${preview}`} pattern={pattern} levelN={view.l} lex={lex} can={can} preview={preview}
     progress={progress} onLevel={(l) => open(pattern.id, l)} onBack={() => open(null)} record={(key, grade) => check(key, grade)} />;
 }
@@ -108,14 +113,14 @@ function Parts({ parts, lex, big }) {
       {parts.map((x, k) => (
         <span key={k} className="pt-part" style={{ '--sc': SLOT_COLOURS[x.slot] }}>
           <span className="th" lang="th">{x.th}</span>
-          <span className="rom">{lex[x.th]?.rom || ''}</span>
+          <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
         </span>
       ))}
     </span>
   );
 }
 
-function PatternList({ lex, can, progress, preview, setPreview, onOpen }) {
+function PatternList({ pats, lex, can, progress, preview, setPreview, onOpen }) {
   return (
     <div className="pt">
       <div className="tp-head">
@@ -123,7 +128,7 @@ function PatternList({ lex, can, progress, preview, setPreview, onOpen }) {
         <p>Turn the words you know into sentences. Each pattern grows one piece at a time.</p>
       </div>
       <div className="pt-list">
-        {PATTERNS.map((p) => {
+        {pats.map((p) => {
           const example = p.levels[p.levels.length - 1].make(randomValues(p, p.levels[p.levels.length - 1]) || {});
           const first = p.levels[0];
           const lock = lockInfo(p, first, can, progress, preview, lex);
@@ -241,12 +246,12 @@ function Spin({ p, level, lex, can }) {
       <div className={`pt-reels${spinning ? ' is-spinning' : ''}`}>
         {s.parts.map((x, k) => {
           const slot = x.slot === 'fixed' && x.th === 'ไม่' && level.slots.includes('neg') ? 'neg' : x.slot;
-          const turnable = slot !== 'fixed';
+          const turnable = slot !== 'fixed' && slot !== 'ending';
           return (
             <button key={k} type="button" className={`pt-reel${turnable ? '' : ' is-fixed'}`} style={{ '--sc': SLOT_COLOURS[x.slot] }}
               onClick={() => turnable && turn(slot)} disabled={!turnable || spinning} aria-label={turnable ? `Change ${x.th}` : x.th}>
               <span className="th" lang="th">{x.th}</span>
-              <span className="rom">{lex[x.th]?.rom || ''}</span>
+              <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
             </button>
           );
         })}
@@ -315,7 +320,7 @@ function Build({ p, level, lex, can, onRound }) {
         {placed.map((t) => (
           <button key={t.id} type="button" className="pt-tile" style={result ? { '--sc': SLOT_COLOURS[t.slot] } : undefined} disabled={!!result}
             onClick={() => setPlaced(placed.filter((x) => x.id !== t.id))}>
-            <span className="th" lang="th">{t.th}</span><span className="rom">{lex[t.th]?.rom}</span>
+            <span className="th" lang="th">{t.th}</span><span className="rom">{lex[t.th]?.rom || t.rom}</span>
           </button>
         ))}
       </div>
@@ -325,7 +330,7 @@ function Build({ p, level, lex, can, onRound }) {
           return (
             <button key={t.id} type="button" className={`pt-tile${used ? ' is-used' : ''}`} disabled={used || !!result}
               onClick={() => { setPlaced([...placed, t]); play(t.th); }}>
-              <span className="th" lang="th">{t.th}</span><span className="rom">{lex[t.th]?.rom}</span>
+              <span className="th" lang="th">{t.th}</span><span className="rom">{lex[t.th]?.rom || t.rom}</span>
             </button>
           );
         })}
@@ -417,5 +422,130 @@ function RoundDone({ right, counted, onAgain }) {
       <p className="pt-note">{note}</p>
       <button type="button" className="auth-btn primary" onClick={onAgain}>Another round</button>
     </section>
+  );
+}
+
+// ---- Patterns in Today ----------------------------------------------------
+// One pattern block a day, after the words: a level whose Listen check is due,
+// or else the next level that has just opened (at most one new level a day).
+// New level: 3 Spins (hear it, see it) then 3 Listen items. Due level: 3 Listen items.
+// Recorded on the Listen record: 3/3 right = good, 2/3 = no change (due tomorrow), else again.
+const TODAY_LISTEN = 3;
+const TODAY_SPINS = 3;
+
+export function pickTodayPattern(progress) {
+  const can = (th) => !!progress[th];
+  const pats = inRegister(PATTERNS, getRegister(), particleFor);
+  let fresh = null;
+  for (const p of pats) {
+    for (const level of p.levels) {
+      if (lockInfo(p, level, can, progress, false)) break; // later levels are locked too
+      const e = progress[keyFor(p, level, 'listen')];
+      if (e && doneToday(e)) continue;
+      if (e && e.due <= endOfToday()) return { p, level, isNew: false };
+      if (!e && !fresh) fresh = { p, level, isNew: true };
+      if (!e) break;
+    }
+  }
+  return fresh;
+}
+
+export function TodayPattern({ pick, lex, onDone, onQuit }) {
+  const { progress, check } = useProgressStore();
+  const can = (th) => !!progress[th];
+  const { p, level, isNew } = pick;
+  const total = (isNew ? TODAY_SPINS : 0) + TODAY_LISTEN;
+  const [step, setStep] = useState(0);
+  const [spin, setSpin] = useState(() => randomValues(p, level, can));
+  const [showEn, setShowEn] = useState(false);
+  const [item, setItem] = useState(null);
+  const [picked, setPicked] = useState(null);
+  const right = useRef(0);
+  const { play, playing } = useAudio();
+  const spinning = isNew && step < TODAY_SPINS;
+  const s = spinning && spin ? level.make(spin) : null;
+
+  useEffect(() => {
+    if (spinning) { if (s) play(sentenceThai(s)); setShowEn(false); }
+    else { const it = makeListen(p, level, can); setItem(it); setPicked(null); if (it) play(sentenceThai(it.s)); }
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const next = () => {
+    const n = step + 1;
+    if (n >= total) {
+      const r = right.current;
+      check(keyFor(p, level, 'listen'), r >= TODAY_LISTEN ? 'good' : r === TODAY_LISTEN - 1 ? 'hard' : 'again');
+      onDone?.({ right: r, total: TODAY_LISTEN, pattern: p.title });
+      return;
+    }
+    if (isNew && n < TODAY_SPINS) setSpin(randomValues(p, level, can));
+    setStep(n);
+  };
+  const choose = (o) => { if (picked != null) return; setPicked(o); if (o === item.s.en) right.current += 1; };
+
+  return (
+    <div className="ck">
+      <div className="ck-top">
+        <div className="ck-progress" aria-hidden="true"><span style={{ width: `${(step / total) * 100}%` }} /></div>
+        <span className="ck-count">{step + 1} / {total}</span>
+        <button type="button" className="today-quit" onClick={onQuit}>End session</button>
+      </div>
+      <section className="ck-card">
+        <div className="ck-band" style={{ background: 'var(--soi)' }}>
+          <span>{isNew ? (spinning ? 'New pattern' : 'Listen') : 'Pattern check'}</span>
+          <span>Level {level.n}</span>
+        </div>
+        <div className="ck-body">
+          <p className="ck-q">{spinning ? p.title : 'What does it mean?'}</p>
+          {spinning && <p className="pt-frame">{p.frame}</p>}
+          {spinning && s && (
+            <>
+              <div className="pt-reels">
+                {s.parts.map((x, k) => (
+                  <span key={k} className="pt-reel is-static" style={{ '--sc': SLOT_COLOURS[x.slot] }}>
+                    <span className="th" lang="th">{x.th}</span>
+                    <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
+                  </span>
+                ))}
+              </div>
+              <div className="pt-actions">
+                <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
+                <button type="button" className="pt-play" onClick={() => play(sentenceThai(s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+              </div>
+              <button type="button" className={`pt-en${showEn ? ' is-on' : ''}`} onClick={() => setShowEn(true)} aria-label={showEn ? s.en : 'Show the English'}>
+                <span aria-hidden={!showEn}>{s.en}</span>
+              </button>
+              <p className="pt-note">Say it out loud, then tap to check the English.</p>
+              <button type="button" className="auth-btn primary pt-check" onClick={next}>{step + 1 < TODAY_SPINS ? 'Next sentence' : 'Now listen'}</button>
+            </>
+          )}
+          {!spinning && item && (
+            <>
+              <div className="ck-audio">
+                <button type="button" className={`ck-play${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
+                <button type="button" className="ck-slow" onClick={() => play(sentenceThai(item.s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+              </div>
+              {picked != null && <div className="pt-reveal"><Parts parts={item.s.parts} lex={lex} big /></div>}
+              <div className="ck-options">
+                {item.options.map((o, k) => {
+                  const state = picked == null ? '' : o === item.s.en ? ' is-right' : o === picked ? ' is-wrong' : ' is-dim';
+                  return (
+                    <button key={o} type="button" className={`ck-opt${state}`} disabled={picked != null} onClick={() => choose(o)}>
+                      <span className="ck-key" aria-hidden="true">{picked != null && o === item.s.en ? '✓' : picked != null && o === picked ? '✕' : k + 1}</span>{o}
+                    </button>
+                  );
+                })}
+              </div>
+              {picked != null && (
+                <div className={`ck-result is-${picked === item.s.en ? 'right' : 'wrong'}`}>
+                  <p aria-live="polite">{picked === item.s.en ? 'Right.' : <>It was: <b>{item.s.en}</b></>}</p>
+                  <button type="button" className="auth-btn primary" onClick={next} autoFocus>Continue</button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </section>
+    </div>
   );
 }

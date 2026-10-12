@@ -3,11 +3,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Deck from '../vocabulary/Deck';
 import { useProgressStore, coverage, countKnown, countLearning, endOfToday, dayKey, GOAL_OPTIONS } from '../lib/progress';
 import CheckSession from './Check';
+import { TodayPattern, pickTodayPattern } from '../patterns/Patterns';
 import { useUser } from '../lib/useUser';
 import { SAY_IT, sayItFor } from '../lib/sayit';
 import { supabaseBrowser } from '../lib/supabase-browser';
 import { readStore, writeStore, dayKey as todayKey } from '../lib/progress';
 import SoiSign from '../components/SoiSign';
+import { renderSentence, getRegister, registerChosen, setRegister } from '../lib/register';
 
 const REVIEW_CAP = 25;     // checks per day; any backlog rolls over, so a session stays ~5 minutes
                            // (and new words pause while more than this are waiting)
@@ -93,6 +95,27 @@ function Meter({ value, from, milestones = {}, knownCount = 0, learningCount = 0
   );
 }
 
+// First visit: who's speaking? Picks the voice and the forms (ผม/ครับ or ฉัน/ค่ะ) everywhere.
+function RegisterChooser({ onChoose }) {
+  const sample = (reg) => {
+    try { new Audio(`/api/speak?text=${encodeURIComponent(reg === 'male' ? 'สวัสดีครับ' : 'สวัสดีค่ะ')}&voice=${reg}&v=2`).play().catch(() => {}); } catch {}
+  };
+  return (
+    <section className="today-step reg" aria-label="How you speak">
+      <p className="reg-q">First, who's speaking?</p>
+      <p className="reg-sub">Thai changes a little depending on who's talking. You'll see the right words and hear a matching voice. You can change it later in Aa.</p>
+      <div className="reg-opts">
+        <button type="button" className="reg-opt" onClick={() => { sample('female'); onChoose('female'); }}>
+          <b>Speak as a woman</b><span className="th" lang="th">สวัสดีค่ะ</span><span className="rom">sà-wàt-dii khâ · I = ฉัน chǎn</span>
+        </button>
+        <button type="button" className="reg-opt" onClick={() => { sample('male'); onChoose('male'); }}>
+          <b>Speak as a man</b><span className="th" lang="th">สวัสดีครับ</span><span className="rom">sà-wàt-dii khráp · I = ผม phǒm</span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
 // "Say it Today": one real-life line to use today, with an "I said it" tap.
 // The line is fixed for the whole calendar day and only uses words studied
 // before today. Taps are kept in this browser and, when signed in, in the
@@ -134,6 +157,8 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
 
   const line = lineNo ? SAY_IT[lineNo - 1] : null;
   if (!line) return null;
+  // The line in the learner's own register (ผม/ครับ or ฉัน/ค่ะ/คะ)
+  const shown = renderSentence({ thai: line.thai, romanization: line.rom }, getRegister());
   const doneToday = said[today] != null;
   const total = Object.keys(said).length;
   const markSaid = () => {
@@ -152,7 +177,7 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
   const play = () => {
     try {
       const voice = readStore('tsc-help', {}).voice || 'female';
-      const a = new Audio(`/api/speak?text=${encodeURIComponent(line.thai)}&voice=${voice}&v=2`);
+      const a = new Audio(`/api/speak?text=${encodeURIComponent(shown.thai)}&voice=${voice}&v=2`);
       setPlaying(true);
       a.onended = a.onerror = () => setPlaying(false);
       a.play().catch(() => setPlaying(false));
@@ -162,12 +187,12 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
     <section className="sayit" aria-label="Say it today">
       <p className="sayit-eyebrow">{bonus && <span className="today-bonus">Bonus</span>}Say it out loud today</p>
       <div className="sayit-line">
-        <button type="button" className={`sayit-play${playing ? ' on' : ''}`} onClick={play} aria-label={`Play ${line.thai}`}>
+        <button type="button" className={`sayit-play${playing ? ' on' : ''}`} onClick={play} aria-label={`Play ${shown.thai}`}>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
         </button>
         <div className="sayit-text">
-          <span className="sayit-th" lang="th">{line.thai}</span>
-          <span className="sayit-rom">{line.rom}</span>
+          <span className="sayit-th" lang="th">{shown.thai}</span>
+          <span className="sayit-rom">{shown.romanization}</span>
           <span className="sayit-en">{line.en}</span>
         </div>
       </div>
@@ -199,6 +224,11 @@ export default function Today({ words, milestones }) {
   const [checkQueue, setCheckQueue] = useState([]); // words due for a check
   const [score, setScore] = useState(null);     // { right, total } from today's checks
   const [run, setRun] = useState(0);            // remounts the check session each time
+  const [patternPick, setPatternPick] = useState(null); // today's pattern block
+  const [patternScore, setPatternScore] = useState(null);
+  const [chosen, setChosen] = useState(true);   // has the learner picked how they speak?
+  useEffect(() => { setChosen(registerChosen()); }, []);
+  const lex = useMemo(() => Object.fromEntries(words.map((w) => [w.thai, { rom: w.romanization, en: w.english }])), [words]);
   const [before, setBefore] = useState(0);
   const repeats = useRef(new Map());
   const reviewedInSession = useRef(0);
@@ -239,7 +269,12 @@ export default function Today({ words, milestones }) {
   };
   const afterChecks = (result) => {
     setScore(result);
-    if (queue.length) { setMode('session'); window.scrollTo(0, 0); } else onDone();
+    if (queue.length) { setMode('session'); window.scrollTo(0, 0); } else afterWords();
+  };
+  // Words done: today's pattern practice (if one is open), then the day is done
+  const afterWords = () => {
+    const pick = pickTodayPattern(progressRef.current);
+    if (pick) { setPatternPick(pick); setMode('pattern'); window.scrollTo(0, 0); } else onDone();
   };
 
   // "Still learning": the card comes back later in this session
@@ -254,8 +289,14 @@ export default function Today({ words, milestones }) {
   };
 
   const onDone = () => { finishToday(); setMode('done'); window.scrollTo(0, 0); };
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
 
   if (!loaded) return <div className="today-wrap"><p className="today-note">Loading…</p></div>;
+
+  if (mode === 'pattern' && patternPick) {
+    return <TodayPattern key={run} pick={patternPick} lex={lex} onDone={(r) => { setPatternScore(r); onDone(); }} onQuit={() => setMode('home')} />;
+  }
 
   if (mode === 'checks') {
     return (
@@ -271,12 +312,13 @@ export default function Today({ words, milestones }) {
           <h1>Today</h1>
           <button type="button" className="today-quit" onClick={() => setMode('home')}>End session</button>
         </div>
-        <Deck words={queue} session onRated={onRated} onDone={onDone} />
+        <Deck words={queue} session onRated={onRated} onDone={afterWords} />
       </>
     );
   }
 
-  const nothingLeft = plan.due.length === 0 && plan.newCards.length === 0;
+  const todayPattern = pickTodayPattern(progress);
+  const nothingLeft = plan.due.length === 0 && plan.newCards.length === 0 && !todayPattern;
   const brandNew = studiedBeforeToday === 0 && plan.due.length === 0 && reviewedInSession.current === 0;
   const signedOut = ready && !user;
 
@@ -290,6 +332,7 @@ export default function Today({ words, milestones }) {
           <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
           <div className="today-stats">
             {score?.total > 0 && <div><b>{score.right}/{score.total}</b><span>remembered</span></div>}
+            {patternScore && <div><b>{patternScore.right}/{patternScore.total}</b><span>pattern sentences</span></div>}
             {reviewedInSession.current > 0 && <div><b>{new Set(queue.map((w) => w.thai)).size}</b><span>new words met</span></div>}
             <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
           </div>
@@ -311,8 +354,10 @@ export default function Today({ words, milestones }) {
             )}
           </div>
 
+          {!chosen && <RegisterChooser onChoose={(r) => { setRegister(r); setChosen(true); }} />}
+
           {/* Step 1: the one thing to do first */}
-          <section className="today-step" aria-label="Learn">
+          {chosen && <section className="today-step" aria-label="Learn">
             <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today's goal</p>
             {nothingLeft ? (
               <div className="today-step-body">
@@ -328,17 +373,19 @@ export default function Today({ words, milestones }) {
                     {[
                       plan.due.length > 0 ? `Check ${plan.due.length} word${plan.due.length === 1 ? '' : 's'}` : null,
                       plan.newCards.length > 0 ? `${brandNew ? 'Learn your first' : 'learn'} ${plan.newCards.length} ${brandNew ? '' : 'new '}word${plan.newCards.length === 1 ? '' : 's'}` : null,
-                    ].filter(Boolean).join(', then ').replace(/^l/, 'L')}
+                      todayPattern ? `practise ${todayPattern.isNew ? 'a new pattern' : 'a pattern'}` : null,
+                    ].filter(Boolean).join(', then ').replace(/^l/, 'L').replace(/^p/, 'P')}
                   </strong>
                   <span>
                     {brandNew && plan.newCards[0] ? <>Starting with <span lang="th">{plan.newCards[0].thai}</span> ({plan.newCards[0].romanization}). </> : null}
-                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25) / 60))} minutes. Finish and {day.full} lights up {day.colour}.
+                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (todayPattern ? 60 : 0)) / 60))} minutes. Finish and {day.full} lights up {day.colour}.
                   </span>
                 </div>
-                <button type="button" className="auth-btn primary today-start" onClick={() => start(plan.due, plan.newCards)}>Start</button>
+                <button type="button" className="auth-btn primary today-start"
+                  onClick={() => (plan.due.length || plan.newCards.length ? start(plan.due, plan.newCards) : (setPatternPick(todayPattern), setRun((n) => n + 1), setMode('pattern')))}>Start</button>
               </div>
             )}
-          </section>
+          </section>}
 
           <section className="today-progress" aria-label="Your progress">
             <p className="today-section-label">Your week</p>

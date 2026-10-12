@@ -21,6 +21,7 @@
 
 import { SAY_IT } from '../../lib/sayit';
 import { allPatternSentences } from '../../lib/patterns';
+import { neutralForms } from '../../lib/register';
 import { supabasePublic } from '../../lib/supabase-public';
 
 const AMY_VOICE_ID = 'OZxMHsGaBmV5pjMIDIn0'; // female voice
@@ -43,7 +44,14 @@ const ONE_YEAR = 60 * 60 * 24 * 365;
 // "Say it Today" lines live in the app code, not the database
 const SAY_IT_TEXT = new Set(SAY_IT.flatMap((l) => [l.thai, ...l.words]));
 
+// Sentences are shown in the learner's register (ผม / ครับ / ค่ะ / คะ added, see
+// lib/register.js). Allowed if any neutral form of the text is course content.
 async function isCourseText(text) {
+  for (const t of neutralForms(text)) if (await isCourseTextExact(t)) return true;
+  return false;
+}
+
+async function isCourseTextExact(text) {
   if (SAY_IT_TEXT.has(text)) return true;
   // Sentences built by the pattern machines (generated in code, so the set is fixed)
   if (allPatternSentences().has(text)) return true;
