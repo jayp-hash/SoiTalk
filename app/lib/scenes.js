@@ -26,7 +26,7 @@ export const SCENES = {
     // Your reply: fixed words, then the slot. The polite ending is added by register.
     reply: [
       { th: 'ไม่', rom: 'mâi', en: 'not' },
-      { th: 'เอา', rom: 'ao', en: 'take' },
+      { th: 'เอา', rom: 'ao', en: 'want' },
       { slot: true },
     ],
     // Other natural replies (no word to swap, so shown on the done screen)
@@ -42,8 +42,8 @@ export const SCENES = {
       { th: 'หลอด', rom: 'lǎawt', en: 'straw', a: 'a straw' },
     ],
     mission: 'Next time you pay at 7-Eleven, say it before they bag your things.',
-    // Tomorrow: the ordering pattern (lib/patterns.js), first level
-    teaser: { title: 'Tomorrow: order two drinks', th: 'ขอน้ำเปล่าสองขวด', rom: 'khǎaw náam-bplàao sǎawng khùat', en: 'Two bottles of water, please.' },
+    // Tomorrow: the restaurant scene (they already know ไม่)
+    teaser: { title: 'Tomorrow: order Thai food your way', th: 'ไม่เผ็ด', rom: 'mâi phèt', en: 'Not spicy.' },
   },
 };
 
