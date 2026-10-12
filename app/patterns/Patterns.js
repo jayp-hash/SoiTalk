@@ -49,6 +49,7 @@ function useAudio() {
 
 const PlayIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>;
 const SlowIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15c0-3.9 3.1-7 7-7s7 3.1 7 7" /><path d="M2 15h19c1 0 1.5-.8 1.2-1.6L21 11" /><path d="M7 15l-1 3M15 15l1 3" /></svg>;
+const SwapIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" /><path d="M4 3v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" /><path d="M20 21v-5h-5" /></svg>;
 const LockIcon = () => <svg className="lk" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>;
 const Back = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>;
 
@@ -436,7 +437,7 @@ function RoundDone({ right, counted, onAgain }) {
 // New level: 3 Spins (hear it, see it) then 3 Listen items. Due level: 3 Listen items.
 // Recorded on the Listen record: 3/3 right = good, 2/3 = no change (due tomorrow), else again.
 const TODAY_LISTEN = 3;
-const TODAY_SPINS = 3;
+const TODAY_MAKE = 3; // sentences the learner makes themselves before listening
 
 export function pickTodayPattern(progress) {
   const can = (th) => met(progress, th);
@@ -459,7 +460,7 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
   const { progress, check } = useProgressStore();
   const can = (th) => met(progress, th);
   const { p, level, isNew } = pick;
-  const total = (isNew ? TODAY_SPINS : 0) + TODAY_LISTEN;
+  const total = (isNew ? 1 : 0) + TODAY_LISTEN;
   const [step, setStep] = useState(0);
   const [spin, setSpin] = useState(() => randomValues(p, level, can));
   const [showEn, setShowEn] = useState(false);
@@ -467,11 +468,34 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
   const [picked, setPicked] = useState(null);
   const right = useRef(0);
   const { play, playing } = useAudio();
-  const spinning = isNew && step < TODAY_SPINS;
+  const spinning = isNew && step === 0;
+  const made = useRef(new Set());
+  const [madeN, setMadeN] = useState(1);
+  const [toast, setToast] = useState('');
+  // Which pieces can be swapped: slots of this level with 2+ options you know
+  const swappable = (slot) => level.slots.includes(slot) && !isFlag(slot) && slotOptions(p, slot, can).length >= 2;
+  const swapSlot = (slot) => {
+    const opts = slotOptions(p, slot, can);
+    const at = opts.findIndex((o) => o.th === spin[slot]?.th);
+    for (let k = 1; k <= opts.length; k++) {
+      const v = { ...spin, [slot]: opts[(at + k) % opts.length] };
+      if (!isValid(p, v)) continue;
+      setSpin(v);
+      const ns = level.make(v);
+      play(sentenceThai(ns));
+      const key = sentenceThai(ns);
+      if (!made.current.has(key)) {
+        made.current.add(key); setMadeN(made.current.size);
+        setToast(made.current.size === 2 ? 'You just made a new sentence.' : 'Another one.');
+        setTimeout(() => setToast(''), 2000);
+      }
+      return;
+    }
+  };
   const s = spinning && spin ? level.make(spin) : null;
 
   useEffect(() => {
-    if (spinning) { if (s) play(sentenceThai(s)); setShowEn(false); }
+    if (spinning) { if (s) { play(sentenceThai(s)); made.current = new Set([sentenceThai(s)]); setMadeN(1); } }
     else { const it = makeListen(p, level, can); setItem(it); setPicked(null); if (it) play(sentenceThai(it.s)); }
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -483,7 +507,6 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
       onDone?.({ right: r, total: TODAY_LISTEN, pattern: p.title });
       return;
     }
-    if (isNew && n < TODAY_SPINS) setSpin(randomValues(p, level, can));
     setStep(n);
   };
   const choose = (o) => { if (picked != null) return; setPicked(o); if (o === item.s.en) right.current += 1; };
@@ -497,31 +520,35 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
       </div>
       <section className="ck-card">
         <div className="ck-band" style={{ background: 'var(--soi)' }}>
-          <span>{isNew ? (spinning ? 'New pattern' : 'Listen') : 'Pattern check'}</span>
-          <span>Level {level.n}</span>
+          <span>{spinning ? `New: ${p.title}` : 'Test your ear'}</span>
         </div>
         <div className="ck-body">
-          <p className="ck-q">{spinning ? p.title : 'What does it mean?'}</p>
-          {spinning && <p className="pt-frame">{p.frame}</p>}
+          <p className="ck-q">{spinning ? 'Tap a word with ↻ to swap it' : 'What does it mean?'}</p>
           {spinning && s && (
             <>
-              <div className="pt-reels">
-                {s.parts.map((x, k) => (
-                  <span key={k} className="pt-reel is-static" style={{ '--sc': SLOT_COLOURS[x.slot] }}>
-                    <span className="th" lang="th">{x.th}</span>
-                    <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
-                  </span>
-                ))}
+              <div className="st-tiles" lang="th">
+                {s.parts.map((x, k) => {
+                  const sw = swappable(x.slot);
+                  return (
+                    <button key={`${k}-${x.th}`} type="button" className={`st-tile${sw ? ' is-swap' : ''}${x.slot === 'ending' ? ' is-ending' : ''}`}
+                      onClick={() => (sw ? swapSlot(x.slot) : play(x.th))} aria-label={sw ? `${x.th}. Tap to swap` : `${x.th}. Tap to hear`}>
+                      {sw && <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>}
+                      <span className="th">{x.th}</span>
+                      <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
+                      <span className="en">{x.slot === 'ending' ? 'polite' : (lex[x.th]?.en || '').split(/[;,(]/)[0].replace(/^to /, '')}</span>
+                    </button>
+                  );
+                })}
               </div>
               <div className="pt-actions">
                 <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
                 <button type="button" className="pt-play" onClick={() => play(sentenceThai(s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
-              <button type="button" className={`pt-en${showEn ? ' is-on' : ''}`} onClick={() => setShowEn(true)} aria-label={showEn ? s.en : 'Show the English'}>
-                <span aria-hidden={!showEn}>{s.en}</span>
+              <p className="pt-sentence-en">{s.en}</p>
+              <p className={`st-toast${toast ? ' is-on' : ''}`} role="status">{toast || ' '}</p>
+              <button type="button" className="auth-btn primary pt-check" disabled={madeN < TODAY_MAKE} onClick={next}>
+                {madeN < TODAY_MAKE ? `Make ${TODAY_MAKE - madeN} more` : 'Next: test your ear'}
               </button>
-              <p className="pt-note">Say it out loud, then tap to check the English.</p>
-              <button type="button" className="auth-btn primary pt-check" onClick={next}>{step + 1 < TODAY_SPINS ? 'Next sentence' : 'Now listen'}</button>
             </>
           )}
           {!spinning && item && (
@@ -530,7 +557,17 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
                 <button type="button" className={`ck-play${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
                 <button type="button" className="ck-slow" onClick={() => play(sentenceThai(item.s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
-              {picked != null && <div className="pt-reveal"><Parts parts={item.s.parts} lex={lex} big /></div>}
+              {picked != null && (
+                <div className="st-tiles is-reveal" lang="th">
+                  {item.s.parts.map((x, k) => (
+                    <span key={k} className="st-tile is-static">
+                      <span className="th">{x.th}</span>
+                      <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
+                      <span className="en">{x.slot === 'ending' ? 'polite' : (lex[x.th]?.en || '').split(/[;,(]/)[0].replace(/^to /, '')}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="ck-options">
                 {item.options.map((o, k) => {
                   const state = picked == null ? '' : o === item.s.en ? ' is-right' : o === picked ? ' is-wrong' : ' is-dim';

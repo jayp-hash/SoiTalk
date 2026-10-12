@@ -2,7 +2,8 @@
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import Tour, { tourSteps, TOUR_KEY, HINT_BACK_KEY } from './Tour';
 import { TOPIC_GROUPS } from '../lib/categories';
-import { renderSentence, setRegister } from '../lib/register';
+import { renderSentence, setRegister, particleFor } from '../lib/register';
+import { PATTERNS, inRegister, exampleFor } from '../lib/patterns';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const SET_SIZE = 20;
@@ -308,7 +309,7 @@ function hexToRgba(hex, alpha) {
 // session = the daily review: one list of cards, no sets or shuffle.
 //   onRated(word, knewIt) -> return true if the word was put back in the queue
 //   onDone() is called after rating the last card.
-export default function Deck({ words: allWords, session = false, onRated, onDone, topic: topicProp = null, onTopics, startSet = 0 }) {
+export default function Deck({ words: allWords, session = false, onRated, onDone, topic: topicProp = null, onTopics, startSet = 0, lex = null }) {
   // Topic filter (browse mode): learn only one category, e.g. Food & drink.
   // On /vocabulary the topic comes from the topic page (onTopics goes back to it).
   const [topic, setTopic] = useState(topicProp);
@@ -500,7 +501,23 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
   const cards = order || setWords;
   const word = cards[cardIndex];
   // The sample sentence in the learner's own register (ผม/ครับ or ฉัน/ค่ะ/คะ)
-  const sentence = useMemo(() => renderSentence(word?.sentences?.[0], help.voice === 'male' ? 'male' : 'female'), [word, help.voice]);
+  // In a Today session, a sentence must only use words you've met (or are meeting
+  // today). If the workbook sentence doesn't fit yet, build one from a pattern.
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
+  const sentence = useMemo(() => {
+    const reg = help.voice === 'male' ? 'male' : 'female';
+    const base = renderSentence(word?.sentences?.[0], reg);
+    if (!session || !word) return base;
+    const p = progressRef.current;
+    const today = new Set(allWords.map((w) => w.thai));
+    const can = (th) => !!p[th] || today.has(th) || th === word.thai || (th === 'ผม' && !!p['ฉัน']) || (th === 'ฉัน' && !!p['ผม']);
+    const fits = base?.words && base.words.every((w) => w.ending || /^(ครับ|ค่ะ|คะ)$/.test(w.th) || can(w.th));
+    if (fits || (base && !base.words)) return base;
+    if (!lex) return base;
+    return exampleFor(inRegister(PATTERNS, reg, particleFor), word.thai, can, lex) || null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [word, help.voice, session]);
   const isLastCard = cardIndex === cards.length - 1;
   const hasNextSet = setIndex < setCount - 1;
 

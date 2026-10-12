@@ -21,6 +21,7 @@
 
 import { SAY_IT } from '../../lib/sayit';
 import { allPatternSentences } from '../../lib/patterns';
+import { allSceneLines } from '../../lib/scenes';
 import { neutralForms } from '../../lib/register';
 import { supabasePublic } from '../../lib/supabase-public';
 
@@ -55,6 +56,8 @@ async function isCourseTextExact(text) {
   if (SAY_IT_TEXT.has(text)) return true;
   // Sentences built by the pattern machines (generated in code, so the set is fixed)
   if (allPatternSentences().has(text)) return true;
+  // First-session scenes (lib/scenes.js), also built in code
+  if (allSceneLines().has(text)) return true;
   const [word, sentence, box] = await Promise.all([
     supabasePublic.from('vocabulary').select('id').eq('thai', text).limit(1),
     supabasePublic.from('sentences').select('id').eq('thai', text).neq('review_status', 'rejected').limit(1),

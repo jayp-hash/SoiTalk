@@ -15,7 +15,12 @@ export default function AuthCallback() {
 
     const db = supabaseBrowser();
     let done = false;
-    const go = () => { if (!done) { done = true; window.location.replace('/vocabulary'); } };
+    const go = () => {
+      if (done) return; done = true;
+      let next = '/today';
+      try { next = localStorage.getItem('tsc-after-signin') || '/today'; localStorage.removeItem('tsc-after-signin'); } catch {}
+      window.location.replace(next);
+    };
     const { data: sub } = db.auth.onAuthStateChange((_e, session) => { if (session) go(); });
     db.auth.getSession().then(({ data }) => { if (data.session) go(); });
     // If nothing happens, the link was probably opened in a different

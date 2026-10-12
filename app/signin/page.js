@@ -12,7 +12,14 @@ export default function SignIn() {
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [error, setError] = useState('');
 
-  const back = () => `${window.location.origin}/auth/callback`;
+  // Where to go after signing in (e.g. /signin?next=/today from the first session)
+  const back = () => {
+    try {
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (next && next.startsWith('/') && !next.startsWith('//')) localStorage.setItem('tsc-after-signin', next);
+    } catch {}
+    return `${window.location.origin}/auth/callback`;
+  };
 
   const google = async () => {
     setError('');
@@ -39,7 +46,7 @@ export default function SignIn() {
         <div className="auth-card">
           <h1 className="auth-title">You're signed in</h1>
           <p className="auth-sub">Signed in as <b>{user.email}</b>. Your progress is saved to your account.</p>
-          <a className="auth-btn primary" href="/vocabulary">Go to my cards</a>
+          <a className="auth-btn primary" href="/today">Go to Today</a>
         </div>
       </main>
     );
@@ -49,7 +56,7 @@ export default function SignIn() {
     <main className="page auth">
       <div className="auth-card">
         <h1 className="auth-title">Save your progress</h1>
-        <p className="auth-sub">Sign in so your cards, streak and progress follow you to any device.</p>
+        <p className="auth-sub">Sign in so your words and progress follow you to any device, and nothing is lost if you open Soi Talk in a different browser.</p>
 
         <button type="button" className="auth-btn google" onClick={google}>
           <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">

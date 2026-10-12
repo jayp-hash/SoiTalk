@@ -17,34 +17,34 @@ const EXTRA_NEW = 5;       // "Learn 5 more"
 const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice per session
 
 // Under 10% show one decimal, so the first few words visibly move the meter
-// First days: the words the patterns need come first, so every day has a
-// pattern to practise, starting on day 1. After these, new words follow the
-// course order. Each learner gets their own forms: "I" is ผม for men and
-// ฉัน for women; the polite ending is ครับ for men, ค่ะ for women.
+// First days. Day 1 is the first session (/start/7eleven: ไม่ เอา ถุง ใบเสร็จ ช้อน
+// + your polite ending). After that, each day is a small bundle of words that
+// opens the next pattern, so every day ends with a pattern to practise. A
+// bundle is learned whole, even if it's one more than the daily goal.
+// "I" is ผม for men and ฉัน for women; the polite ending is ครับ / ค่ะ.
 const FAST_TRACK = [
-  // day 1: I, you, like, eat, sleep -> 'Saying what you like' opens
-  'ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน',
-  // day 2: hello, thank you, your polite ending, not, ask for -> add ไม่ (don't like)
-  'สวัสดี', 'ขอบคุณ', 'ENDING', 'ไม่', 'ขอ',
-  // day 3: beer, water, bottle, two, three -> 'Ordering' opens
-  'เบียร์', 'น้ำเปล่า', 'ขวด', 'สอง', 'สาม',
-  // day 4: sorry, no worries, yes, how many, want -> ordering level 2 (กี่)
-  'ขอโทษ', 'ไม่เป็นไร', 'ใช่', 'กี่', 'เอา',
+  ['ไม่', 'เอา', 'ถุง', 'ใบเสร็จ', 'ช้อน', 'ENDING'],          // day 1: the first session
+  ['ขอ', 'น้ำเปล่า', 'เบียร์', 'ขวด', 'สอง', 'สาม'],          // day 2: ordering opens (ขอ น้ำเปล่า สอง ขวด)
+  ['ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน'],                     // day 3: saying what you like
+  ['กี่', 'สวัสดี', 'ขอบคุณ', 'ขอโทษ', 'ไม่เป็นไร'],          // day 4: the staff's question (เอากี่ขวด)
 ];
 // The other gender's ending (to recognise it when you hear it) waits until later
 const OTHER_ENDING_AFTER = 60;
+function personal(t, reg) {
+  if (t === 'ฉัน' && reg === 'male') return 'ผม';
+  if (t === 'ENDING') return reg === 'male' ? 'ครับ' : 'ค่ะ';
+  return t;
+}
+// The course order for this learner, plus the fast-track bundles (as Thai lists)
 function fastTrack(words, reg) {
-  const male = reg === 'male';
-  const own = male ? 'ครับ' : 'ค่ะ';
-  const other = male ? 'ค่ะ' : 'ครับ';
-  const list = FAST_TRACK.map((t) => (t === 'ฉัน' && male ? 'ผม' : t === 'ENDING' ? own : t));
+  const other = reg === 'male' ? 'ค่ะ' : 'ครับ';
   const byThai = new Map(words.map((w) => [w.thai, w]));
-  const first = list.map((t) => byThai.get(t)).filter(Boolean);
+  const bundles = FAST_TRACK.map((b) => b.map((t) => personal(t, reg)).filter((t) => byThai.has(t)));
+  const first = bundles.flat().map((t) => byThai.get(t));
   const inFirst = new Set(first.map((w) => w.thai));
-  const rest = words.filter((w) => !inFirst.has(w.thai) && w.thai !== other);
-  const out = [...first, ...rest];
+  const out = [...first, ...words.filter((w) => !inFirst.has(w.thai) && w.thai !== other)];
   if (byThai.has(other)) out.splice(Math.min(OTHER_ENDING_AFTER, out.length), 0, byThai.get(other));
-  return out;
+  return { order: out, bundles };
 }
 
 const pct = (x) => { const v = x * 100; return v > 0 && v < 10 ? `${(Math.round(v * 10) / 10).toFixed(1)}%` : `${Math.round(v)}%`; };
@@ -155,10 +155,35 @@ function RegisterChooser({ onChoose, onClose }) {
   );
 }
 
+// The real-life mission from the first session: "Did you say it?" on the next visits.
+// Yes = a star on today. Not yet = ask again another day. Never a penalty.
+function Mission({ onSaid }) {
+  const [m, setM] = useState(null);
+  useEffect(() => { setM(readStore('tsc-mission', null)); }, []);
+  if (!m || m.done || m.snooze === todayKey() || m.day === todayKey()) return null;
+  const save = (patch) => { const next = { ...m, ...patch }; writeStore('tsc-mission', next); setM(next); };
+  return (
+    <section className="today-mission" aria-label="Your mission">
+      <span className="lbl">Your mission</span>
+      <span className="th" lang="th">{m.th}</span>
+      {m.rom && <span className="rom">{m.rom}</span>}
+      <span>{m.en} Did you get to say it?</span>
+      <div className="row">
+        <button type="button" className="yes" onClick={() => {
+          writeStore(MISSION_DAYS_KEY, { ...readStore(MISSION_DAYS_KEY, {}), [todayKey()]: m.scene });
+          save({ done: true }); onSaid?.();
+        }}>Yes, I said it ★</button>
+        <button type="button" className="no" onClick={() => save({ snooze: todayKey() })}>Not yet</button>
+      </div>
+    </section>
+  );
+}
+
 // "Say it Today": one real-life line to use today, with an "I said it" tap.
 // The line is fixed for the whole calendar day and only uses words studied
 // before today. Taps are kept in this browser and, when signed in, in the
 // account (said_it table).
+const MISSION_DAYS_KEY = 'tsc-mission-days'; // { day: scene } days a mission was done (a star on the week)
 const SAID_KEY = 'tsc-said';          // { "2026-10-09": 12 (line number), ... }
 const TODAY_LINE_KEY = 'tsc-sayit-day'; // { day: "2026-10-09", line: 12 }
 function SayIt({ studiedBeforeToday, bonus, onSaid }) {
@@ -282,10 +307,14 @@ export default function Today({ words, milestones }) {
       .filter((w) => progress[w.thai] && progress[w.thai].due <= cutoff)
       .sort((a, b) => progress[a.thai].due - progress[b.thai].due);
     const due = allDue.slice(0, REVIEW_CAP);
-    const fresh = fastTrack(words, reg).filter((w) => !progress[w.thai]);
+    const { order, bundles } = fastTrack(words, reg);
+    const fresh = order.filter((w) => !progress[w.thai]);
     const paused = allDue.length > REVIEW_CAP; // catch up before adding more
     const newLeft = paused ? 0 : Math.max(goal - newToday, 0);
-    return { due, fresh, newLeft, paused, newCards: fresh.slice(0, newLeft) };
+    // In the first days, today's new words are the rest of the current bundle
+    const bundle = fresh[0] && bundles.find((b) => b.includes(fresh[0].thai));
+    const take = bundle && newLeft > 0 ? bundle.filter((t) => !progress[t]).length : newLeft;
+    return { due, fresh, newLeft, paused, newCards: fresh.slice(0, take) };
   }, [words, progress, goal, newToday, reg]);
 
   const known = useMemo(() => coverage(words, progress), [words, progress]);
@@ -293,7 +322,7 @@ export default function Today({ words, milestones }) {
   const learningCount = useMemo(() => countLearning(words, progress), [words, progress]);
   // Days you said the line out loud (stars on the week); refreshed when you tick it
   const [said, setSaidDays] = useState({});
-  const refreshSaid = () => setSaidDays(readStore(SAID_KEY, {}));
+  const refreshSaid = () => setSaidDays({ ...readStore(MISSION_DAYS_KEY, {}), ...readStore(SAID_KEY, {}) });
   useEffect(refreshSaid, []);
   const day = THAI_DAY[new Date().getDay()];
 
@@ -365,7 +394,7 @@ export default function Today({ words, milestones }) {
           <h1>Today</h1>
           <button type="button" className="today-quit" onClick={() => setMode('home')}>End session</button>
         </div>
-        <Deck words={queue} session onRated={onRated} onDone={afterWords} />
+        <Deck words={queue} session lex={lex} onRated={onRated} onDone={afterWords} />
       </>
     );
   }
@@ -380,6 +409,24 @@ export default function Today({ words, milestones }) {
   const nothingLeft = plan.due.length === 0 && plan.newCards.length === 0 && !todayPattern;
   const brandNew = studiedBeforeToday === 0 && plan.due.length === 0 && reviewedInSession.current === 0;
   const signedOut = ready && !user;
+  // First days: no meter, milestones or goal picker yet (nothing to show, and too much to read)
+  const early = Object.keys(days).length < 3;
+  const firstDaysLine = <p className="today-note"><b>{learningCount} words</b> in progress. They count toward your street meter once they stick.</p>;
+
+  // Brand new (nothing learned, no first session yet): one thing only, the first session
+  if (mode === 'home' && Object.keys(progress).length === 0 && !readStore('tsc-first-session', null)) {
+    return (
+      <div className="today-wrap">
+        <div className="today-card">
+          <div className="today-first">
+            <h2>Your first Thai, in 2 minutes</h2>
+            <p>Turn down a bag at 7-Eleven. Hear it, make your own sentences, use it today. No sign-up needed.</p>
+            <a className="auth-btn primary" href="/start">Start</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="today-wrap">
@@ -388,18 +435,18 @@ export default function Today({ words, milestones }) {
           <p className="today-eyebrow">Session complete</p>
           <h1 className="today-title">Done for today</h1>
           <p className="today-goal-done"><i style={{ background: day.color }} />Today's goal is done. {day.full} lights up {day.colour} on your week.</p>
-          <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
+          {!early && <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />}
           <div className="today-stats">
-            {score?.total > 0 && <div><b>{score.right}/{score.total}</b><span>remembered</span></div>}
-            {patternScore && <div><b>{patternScore.right}/{patternScore.total}</b><span>pattern sentences</span></div>}
+            {score?.right > 0 && <div><b>{score.right}</b><span>word{score.right === 1 ? '' : 's'} remembered</span></div>}
+            {patternScore?.right > 0 && <div><b>{patternScore.right}</b><span>sentence{patternScore.right === 1 ? '' : 's'} understood</span></div>}
             {reviewedInSession.current > 0 && <div><b>{new Set(queue.map((w) => w.thai)).size}</b><span>new words met</span></div>}
             <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
           </div>
           <Week days={days} said={said} />
-          <Meter value={known} from={before} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />
+          {early ? firstDaysLine : <Meter value={known} from={before} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />}
           <div className="today-actions">
             {plan.fresh.length > 0 && (
-              <button type="button" className="auth-btn primary" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more words</button>
+              <button type="button" className="today-more-link" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Want more? Learn {EXTRA_NEW} extra words</button>
             )}
             <a className="auth-btn google" href="/vocabulary">Browse all words</a>
           </div>
@@ -414,13 +461,15 @@ export default function Today({ words, milestones }) {
           </div>
 
           {/* Step 1: the one thing to do first */}
+          <Mission onSaid={refreshSaid} />
+
           <section className="today-step" aria-label="Learn">
             <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today's goal</p>
             {nothingLeft ? (
               <div className="today-step-body">
                 <div><strong>Goal done ✓</strong><span>{day.full} lights up {day.colour} on your week. See you tomorrow.</span></div>
                 {plan.fresh.length > 0 && (
-                  <button type="button" className="auth-btn primary" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more</button>
+                  <button type="button" className="today-more-link" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Want more? Learn {EXTRA_NEW} extra words</button>
                 )}
               </div>
             ) : (
@@ -451,24 +500,24 @@ export default function Today({ words, milestones }) {
           <section className="today-progress" aria-label="Your progress">
             <p className="today-section-label">Your week</p>
             <Week days={days} said={said} />
-            <Meter value={known} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />
+            {early ? firstDaysLine : <Meter value={known} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />}
           </section>
 
-          <div className="today-goal">
+          {!early && <div className="today-goal">
             <span id="goal-label">Learning goal: new words a day</span>
             <div className="fc-seg" role="radiogroup" aria-labelledby="goal-label">
               {GOAL_OPTIONS.map((n) => (
                 <button key={n} type="button" role="radio" aria-checked={goal === n} className={goal === n ? 'is-on' : ''} onClick={() => setGoal(n)}>{n}</button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {signedOut && (
-            <p className="today-note">Your progress is saved in this browser. <a href="/signin">Sign in</a> to keep your streak on every device.</p>
+            <p className="today-note">Your progress is saved in this browser. <a href="/signin?next=/today">Sign in</a> to keep it on every device.</p>
           )}
 
           {/* Bonus, last: take one line out into real life */}
-          <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
+          {!early && <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />}
         </div>
       )}
     </div>

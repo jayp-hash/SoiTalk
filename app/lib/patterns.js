@@ -105,7 +105,8 @@ function orderSentence({ thing, number, ask, short, also }) {
     { slot: 'number', th: number.th }, { slot: 'counter', th: c.th },
     ...(also ? [{ slot: 'fixed', th: 'ด้วย' }] : []),
   ];
-  const en = also ? `And ${amount(number.en, thing, c)} too.` : `Can I have ${amount(number.en, thing, c)}?`;
+  const a = amount(number.en, thing, c);
+  const en = also ? `And ${a} too.` : `${a.charAt(0).toUpperCase()}${a.slice(1)}, please.`;
   return { parts, en };
 }
 
@@ -212,4 +213,31 @@ export function inRegister(patterns, reg, particleFor) {
     return { ...s, parts: [...parts, { slot: 'ending', th: e.th, rom: e.rom }] };
   };
   return patterns.map((p) => ({ ...p, levels: p.levels.map((l) => ({ ...l, make: wrap(l.make) })) }));
+}
+
+// An example sentence for a word, built from a pattern, using only words the
+// learner can use (can(th) is true) plus the word itself. Used on Today's
+// cards when the workbook sentence still has words the learner hasn't met.
+// patterns: already in the learner's register (inRegister). lex: { th: { rom, en } }.
+export function exampleFor(patterns, thai, can, lex, tries = 60) {
+  const ok = (th) => th === thai || can(th) || (th === 'ฉัน' && (thai === 'ผม' || can('ผม')));
+  for (const p of patterns) {
+    for (const level of p.levels) {
+      for (let i = 0; i < tries; i++) {
+        const v = randomValues(p, level, ok);
+        if (!v) break;
+        const s = level.make(v);
+        if (!s || !s.parts.some((x) => x.th === thai)) continue;
+        if (!s.parts.every((x) => x.slot === 'ending' || ok(x.th) || (x.th === 'ผม' && ok('ฉัน')))) continue;
+        const words = s.parts.map((x) => ({
+          th: x.th,
+          rom: x.rom || lex[x.th]?.rom || '',
+          en: x.slot === 'ending' ? 'polite ending' : (lex[x.th]?.en || ''),
+          ...(x.slot === 'ending' ? { ending: true } : {}),
+        }));
+        return { thai: words.map((w) => w.th).join(''), romanization: words.map((w) => w.rom).join(' '), english: s.en, words, generated: true };
+      }
+    }
+  }
+  return null;
 }

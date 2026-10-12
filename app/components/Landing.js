@@ -167,7 +167,7 @@ export default function Landing({ wordCount, demo, curve }) {
   const count = wordCount.toLocaleString('en');
   const cta = user
     ? <a className="lp-btn" href="/today">Continue to Today</a>
-    : <a className="lp-btn" href="/today">Start learning free</a>;
+    : <a className="lp-btn" href="/start">Start learning free</a>;
   const curvePts = Object.entries(curve).map(([n, pct]) => ({ n: Number(n), pct }));
   const maxPct = Math.max(...curvePts.map((p) => p.pct), 1);
   const [pick, setPick] = useState(() => (curvePts.find((p) => p.n >= 300) || curvePts[curvePts.length - 1] || { n: 0 }).n);

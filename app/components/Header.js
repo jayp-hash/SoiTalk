@@ -49,8 +49,17 @@ function Account() {
   );
 }
 
+// The Patterns tab appears from day 3 (before that, patterns come to you in Today)
+const showPatterns = () => {
+  try { return Object.keys(JSON.parse(localStorage.getItem('tsc-days')) || {}).length >= 3; } catch { return false; }
+};
+
 export default function Header() {
   const pathname = usePathname();
+  const [patterns, setPatterns] = useState(false);
+  useEffect(() => { setPatterns(showPatterns() || pathname === '/patterns'); }, [pathname]);
+  // The first session (/start) is full screen: nothing to wander off to
+  if (pathname?.startsWith('/start')) return null;
 
   return (
     <header className="site-header">
@@ -58,7 +67,7 @@ export default function Header() {
         <SoiSign width={172} tab={false} title="Soi Talk" />
       </a>
       <nav>
-        {LINKS.map((link) => (
+        {LINKS.filter((l) => l.href !== '/patterns' || patterns).map((link) => (
           <a
             key={link.href}
             href={link.href}

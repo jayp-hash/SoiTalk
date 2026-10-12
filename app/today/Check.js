@@ -46,7 +46,15 @@ function kindFor(word, entry) {
 }
 
 function buildItem(word, entry, allWords, progress) {
-  const kind = kindFor(word, entry);
+  let kind = kindFor(word, entry);
+  // A sentence check only if you know every word in it; otherwise check the word itself
+  if (kind === 'sentence') {
+    const sw = renderSentence(word.sentences[0], getRegister()).words;
+    const known = (th) => !!progress[th] || th === word.thai || /^(ครับ|ค่ะ|คะ)$/.test(th) || (th === 'ผม' && !!progress['ฉัน']) || (th === 'ฉัน' && !!progress['ผม']);
+    if (!sw || !sw.every((x) => x.ending || known(x.th))) kind = 'word';
+  }
+  // Fewer choices in the first weeks
+  const OPTIONS = Object.keys(progress).length < 40 ? 3 : 5;
   if (!kind) return null;
   const metFirst = (list) => [...list.filter((w) => progress[w.thai]), ...list.filter((w) => !progress[w.thai])];
   if (kind === 'word') {
