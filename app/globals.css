@@ -1230,3 +1230,16 @@ body:has(.fc) .page { padding-bottom: 0; }
   .tp-chip-name { font-size: 13.5px; }
   .tp-chip-n { font-size: 12px; }
 }
+/* Library start card is a link to Today */
+a.tp-start { text-decoration: none; }
+a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
+.tp-all-row { border-style: solid; background: #fff; }
+/* Week: day name romanization on tap */
+.today-week .day { position: relative; display: grid; justify-items: center; gap: 5px; width: 100%; border: 0; background: none; padding: 2px 0; cursor: pointer; font: inherit; color: inherit; }
+.today-week .day:focus-visible { outline: 2px solid var(--soi); outline-offset: 2px; border-radius: 10px; }
+.today-week .day-peek { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 160px;
+  background: #1f2533; color: #fff; font: 700 12.5px/1.3 var(--font-body), sans-serif; padding: 6px 9px; border-radius: 8px; z-index: 3; pointer-events: none; animation: fc-peek-in .15s ease-out; }
+.today-week li:first-child .day-peek { left: 0; transform: none; animation-name: fc-peek-in-side; }
+.today-week li:last-child .day-peek { left: auto; right: 0; transform: none; animation-name: fc-peek-in-side; }
+.today-week .lbl { font-size: 12px; }
+.today-week { overflow: visible; }

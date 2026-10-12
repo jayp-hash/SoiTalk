@@ -69,28 +69,29 @@ function TopicPage({ words, onOpen }) {
   return (
     <div className="tp">
       <div className="tp-head">
-        <h1>What do you want to learn?</h1>
-        <p>Follow the course, or jump to the words you need this week.</p>
+        <h1>Word library</h1>
+        <p>Browse words by topic. Your daily lesson is on Today.</p>
       </div>
 
-      <button type="button" className="tp-start" onClick={() => onOpen(ALL, nextSet)}>
+      {/* Today is the main path; the library points there */}
+      <a className="tp-start" href="/today">
         <span className="tp-start-text">
-          <span className="tp-start-kicker">{started ? 'Continue the course' : 'Recommended'}</span>
-          <span className="tp-start-title">{started ? `Set ${nextSet + 1} of ${Math.ceil(words.length / SET_SIZE)}` : 'Start with the most useful words'}</span>
+          <span className="tp-start-kicker">Your daily lesson</span>
+          <span className="tp-start-title">{started ? 'Continue on Today' : 'Start on Today'}</span>
           <span className="tp-start-sub">
             {started
-              ? <>{learnedAll} of {words.length.toLocaleString('en')} learned. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
-              : <>Every topic, in the order you'll need it. First up: <span lang="th">สวัสดี</span> (sà-wàt-dii), hello.</>}
+              ? <>{learnedAll} of {words.length.toLocaleString('en')} words learned. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
+              : <>A few new words a day, most useful first. First up: <span lang="th">สวัสดี</span> (sà-wàt-dii), hello.</>}
           </span>
           {started && <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(learnedAll / words.length) * 100}%` }} /></span>}
         </span>
         <span className="tp-start-go" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
         </span>
-      </button>
+      </a>
 
       <section className="tp-section" aria-labelledby="tp-start-here">
-        <h2 id="tp-start-here">{started ? 'Your topics' : 'Start here'}</h2>
+        <h2 id="tp-start-here">Everyday topics</h2>
         <div className="tp-tiles">
           {startHere.map((t, i) => {
             const done = t.words.filter(isKnown).length;
@@ -134,6 +135,11 @@ function TopicPage({ words, onOpen }) {
           })}
         </div>
       </section>
+
+      <button type="button" className="tp-formal tp-all-row" onClick={() => onOpen(ALL, nextSet)}>
+        <span><b>All words in course order</b> · {words.length.toLocaleString('en')} words, most useful first{started ? `. You're on set ${nextSet + 1} of ${Math.ceil(words.length / SET_SIZE)}.` : '.'}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
 
       {formal.map((t) => (
         <button key={t.name} type="button" className="tp-formal" onClick={() => onOpen(t.name)}>

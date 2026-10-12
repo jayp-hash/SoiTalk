@@ -30,6 +30,11 @@ const THAI_DAY = [
 // A day fills with its colour when the day's goal (the words) is done;
 // a star means you also said that day's line out loud (the bonus).
 function Week({ days, said = {} }) {
+  // Tap a day to see how its Thai name is said (kept hidden for spacing)
+  const [peek, setPeek] = useState(-1);
+  const timer = useRef(0);
+  const show = (back) => { clearTimeout(timer.current); setPeek(back); timer.current = setTimeout(() => setPeek(-1), 2500); };
+  useEffect(() => () => clearTimeout(timer.current), []);
   const cells = [];
   for (let back = 6; back >= 0; back--) {
     const t = Date.now() - back * 864e5;
@@ -37,11 +42,13 @@ function Week({ days, said = {} }) {
     const done = !!days[dayKey(t)]?.done;
     const star = said[dayKey(t)] != null;
     cells.push(
-      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': d.color }}
-        aria-label={`${d.en}${back === 0 ? ' (today)' : ''}${done ? ', goal done' : ''}${star ? ', said it out loud' : ''}`}>
-        <span className="dot" lang="th" aria-hidden="true">{d.th}{star && <span className="star">★</span>}</span>
-        <span className="rom" aria-hidden="true">{d.rom}</span>
-        <span className="lbl" aria-hidden="true">{back === 0 ? 'Today' : d.en}</span>
+      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': d.color }}>
+        <button type="button" className="day" onClick={() => show(back)}
+          aria-label={`${d.full}, ${d.rom}${back === 0 ? ', today' : ''}${done ? ', goal done' : ''}${star ? ', said it out loud' : ''}`}>
+          {peek === back && <span className="day-peek" role="tooltip">{d.rom} · {d.full}</span>}
+          <span className="dot" lang="th" aria-hidden="true">{d.th}{star && <span className="star">★</span>}</span>
+          <span className="lbl" aria-hidden="true">{back === 0 ? 'Today' : d.en}</span>
+        </button>
       </li>
     );
   }
