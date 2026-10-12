@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore, dayKey } from '../lib/progress';
 import { getRegister, setRegister } from '../lib/register';
 import { useUser } from '../lib/useUser';
+import { soundRight, soundWrong, soundDone } from '../lib/sfx';
+import { supabaseBrowser } from '../lib/supabase-browser';
 import { SCENES, DEFAULT_SCENE, replyParts, followParts, missionParts, joinTh, joinRom, endingFor } from '../lib/scenes';
 
 // ---------------------------------------------------------------------
@@ -56,6 +58,18 @@ const StopIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden=
 const SlowIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15c0-3.9 3.1-7 7-7s7 3.1 7 7" /><path d="M2 15h19c1 0 1.5-.8 1.2-1.6L21 11" /><path d="M7 15l-1 3M15 15l1 3" /></svg>;
 const SwapIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" /><path d="M4 3v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" /><path d="M20 21v-5h-5" /></svg>;
 
+// Slow: the words one by one (spaces between them) in the voice's slow mode
+const spaced = (parts) => parts.map((p) => p.th).join(' ');
+function SlowBtn({ id, clips, player }) {
+  const on = player.playing === id;
+  return (
+    <button type="button" className={`st-slow${on ? ' is-on' : ''}`} aria-label={on ? 'Stop' : 'Play slowly, word by word'} title="Slowly, word by word"
+      onClick={(e) => { e.stopPropagation(); player.play(id, clips); }}>
+      {on ? <StopIcon /> : <SlowIcon />}
+    </button>
+  );
+}
+
 function PlayBtn({ id, clips, player, label, big }) {
   const on = player.playing === id;
   return (
@@ -87,6 +101,21 @@ function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash }) {
       })}
     </div>
   );
+}
+
+// After answering: ✓ on the right answer, ✕ on a wrong pick, plus a word that says so
+function Mark({ on, right, mine }) {
+  if (!on) return null;
+  if (right) return <span className="st-mark is-right" aria-hidden="true">✓</span>;
+  if (mine) return <span className="st-mark is-wrong" aria-hidden="true">✕</span>;
+  return null;
+}
+function Tag({ on, right, mine }) {
+  if (!on) return null;
+  if (right && mine) return <span className="st-tag is-right">Correct</span>;
+  if (right) return <span className="st-tag is-right">Right answer</span>;
+  if (mine) return <span className="st-tag is-wrong">Your answer</span>;
+  return null;
 }
 
 function Bar({ step, steps }) {
@@ -165,6 +194,7 @@ export default function Start({ sceneId }) {
   const checkBuilt = () => {
     const ok = built.length === target.length && built.every((x, i) => x.th === target[i].th);
     setRDone(ok ? 'right' : 'wrong');
+    if (ok) soundRight(); else soundWrong();
     target.forEach((w, i) => check(w.th, built[i]?.th === w.th ? 'good' : 'again'));
     player.play('recall', [{ text: joinTh(target), voice }]);
   };
@@ -178,7 +208,7 @@ export default function Start({ sceneId }) {
   const [rPicked, setRPicked] = useState(null);
   useEffect(() => { if (step === 'recall' && rw && !rPicked) player.play(`r-${rStage}`, [{ text: rw.th, voice }]); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, rStage]);
-  const rAnswer = (o) => { if (rPicked) return; setRPicked(o.key); check(rw.th, o.key === rw.th ? 'good' : 'again'); };
+  const rAnswer = (o) => { if (rPicked) return; setRPicked(o.key); check(rw.th, o.key === rw.th ? 'good' : 'again'); if (o.key === rw.th) soundRight(); else soundWrong(); };
   const rNext = () => {
     setRPicked(null);
     if (rStage < prevWords.length) setRStage(rStage + 1); else go('scene');
@@ -215,6 +245,7 @@ export default function Start({ sceneId }) {
         return {
           kind, key: ans.key, title: 'What did you say?',
           clip: [{ text: joinTh(followParts(scene, i, reg)), voice }],
+          slowClip: [{ text: spaced(followParts(scene, i, reg)), voice, slow: true }],
           opts: shuffle([...fu.answers.map((x) => ({ key: x.key, en: x.en })), { key: 'wrong', en: fu.wrong }]),
           fb: { th: joinTh(ans.parts), rom: joinRom(ans.parts), en: ans.en },
         };
@@ -224,8 +255,9 @@ export default function Start({ sceneId }) {
         kind, key: it.th,
         title: asks ? `What is ${scene.staff.who.toLowerCase()} asking?` : scene.followUp ? 'What did you order?' : 'What did you say?',
         clip: asks ? [{ text: scene.staff.ask(it).th, voice: 'female' }] : [{ text: joinTh(replyParts(scene, it, reg)), voice }],
+        slowClip: asks ? [{ text: scene.staff.ask(it).th, voice: 'female', slow: true }] : [{ text: spaced(replyParts(scene, it, reg)), voice, slow: true }],
         opts: shuffle([it, ...others(it)]).map((o) => ({ key: o.th, en: asks ? scene.staff.ask(o).en : scene.replyEn(o) })),
-        fb: { th: it.th, rom: it.rom, en: it.en },
+        fb: { th: it.th, rom: it.rom, en: it.en, name: !!it.name },
       };
     };
     const kinds = scene.listen || ['ask', 'reply', 'ask'];
@@ -244,6 +276,7 @@ export default function Start({ sceneId }) {
   const answer = (o) => {
     if (picked) return;
     setPicked(o.key);
+    if (o.key === q.key) soundRight(); else soundWrong();
     if (o.key !== q.key && !retried) { setRetried(true); setQueue((qq) => [...qq, { ...q, again: true }]); }
   };
   const nextQ = () => {
@@ -273,7 +306,7 @@ export default function Start({ sceneId }) {
   }, [cw, words]);
   useEffect(() => { if (step === 'check' && cw && !cPicked) player.play(`c-${ci}`, [{ text: cw.th, voice }]); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, ci]);
-  const cAnswer = (o) => { if (cPicked) return; setCPicked(o.key); results.current[cw.th] = o.key === cw.th; };
+  const cAnswer = (o) => { if (cPicked) return; setCPicked(o.key); results.current[cw.th] = o.key === cw.th; if (o.key === cw.th) soundRight(); else soundWrong(); };
   const cNext = () => {
     setCPicked(null);
     if (ci + 1 < words.length) { setCi(ci + 1); return; }
@@ -348,7 +381,7 @@ export default function Start({ sceneId }) {
               {rOpts.map((o) => {
                 const right = o.key === rw.th;
                 const cls = rPicked ? (right ? ' is-right' : o.key === rPicked ? ' is-wrong' : ' is-dim') : '';
-                return <button key={o.key} type="button" className={`st-opt${cls}`} onClick={() => rAnswer(o)} disabled={!!rPicked}>{rPicked && right && <span aria-hidden="true">✓ </span>}{o.en}</button>;
+                return <button key={o.key} type="button" className={`st-opt${cls}`} onClick={() => rAnswer(o)} disabled={!!rPicked}><Mark on={!!rPicked} right={right} mine={o.key === rPicked} />{o.en}<Tag on={!!rPicked} right={right} mine={o.key === rPicked} /></button>;
               })}
             </div>
             {rPicked && <button type="button" className="st-cta" onClick={rNext}>{rStage < prevWords.length ? 'Next word' : 'On to today'}</button>}
@@ -413,7 +446,7 @@ export default function Start({ sceneId }) {
             <Tiles parts={parts} onTap={say} />
             <div className="st-whole">
               <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play the whole sentence" />
-              <button type="button" className="st-slow" aria-label="Play slowly" onClick={() => player.play('slow', [{ text: joinTh(parts), voice, slow: true }])}><SlowIcon /></button>
+              <SlowBtn id="slow" clips={[{ text: spaced(parts), voice, slow: true }]} player={player} />
               <span className="en">{scene.replyEn(item)}</span>
             </div>
             {fu && (
@@ -422,7 +455,7 @@ export default function Start({ sceneId }) {
                 <Tiles parts={spiceParts} onTap={say} />
                 <div className="st-whole">
                   <PlayBtn id="spice" clips={[{ text: joinTh(spiceParts), voice }]} player={player} label="Play the whole sentence" />
-                  <button type="button" className="st-slow" aria-label="Play slowly" onClick={() => player.play('slow2', [{ text: joinTh(spiceParts), voice, slow: true }])}><SlowIcon /></button>
+                  <SlowBtn id="slow2" clips={[{ text: spaced(spiceParts), voice, slow: true }]} player={player} />
                   <span className="en">{fu.answers[spiceIdx].en}</span>
                 </div>
               </>
@@ -446,7 +479,7 @@ export default function Start({ sceneId }) {
             <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1} flash={flash} />
             <div className="st-whole">
               <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play the sentence" />
-              <button type="button" className="st-slow" aria-label="Play slowly" onClick={() => player.play('slow', [{ text: joinTh(parts), voice, slow: true }])}><SlowIcon /></button>
+              <SlowBtn id="slow" clips={[{ text: spaced(parts), voice, slow: true }]} player={player} />
               <span className="en">{scene.replyEn(item)}</span>
             </div>
             {fu && (
@@ -488,7 +521,7 @@ export default function Start({ sceneId }) {
             <h1 className="st-title">{q.title}</h1>
             <div className="st-listen">
               <PlayBtn id={`q-${qi}`} clips={q.clip} player={player} label="Play again" big />
-              <button type="button" className="st-slow" aria-label="Play slowly" onClick={() => player.play('slow', q.clip.map((c) => ({ ...c, slow: true })))}><SlowIcon /></button>
+              <SlowBtn id={`qslow-${qi}`} clips={q.slowClip} player={player} />
             </div>
             <div className="st-opts">
               {q.opts.map((o) => {
@@ -496,7 +529,7 @@ export default function Start({ sceneId }) {
                 const cls = picked ? (right ? ' is-right' : o.key === picked ? ' is-wrong' : ' is-dim') : '';
                 return (
                   <button key={o.key} type="button" className={`st-opt${cls}`} onClick={() => answer(o)} disabled={!!picked}>
-                    {picked && right && <span aria-hidden="true">✓ </span>}{picked && !right && o.key === picked && <span aria-hidden="true">✕ </span>}{o.en}
+                    <Mark on={!!picked} right={right} mine={o.key === picked} />{o.en}<Tag on={!!picked} right={right} mine={o.key === picked} />
                   </button>
                 );
               })}
@@ -504,8 +537,8 @@ export default function Start({ sceneId }) {
             {picked && (
               <div className="st-feedback" role="status">
                 {picked === q.key
-                  ? <p><b>Right.</b> <span lang="th">{q.fb.th}</span> ({q.fb.rom}) = {q.fb.en.replace(/\.$/, '')}.</p>
-                  : <p>Not quite. You heard <b lang="th">{q.fb.th}</b> ({q.fb.rom}) = {q.fb.en.replace(/\.$/, '')}. {retried && !q.again ? 'It comes back once more.' : ''}</p>}
+                  ? <p><b>Right.</b> <span lang="th">{q.fb.th}</span> ({q.fb.rom}){q.fb.name ? '' : ` = ${q.fb.en.replace(/\.$/, '')}`}.</p>
+                  : <p>Not quite. You heard <b lang="th">{q.fb.th}</b> ({q.fb.rom}){q.fb.name ? '' : ` = ${q.fb.en.replace(/\.$/, '')}`}. {retried && !q.again ? 'It comes back once more.' : ''}</p>}
                 <button type="button" className="st-cta" onClick={nextQ}>Continue</button>
               </div>
             )}
@@ -524,7 +557,7 @@ export default function Start({ sceneId }) {
               {cOpts.map((o) => {
                 const right = o.key === cw.th;
                 const cls = cPicked ? (right ? ' is-right' : o.key === cPicked ? ' is-wrong' : ' is-dim') : '';
-                return <button key={o.key} type="button" className={`st-opt${cls}`} onClick={() => cAnswer(o)} disabled={!!cPicked}>{cPicked && right && <span aria-hidden="true">✓ </span>}{o.en}</button>;
+                return <button key={o.key} type="button" className={`st-opt${cls}`} onClick={() => cAnswer(o)} disabled={!!cPicked}><Mark on={!!cPicked} right={right} mine={o.key === cPicked} />{o.en}<Tag on={!!cPicked} right={right} mine={o.key === cPicked} /></button>;
               })}
             </div>
             {cPicked && <button type="button" className="st-cta" onClick={cNext}>{ci + 1 < words.length ? 'Next word' : 'Finish'}</button>}
@@ -532,61 +565,110 @@ export default function Start({ sceneId }) {
         )}
 
         {step === 'done' && (
-          <section className="st-card st-done">
-            <p className="st-place">{scene.place} · done</p>
-            <h1 className="st-title">You can now say</h1>
-            <p className="st-win">+{madeItems.length + (fu ? fu.answers.length : 0)} things you can say in Thai</p>
-            <ul className="st-said">
-              {madeItems.map((it) => {
-                const p = replyParts(scene, it, reg);
-                return (
-                  <li key={it.th}>
-                    <PlayBtn id={`s-${it.th}`} clips={[{ text: joinTh(p), voice }]} player={player} label={`Play ${scene.replyEn(it)}`} />
-                    <div><p className="th" lang="th">{joinTh(p)}</p><p className="rom">{joinRom(p)}</p><p className="en">{scene.replyEn(it)}</p></div>
-                  </li>
-                );
-              })}
-              {fu && fu.answers.map((x, i) => {
-                const p = followParts(scene, i, reg);
-                return (
-                  <li key={x.key}>
-                    <PlayBtn id={`f-${x.key}`} clips={[{ text: joinTh(p), voice }]} player={player} label={`Play ${x.en}`} />
-                    <div><p className="th" lang="th">{joinTh(p)}</p><p className="rom">{joinRom(p)}</p><p className="en">{x.en}</p></div>
-                  </li>
-                );
-              })}
-            </ul>
-            {scene.next && (
-              <p className="st-next">Next, she may ask <span lang="th">{scene.next.th}</span> <i>{scene.next.rom}</i>, {scene.next.en.toLowerCase()} That's coming soon.</p>
-            )}
-            {scene.alsoHeard && (
-              <p className="st-also">Also natural: <span lang="th">{scene.alsoHeard.th}{endingFor(reg).th}</span> <i>{scene.alsoHeard.rom} {endingFor(reg).rom}</i>, {scene.alsoHeard.en}.</p>
-            )}
-            <div className="st-mission">
-              <p className="st-mission-label">Your mission</p>
-              <p>{scene.mission}</p>
-              <p className="st-mission-line"><span lang="th">{joinTh(missionParts(scene, reg, spiceIdx))}</span></p>
-              <p className="st-mission-rom">{joinRom(missionParts(scene, reg, spiceIdx))}</p>
-              <p className="st-mission-foot">Come back and tick it off. No pressure if you don't get the chance.</p>
-            </div>
-            <div className="st-teaser">
-              <p className="st-teaser-label">{scene.teaser.title}</p>
-              <div className="st-line">
-                <PlayBtn id="teaser" clips={[{ text: scene.teaser.th + endingFor(reg).th, voice }]} player={player} label="Hear tomorrow's sentence" />
-                <div><p className="th" lang="th">{scene.teaser.th}{endingFor(reg).th}</p><p className="rom">{scene.teaser.rom} {endingFor(reg).rom}</p><p className="en">{scene.teaser.en}</p></div>
-              </div>
-            </div>
-            {ready && user ? (
-              <a className="st-cta" href="/today">Go to Today</a>
-            ) : (
-              <>
-                <a className="st-cta" href="/signin?next=/today">Save my progress</a>
-                <a className="st-later" href="/today">Not now</a>
-              </>
-            )}
-          </section>
+          <Done scene={scene} reg={reg} voice={voice} player={player} madeItems={madeItems} spiceIdx={spiceIdx} user={ready ? user : null} />
         )}
       </div>
     </div>
+  );
+}
+
+// ---- 6. done ----------------------------------------------------------
+// One job per band, top to bottom: celebrate (how much you can now say),
+// show it (your lines, tap to hear), use it (today's mission), come back
+// (tomorrow's teaser), keep it (save progress, one tap with Google).
+const GoogleG = () => (
+  <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
+    <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+    <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+    <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/>
+  </svg>
+);
+// Instagram, TikTok, Facebook and LINE open links in their own browser,
+// where Google sign-in is blocked. Email works there.
+const inAppBrowser = () => {
+  try { return /FBAN|FBAV|Instagram|Line\/|TikTok|musical_ly|Bytedance/i.test(navigator.userAgent); } catch { return false; }
+};
+const CONFETTI = ['#ED1C24', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#F2C200', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#FFFFFF', '#F2C200', '#241D4F', '#ED1C24', '#F2C200', '#FFFFFF'];
+
+function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
+  const fu = scene.followUp;
+  const lines = [
+    ...madeItems.map((it) => ({ id: `s-${it.th}`, parts: replyParts(scene, it, reg), en: scene.replyEn(it) })),
+    ...(fu ? fu.answers.map((x, i) => ({ id: `f-${x.key}`, parts: followParts(scene, i, reg), en: x.en })) : []),
+  ];
+  const mission = missionParts(scene, reg, spiceIdx);
+  const [all, setAll] = useState(false);
+  const shown = all ? lines : lines.slice(0, 3);
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => { setInApp(inAppBrowser()); soundDone(); }, []);
+  const google = async () => {
+    try { localStorage.setItem('tsc-after-signin', '/today'); } catch {}
+    await supabaseBrowser().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback` } });
+  };
+
+  return (
+    <section className="dn">
+      <div className="dn-hero">
+        <div className="dn-confetti" aria-hidden="true">
+          {CONFETTI.map((c, i) => <i key={i} style={{ '--c': c, '--x': `${i % 2 ? 78 + ((i * 7) % 20) : 2 + ((i * 11) % 18)}%`, '--d': `${(i % 5) * 0.06}s`, '--r': `${(i * 53) % 360}deg` }} />)}
+        </div>
+        <p className="dn-cheer" lang="th">เก่งมาก! <span>gèng mâak · great job</span></p>
+        <p className="dn-count"><b>{lines.length}</b> new things you can say in Thai</p>
+        <p className="dn-where">{scene.place}, done in about {scene.minutes} minutes.</p>
+      </div>
+
+      <div className="dn-lines" role="list">
+        {shown.map((l) => {
+          const on = player.playing === l.id;
+          return (
+            <button key={l.id} type="button" role="listitem" className={`dn-line${on ? ' is-on' : ''}`}
+              onClick={() => player.play(l.id, [{ text: joinTh(l.parts), voice }])} aria-label={`Play: ${l.en}`}>
+              <span className="dn-line-text">
+                <span className="th" lang="th">{joinTh(l.parts)}</span>
+                <span className="rom">{joinRom(l.parts)}</span>
+              </span>
+              <span className="en">{l.en}</span>
+              <span className="dn-line-play" aria-hidden="true">{on ? <StopIcon /> : <PlayIcon />}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {lines.length > 3 && !all && (
+        <button type="button" className="dn-more" onClick={() => setAll(true)}>Show {lines.length - 3} more</button>
+      )}
+
+      <div className="dn-use">
+        <p className="dn-label">Use it today</p>
+        <p className="dn-use-line" lang="th">{joinTh(mission)}</p>
+        <p className="dn-use-rom">{joinRom(mission)}</p>
+        <p className="dn-use-text">{scene.mission} Tick it off tomorrow.</p>
+      </div>
+
+      <button type="button" className={`dn-tomorrow${player.playing === 'teaser' ? ' is-on' : ''}`}
+        onClick={() => player.play('teaser', [{ text: scene.teaser.th + endingFor(reg).th, voice }])}>
+        <span className="dn-label">{scene.teaser.title}</span>
+        <span className="th" lang="th">{scene.teaser.th}{endingFor(reg).th}</span>
+        <span className="rom">{scene.teaser.rom} {endingFor(reg).rom} · {scene.teaser.en}</span>
+        <span className="dn-line-play" aria-hidden="true">{player.playing === 'teaser' ? <StopIcon /> : <PlayIcon />}</span>
+      </button>
+
+      <div className="dn-save">
+        {user ? (
+          <a className="st-cta" href="/today">Go to Today</a>
+        ) : inApp ? (
+          <>
+            <a className="st-cta" href="/signin?next=/today">Save my {lines.length} phrases (free)</a>
+            <p className="dn-save-note">Google sign-in doesn't work inside Instagram, TikTok or LINE, so use your email (or open soitalk.app in Safari or Chrome). <a href="/today">Not now</a></p>
+          </>
+        ) : (
+          <>
+            <button type="button" className="dn-google" onClick={google}><GoogleG /> Save my {lines.length} phrases with Google</button>
+            <p className="dn-save-note">Free. Keep your phrases and pick up tomorrow. <span className="dn-links"><a href="/signin?next=/today">Use email</a> · <a href="/today" className="dn-not-now">Not now</a></span></p>
+          </>
+        )}
+      </div>
+    </section>
   );
 }

@@ -72,6 +72,12 @@ function sheetRows(ws) {
   return rows;
 }
 
+// Romanization house rule (Jay, 12 Oct 2026): the "oi" sound (-อย) is written
+// the way expats recognise it: น้อย nói, นิดหน่อย nít-nòi, อร่อย à-rói
+// (the workbook writes náawi, nít-nàawi, à-ràwi). The tone mark is kept.
+const OI_TONE = { a: 'o', 'à': 'ò', 'á': 'ó', 'â': 'ô', 'ǎ': 'ǒ' };
+const rom = (s) => (s ? String(s).normalize('NFC').replace(/([aàáâǎ])a?wi(?=$|[\s\-.,?!])/g, (_, v) => `${OI_TONE[v]}i`) : s);
+
 const col = (row, startsWith) => {
   const key = Object.keys(row).find((k) => k.toLowerCase().startsWith(startsWith.toLowerCase()));
   return key ? row[key] : '';
@@ -104,7 +110,7 @@ async function main() {
     .filter((r) => r['Thai'] && col(r, 'Include').toUpperCase() === 'Y')
     .map((r) => ({
       thai: r['Thai'],
-      romanization: col(r, 'FINAL Romanization'),
+      romanization: rom(col(r, 'FINAL Romanization')),
       english: col(r, 'FINAL English'),
       frequency_rank: col(r, 'Avg Rank') ? Number(col(r, 'Avg Rank')) : null,
       sources_count: Number(col(r, 'Sources Count')) || 0,
@@ -139,7 +145,7 @@ async function main() {
   for (const r of sheetRows(wb.getWorksheet('Sentence Patterns'))) {
     if (r['Category']) category = r['Category'];       // category is only written on the first row of each group
     add({
-      thai: r['Thai'], romanization: r['Romanized'] || null, english: r['English'] || null,
+      thai: r['Thai'], romanization: rom(r['Romanized']) || null, english: r['English'] || null,
       category, sentence_type: col(r, 'Sentence Type') || guessType(r['Thai'] || ''),
       source: 'Sentence Patterns tab', review_status: 'unreviewed',
     });
@@ -148,7 +154,7 @@ async function main() {
     const thai = col(r, 'Example Sentence (Thai)');
     if (!thai) continue;                                // skips the footnote row
     add({
-      thai, romanization: col(r, 'Example (Romanization)') || null, english: col(r, 'Example (English)') || null,
+      thai, romanization: rom(col(r, 'Example (Romanization)')) || null, english: col(r, 'Example (English)') || null,
       category: `Grammar: ${col(r, 'Pattern (English')}`, sentence_type: guessType(thai),
       source: 'Sentence Structures tab', review_status: 'unreviewed',
     });
@@ -157,7 +163,7 @@ async function main() {
   if (drafts) {
     for (const r of sheetRows(drafts)) {
       add({
-        thai: r['Thai'], romanization: col(r, 'Romaniz') || null, english: r['English'] || null,
+        thai: r['Thai'], romanization: rom(col(r, 'Romaniz')) || null, english: r['English'] || null,
         category: r['Category'] || 'Draft', sentence_type: col(r, 'Sentence Type') || guessType(r['Thai'] || ''),
         source: 'Claude draft', review_status: col(r, 'Review Status') || 'needs_native_review',
       });
@@ -175,7 +181,7 @@ async function main() {
       const thai = r['Thai (Claude fills in)'];
       if (!word || !thai) continue;
       samples.push({ word, thai });
-      const romanization = r['Romanization (Claude fills in)'] || null;
+      const romanization = rom(r['Romanization (Claude fills in)']) || null;
       if (!sentences.has(thai)) {
         add({
           thai, romanization, english: r['Your English sentence'] || null,

@@ -1,4 +1,5 @@
 'use client';
+import { soundRight, soundWrong } from '../lib/sfx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import { stageOf } from '../lib/memory';
@@ -264,7 +265,7 @@ function Spin({ p, level, lex, can }) {
       </div>
       <div className="pt-actions">
         <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
-        <button type="button" className="pt-play" onClick={() => play(sentenceThai(s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+        <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
         <button type="button" className="auth-btn primary pt-spin" onClick={spin} disabled={spinning}>Spin</button>
       </div>
       <button type="button" className={`pt-en${showEn ? ' is-on' : ''}`} onClick={() => setShowEn(true)}
@@ -393,7 +394,7 @@ function Listen({ p, level, lex, can, onRound }) {
       <p className="pt-prompt">What does it mean?</p>
       <div className="pt-actions">
         <button type="button" className={`ck-play${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
-        <button type="button" className="ck-slow" onClick={() => play(sentenceThai(item.s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+        <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
       </div>
       <p className="ck-tap">Tap to hear it again · turtle = slow</p>
       {picked != null && <div className="pt-reveal"><Parts parts={item.s.parts} lex={lex} big /></div>}
@@ -401,7 +402,7 @@ function Listen({ p, level, lex, can, onRound }) {
         {item.options.map((o, k) => {
           const state = picked == null ? '' : o === item.s.en ? ' is-right' : o === picked ? ' is-wrong' : ' is-dim';
           return (
-            <button key={o} type="button" className={`ck-opt${state}`} disabled={picked != null} onClick={() => setPicked(o)}>
+            <button key={o} type="button" className={`ck-opt${state}`} disabled={picked != null} onClick={() => { if (picked == null) { setPicked(o); if (o === item.s.en) soundRight(); else soundWrong(); } }}>
               <span className="ck-key" aria-hidden="true">{picked != null && o === item.s.en ? '✓' : picked != null && o === picked ? '✕' : k + 1}</span>{o}
             </button>
           );
@@ -509,7 +510,7 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
     }
     setStep(n);
   };
-  const choose = (o) => { if (picked != null) return; setPicked(o); if (o === item.s.en) right.current += 1; };
+  const choose = (o) => { if (picked != null) return; setPicked(o); if (o === item.s.en) { right.current += 1; soundRight(); } else soundWrong(); };
 
   return (
     <div className="ck">
@@ -542,7 +543,7 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
               </div>
               <div className="pt-actions">
                 <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
-                <button type="button" className="pt-play" onClick={() => play(sentenceThai(s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+                <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
               <p className="pt-sentence-en">{s.en}</p>
               <p className={`st-toast${toast ? ' is-on' : ''}`} role="status">{toast || ' '}</p>
@@ -555,7 +556,7 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
             <>
               <div className="ck-audio">
                 <button type="button" className={`ck-play${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
-                <button type="button" className="ck-slow" onClick={() => play(sentenceThai(item.s), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+                <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
               {picked != null && (
                 <div className="st-tiles is-reveal" lang="th">

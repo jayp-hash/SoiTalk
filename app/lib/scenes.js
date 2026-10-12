@@ -60,19 +60,16 @@ export const SCENES = {
     replyEn: (it) => `${it.en.charAt(0).toUpperCase()}${it.en.slice(1)}, please.`,
     slotLabel: 'the dish',
     items: [
-      { th: 'ผัดกะเพรา', rom: 'phàt-gà-phrao', en: 'holy basil stir-fry', a: 'holy basil stir-fry' },
-      // Dishes where they really ask about spice (fried rice and pad Thai aren't
-      // spicy by default: you add chilli at the table. Thai Teacher, 12 Oct)
-      { th: 'ต้มยำ', rom: 'dtôm-yam', en: 'tom yum', a: 'tom yum' },
-      { th: 'ส้มตำ', rom: 'sôm-dtam', en: 'papaya salad', a: 'papaya salad' },
-      { th: 'แกงเขียวหวาน', rom: 'gaeng-khǐao-wǎan', en: 'green curry', a: 'green curry' },
+      { th: 'ผัดกะเพรา', rom: 'phàt-gà-phrao', en: 'pad kra pao', a: 'pad kra pao', name: true },
+      { th: 'ต้มยำ', rom: 'dtôm-yam', en: 'tom yum', a: 'tom yum', name: true },
+      { th: 'ส้มตำ', rom: 'sôm-dtam', en: 'som tam', a: 'som tam', name: true },
     ],
     // The second exchange: the waitress asks, you pick how spicy
     followUp: {
       staff: { th: 'เผ็ดไหมคะ', rom: 'phèt mǎi khá', en: 'Spicy?' },
       answers: [
         { key: 'none', parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'เผ็ด', rom: 'phèt', en: 'spicy' }], en: 'Not spicy.' },
-        { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nàawi', en: 'a little' }], en: 'A little spicy.' },
+        { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nòi', en: 'a little' }], en: 'A little spicy.' },
       ],
       wrong: 'Very spicy.', // a listening option only
     },

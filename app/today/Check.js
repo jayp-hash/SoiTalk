@@ -1,4 +1,5 @@
 'use client';
+import { soundRight, soundWrong } from '../lib/sfx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { readStore } from '../lib/progress';
 import { renderSentence, getRegister } from '../lib/register';
@@ -132,6 +133,7 @@ export default function CheckSession({ queue, allWords, progress, onAnswer, onDo
     if (picked != null || !item) return;
     setPicked(opt);
     const right = opt === item.answer;
+    if (right) soundRight(); else soundWrong();
     if (!item.practice) {
       score.current.total += 1;
       if (right) score.current.right += 1;
@@ -198,7 +200,7 @@ export default function CheckSession({ queue, allWords, progress, onAnswer, onDo
               const state = picked == null ? '' : o === item.answer ? ' is-right' : o === picked ? ' is-wrong' : ' is-dim';
               return (
                 <button key={o} type="button" className={`ck-opt${state}`} onClick={() => choose(o)} disabled={picked != null}>
-                  <span className="ck-key" aria-hidden="true">{picked != null && o === item.answer ? '✓' : picked != null && o === picked ? '✕' : k + 1}</span>{o}
+                  <span className="ck-key" aria-hidden="true">{picked != null && o === item.answer ? '✓' : picked != null && o === picked ? '✕' : k + 1}</span>{o}{picked != null && o === item.answer && <span className="st-tag is-right">{o === picked ? 'Correct' : 'Right answer'}</span>}{picked != null && o === picked && o !== item.answer && <span className="st-tag is-wrong">Your answer</span>}
                 </button>
               );
             })}

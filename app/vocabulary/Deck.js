@@ -756,7 +756,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
                     className={`fc-turtle${player.playing === 'sentence-slow' ? ' is-playing' : ''}`}
                     aria-label={player.playing === 'sentence-slow' ? 'Stop' : 'Play sentence slowly'}
                     title="Play slowly"
-                    onClick={(e) => { e.stopPropagation(); player.play('sentence-slow', sentence.thai, SLOW_RATE); }}
+                    onClick={(e) => { e.stopPropagation(); player.play('sentence-slow', sentence.words?.length ? sentence.words.map((w) => w.th).join(' ') : sentence.thai, SLOW_RATE); }}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 15c0-4 3.5-7 8-7s7 3 7 6v1H3z" /><path d="M18 13h2a2 2 0 0 0 0-4h-1" /><path d="M6 15v3M15 15v3" />

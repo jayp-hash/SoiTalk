@@ -28,7 +28,7 @@ export const SAY_IT = [
   "words": [
    "อร่อยมาก"
   ],
-  "rom": "à-ràwi mâak",
+  "rom": "à-ròi mâak",
   "en": "Really delicious!",
   "where": "Tell the vendor after you eat. Watch them smile."
  },

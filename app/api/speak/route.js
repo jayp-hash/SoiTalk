@@ -48,7 +48,10 @@ const SAY_IT_TEXT = new Set(SAY_IT.flatMap((l) => [l.thai, ...l.words]));
 // Sentences are shown in the learner's register (ผม / ครับ / ค่ะ / คะ added, see
 // lib/register.js). Allowed if any neutral form of the text is course content.
 async function isCourseText(text) {
-  for (const t of neutralForms(text)) if (await isCourseTextExact(t)) return true;
+  // Slow play sends the words with spaces between them ("ไม่ เอา ถุง ครับ"),
+  // so the voice says them one by one. Same course content, so check it without spaces.
+  const joined = text.replace(/\s+/g, '');
+  for (const t of new Set([...neutralForms(text), ...neutralForms(joined)])) if (await isCourseTextExact(t)) return true;
   return false;
 }
 

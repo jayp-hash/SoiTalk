@@ -29,7 +29,7 @@ const PERSONAS = {
 
 const MISSIONS = {
   live: [['7-Eleven', 'ไม่เอาถุง', 'mâi ao thǔng', "Tell the cashier you don't need a bag."], ['Taxi', 'ไปสุขุมวิท', 'bpai sù-khǔm-wít', "Tell the driver where you're going."], ['Street food', 'ไม่เผ็ด', 'mâi phèt', 'Order your dish not spicy.']],
-  partner: [['Dinner', 'อร่อยมาก', 'à-ràwi mâak', 'Tell their mum the food is delicious.'], ['Greeting', 'สวัสดี', 'sà-wàt-dii', 'Greet their parents with a wai.'], ['At home', 'กินข้าวหรือยัง', 'gin khâao rǔue yang', "Ask someone if they've eaten yet."]],
+  partner: [['Dinner', 'อร่อยมาก', 'à-ròi mâak', 'Tell their mum the food is delicious.'], ['Greeting', 'สวัสดี', 'sà-wàt-dii', 'Greet their parents with a wai.'], ['At home', 'กินข้าวหรือยัง', 'gin khâao rǔue yang', "Ask someone if they've eaten yet."]],
   visit: [['Market', 'เท่าไหร่', 'thâo-rài', 'Ask how much something costs.'], ['Restaurant', 'เช็คบิลด้วย', 'chék-bin dûaai', 'Ask for the bill.'], ['Hotel', 'ขอบคุณ', 'khàawp-khun', 'Thank the staff in Thai.']],
 };
 
