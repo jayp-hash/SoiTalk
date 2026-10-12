@@ -8,7 +8,8 @@ import SoiSign from './SoiSign';
 const LINKS = [
   { href: '/', label: 'Home' },
   { href: '/today', label: 'Today' },
-  { href: '/vocabulary', label: 'Vocabulary' },
+  { href: '/vocabulary', label: 'Words' },
+  { href: '/patterns', label: 'Patterns' },
 ];
 
 // "Sign in" when signed out; a round initial with a small menu when signed in.
@@ -24,7 +25,12 @@ function Account() {
   }, [open]);
 
   if (!ready) return <span className="acct-slot" aria-hidden="true" />;
-  if (!user) return <a href="/signin" className="acct-signin">Sign in</a>;
+  if (!user) return (
+    <a href="/signin" className="acct-signin" aria-label="Sign in">
+      <svg className="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+      <span className="lbl">Sign in</span>
+    </a>
+  );
 
   const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email || '?';
   const signOut = async () => { await supabaseBrowser().auth.signOut(); window.location.href = '/'; };

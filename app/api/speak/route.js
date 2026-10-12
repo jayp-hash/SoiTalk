@@ -20,6 +20,7 @@
 // a `voice` param here will pick between Amy and Chris.
 
 import { SAY_IT } from '../../lib/sayit';
+import { allPatternSentences } from '../../lib/patterns';
 import { supabasePublic } from '../../lib/supabase-public';
 
 const AMY_VOICE_ID = 'OZxMHsGaBmV5pjMIDIn0'; // female voice
@@ -44,6 +45,8 @@ const SAY_IT_TEXT = new Set(SAY_IT.flatMap((l) => [l.thai, ...l.words]));
 
 async function isCourseText(text) {
   if (SAY_IT_TEXT.has(text)) return true;
+  // Sentences built by the pattern machines (generated in code, so the set is fixed)
+  if (allPatternSentences().has(text)) return true;
   const [word, sentence, box] = await Promise.all([
     supabasePublic.from('vocabulary').select('id').eq('thai', text).limit(1),
     supabasePublic.from('sentences').select('id').eq('thai', text).neq('review_status', 'rejected').limit(1),
