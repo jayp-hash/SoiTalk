@@ -198,6 +198,52 @@ const TIPS = {
   'ฉัน': 'ฉัน is "I". Women use it most, men usually say ผม. The example sentences use ฉัน.',
 };
 
+const Check = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
+const Chevron = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>;
+
+// Topic menu: a plain listbox. Arrow keys move, Enter picks, Esc closes.
+function TopicPicker({ topics, total, value, open, setOpen, wrapRef, onChoose }) {
+  const listRef = useRef(null);
+  const rows = [{ name: null, n: total, color: null }, ...topics];
+  const current = rows.find((r) => r.name === value) || rows[0];
+  useEffect(() => {
+    if (!open) return;
+    const i = Math.max(0, rows.findIndex((r) => r.name === value));
+    listRef.current?.querySelectorAll('[role="option"]')[i]?.focus();
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const onKey = (e) => {
+    const opts = [...(listRef.current?.querySelectorAll('[role="option"]') || [])];
+    const i = opts.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); opts[Math.min(i + 1, opts.length - 1)]?.focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); opts[Math.max(i - 1, 0)]?.focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); setOpen(false); }
+    e.stopPropagation(); // keep the deck's arrow-key shortcuts out of the menu
+  };
+  return (
+    <div className="fc-topic-wrap" ref={wrapRef}>
+      <button type="button" className="fc-topic-btn" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <i style={{ background: current.color || 'var(--soi)' }} aria-hidden="true" />
+        <span className="fc-topic-label">{current.name || 'All topics'}</span>
+        <Chevron />
+      </button>
+      {open && (
+        <div className="fc-topic-menu" role="listbox" aria-label="Topic" ref={listRef} onKeyDown={onKey}>
+          {rows.map((r, k) => (
+            <button key={r.name || 'all'} type="button" role="option" aria-selected={r.name === value}
+              className={`fc-topic-opt${r.name === value ? ' is-on' : ''}${k === 0 ? ' is-all' : ''}`}
+              style={r.color ? { '--tc': r.color } : undefined} onClick={() => onChoose(r.name)}>
+              <i aria-hidden="true" />
+              <span>{r.name || 'All topics'}</span>
+              <small>{r.n.toLocaleString('en')}</small>
+              <b>{r.name === value && <Check />}</b>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const levelFor = (got = 0) => (got >= 5 ? 3 : got >= 3 ? 2 : got >= 1 ? 1 : 0);
 
 // Romanization that respects the help level. "tap" = blurred until tapped.
@@ -361,7 +407,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
       if (!stageRef.current) return;
       const top = stageRef.current.getBoundingClientRect().top + window.scrollY;
       // On phones the back/next arrows sit in a row under the card
-      const below = window.innerWidth <= 560 ? 72 : 24;
+      const below = window.innerWidth <= 560 ? 72 : 20;
       setCardHeight(Math.round(Math.max(360, Math.min(620, window.innerHeight - top - below))));
     }
     measure();
@@ -568,32 +614,17 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
 
   return (
     <div className="fc">
-      {!session && (
-        <div className="fc-topic-wrap" ref={topicRef}>
-          <button type="button" className="fc-topic-btn" aria-expanded={topicOpen} onClick={() => setTopicOpen((o) => !o)}>
-            {topic ? <><i style={{ background: topics.find((t) => t.name === topic)?.color }} aria-hidden="true" />{topic}</> : 'All topics'}
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
-          </button>
-          {topicOpen && (
-            <div className="fc-topic-panel" role="dialog" aria-label="Choose a topic">
-              <button type="button" className={`fc-topic${!topic ? ' is-on' : ''}`} aria-pressed={!topic} onClick={() => { chooseTopic(null); setTopicOpen(false); }}>All topics</button>
-              {topics.map((t) => (
-                <button key={t.name} type="button" className={`fc-topic${topic === t.name ? ' is-on' : ''}`} aria-pressed={topic === t.name}
-                  style={{ '--tc': t.color }} onClick={() => { chooseTopic(t.name); setTopicOpen(false); }}>
-                  <i aria-hidden="true" />{t.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      <div className="fc-toolbar">
+      <div className={`fc-toolbar${session ? ' is-session' : ''}`}>
+        {!session && (
+          <TopicPicker topics={topics} total={allWords.length} value={topic} open={topicOpen} setOpen={setTopicOpen}
+            wrapRef={topicRef} onChoose={(t) => { chooseTopic(t); setTopicOpen(false); }} />
+        )}
         {!session && <label className="fc-set">
           <span className="sr-only">Set</span>
           <select value={setIndex} onChange={(e) => chooseSet(Number(e.target.value))}>
             {Array.from({ length: setCount }, (_, i) => (
               <option key={i} value={i}>
-                Set {i + 1} · words {i * size + 1}–{Math.min((i + 1) * size, words.length)}
+                Set {i + 1} of {setCount} · {i * size + 1}–{Math.min((i + 1) * size, words.length)}
               </option>
             ))}
           </select>

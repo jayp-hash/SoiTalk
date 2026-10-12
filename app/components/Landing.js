@@ -28,9 +28,9 @@ const PERSONAS = {
 };
 
 const MISSIONS = {
-  live: [['7-Eleven', 'ไม่เอาถุง', "Tell the cashier you don't need a bag."], ['Taxi', 'ไปสุขุมวิท', "Tell the driver where you're going."], ['Street food', 'ไม่เผ็ด', 'Order your dish not spicy.']],
-  partner: [['Dinner', 'อร่อยมาก', 'Tell their mum the food is delicious.'], ['Greeting', 'สวัสดี', 'Greet their parents with a wai.'], ['At home', 'กินข้าวหรือยัง', "Ask someone if they've eaten yet."]],
-  visit: [['Market', 'เท่าไหร่', 'Ask how much something costs.'], ['Restaurant', 'เช็คบิลด้วย', 'Ask for the bill.'], ['Hotel', 'ขอบคุณ', 'Thank the staff in Thai.']],
+  live: [['7-Eleven', 'ไม่เอาถุง', 'mâi ao thǔng', "Tell the cashier you don't need a bag."], ['Taxi', 'ไปสุขุมวิท', 'bpai sù-khǔm-wít', "Tell the driver where you're going."], ['Street food', 'ไม่เผ็ด', 'mâi phèt', 'Order your dish not spicy.']],
+  partner: [['Dinner', 'อร่อยมาก', 'à-ràwi mâak', 'Tell their mum the food is delicious.'], ['Greeting', 'สวัสดี', 'sà-wàt-dii', 'Greet their parents with a wai.'], ['At home', 'กินข้าวหรือยัง', 'gin khâao rǔue yang', "Ask someone if they've eaten yet."]],
+  visit: [['Market', 'เท่าไหร่', 'thâo-rài', 'Ask how much something costs.'], ['Restaurant', 'เช็คบิลด้วย', 'chék-bin dûaai', 'Ask for the bill.'], ['Hotel', 'ขอบคุณ', 'khàawp-khun', 'Thank the staff in Thai.']],
 };
 
 const clean = (m) => (m || '').replace(/\s*\([^)]*\)\s*$/, '');
@@ -56,7 +56,13 @@ const PlayIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden=
 function DemoCard({ card }) {
   const [flipped, setFlipped] = useState(false);
   const { play, playing } = usePlay();
-  useEffect(() => setFlipped(false), [card.thai]);
+  // Word meanings work like the real cards: tap a word (stays 2.5 s) or rest the mouse on it for half a second
+  const [peek, setPeek] = useState(-1);
+  const peekTimer = useRef(0), hoverTimer = useRef(0);
+  const showPeek = (k, ms) => { clearTimeout(peekTimer.current); setPeek(k); peekTimer.current = ms ? setTimeout(() => { setPeek(-1); peekTimer.current = 0; }, ms) : 0; };
+  const hoverIn = (k) => { clearTimeout(hoverTimer.current); hoverTimer.current = setTimeout(() => showPeek(k, 0), 500); };
+  const hoverOut = () => { clearTimeout(hoverTimer.current); if (!peekTimer.current) setPeek(-1); };
+  useEffect(() => { setFlipped(false); setPeek(-1); }, [card.thai]);
   const s = card.sentence;
   const style = { '--cat': card.category.color, '--cat-edge': card.category.edge };
   const band = (
@@ -83,6 +89,7 @@ function DemoCard({ card }) {
                 {s && <button type="button" className={`lp-play sm${playing === 'sentence' ? ' on' : ''}`} aria-label="Play the sentence" onClick={(e) => { e.stopPropagation(); play('sentence', s.thai); }}><PlayIcon /></button>}
                 <div className="lp-word">
                   <span lang="th">{card.thai}</span>
+                  <i>{card.romanization}</i>
                   <b>{clean(card.english)}</b>
                 </div>
               </div>
@@ -91,8 +98,11 @@ function DemoCard({ card }) {
                   <div className="lp-boxes" lang="th">
                     {(s.words || [{ th: s.thai, rom: s.romanization }]).map((w, k) => (
                       <button key={k} type="button" className={`lp-box${w.th === card.thai ? ' target' : ''}${playing === `b${k}` ? ' on' : ''}`}
-                        title={w.en || ''} aria-label={`Play ${w.th}${w.en ? `, ${w.en}` : ''}`}
-                        onClick={(e) => { e.stopPropagation(); play(`b${k}`, w.th); }}>
+                        aria-label={`Play ${w.th}${w.en ? `, meaning ${w.en}` : ''}`}
+                        onClick={(e) => { e.stopPropagation(); play(`b${k}`, w.th); if (w.en) showPeek(k, 2500); }}
+                        onPointerEnter={(e) => e.pointerType === 'mouse' && w.en && hoverIn(k)}
+                        onPointerLeave={(e) => e.pointerType === 'mouse' && hoverOut()}>
+                        {peek === k && w.en && <span className={`lp-peek${k === 0 ? ' left' : ''}`} role="tooltip">{w.en}</span>}
                         <span className="th">{w.th}</span>
                         {w.rom && <small>{w.rom}</small>}
                       </button>
@@ -105,22 +115,43 @@ function DemoCard({ card }) {
           </section>
         </div>
       </div>
-      <p className="lp-stage-note">{flipped ? 'Tap a word to hear it.' : 'A real card from the course. Tap it to flip.'}</p>
+      <p className="lp-stage-note">{flipped ? 'Tap a word to hear it and see what it means.' : 'A real card from the course. Tap it to flip.'}</p>
     </div>
   );
 }
 
 // Counts the hero sign's number up from 0 once, so the meter idea lands at a glance.
+// Counts from the number now showing to the new target.
 function useCountUp(target, ms = 1600) {
   const [n, setN] = useState(0);
+  const from = useRef(0);
   useEffect(() => {
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setN(target); return; }
-    let raf; const t0 = performance.now();
-    const step = (t) => { const k = Math.min(1, (t - t0) / ms); setN(Math.round(target * (1 - Math.pow(1 - k, 3)))); if (k < 1) raf = requestAnimationFrame(step); };
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setN(target); from.current = target; return; }
+    let raf; const t0 = performance.now(); const start = from.current;
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / ms);
+      const v = Math.round(start + (target - start) * (1 - Math.pow(1 - k, 3)));
+      from.current = v; setN(v);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [target, ms]);
   return n;
+}
+
+// True once the element has scrolled into view (so the count-up is seen).
+function useSeen() {
+  const ref = useRef(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setSeen(true); return; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return [ref, seen];
 }
 
 const Tick = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7" /></svg>;
@@ -139,17 +170,15 @@ export default function Landing({ wordCount, demo, curve }) {
     : <a className="lp-btn" href="/today">Start learning free</a>;
   const curvePts = Object.entries(curve).map(([n, pct]) => ({ n: Number(n), pct }));
   const maxPct = Math.max(...curvePts.map((p) => p.pct), 1);
-  const goal = curvePts.find((p) => p.n >= 300) || curvePts[curvePts.length - 1] || { n: 500, pct: 50 };
-  const meter = useCountUp(goal.pct);
+  const [pick, setPick] = useState(() => (curvePts.find((p) => p.n >= 300) || curvePts[curvePts.length - 1] || { n: 0 }).n);
+  const picked = curvePts.find((p) => p.n === pick) || { n: 0, pct: 0 };
+  const [meterRef, meterSeen] = useSeen();
+  const meter = useCountUp(meterSeen ? picked.pct : 0, 900);
 
   return (
     <main className="lp">
       <section className="lp-hero">
         <div className="lp-pitch">
-          <div className="lp-brand">
-            <SoiSign width={300} number={meter} title={`Soi Talk street sign showing ${meter}`} />
-            <p className="lp-meter-note">The number on your sign is your <b>street meter</b>: how much everyday Thai you understand. Learn the first {goal.n.toLocaleString('en')} words and it reads {goal.pct}%.</p>
-          </div>
           <p className="lp-who-label" id="who-label">I'm learning Thai because</p>
           <div className="lp-who" role="group" aria-labelledby="who-label">
             {Object.entries(PERSONAS).map(([id, p]) => (
@@ -199,15 +228,18 @@ export default function Landing({ wordCount, demo, curve }) {
             <li><i><Tick /></i><span><b>On every device.</b> Sign in once and pick up on your phone or laptop.</span></li>
           </ul>
         </div>
-        <div className="lp-panel">
-          <p className="lp-panel-title">Everyday Thai you understand after…</p>
-          <div className="lp-curve">
+        <div className="lp-panel" ref={meterRef}>
+          <div className="lp-meter-sign">
+            <SoiSign width={280} th="ซอย" en="Your street" number={`${meter}%`} title={`Street meter: ${picked.pct}% after ${picked.n} words`} />
+          </div>
+          <p className="lp-panel-title">Your street meter after…</p>
+          <div className="lp-curve" role="radiogroup" aria-label="Words learned">
             {curvePts.map(({ n, pct }) => (
-              <div key={n} className="lp-curve-row">
+              <button key={n} type="button" role="radio" aria-checked={pick === n} className={`lp-curve-row${pick === n ? ' is-on' : ''}`} onClick={() => setPick(n)}>
                 <span className="lp-curve-n">{n.toLocaleString('en')} words</span>
                 <span className="lp-curve-bar"><i style={{ width: `${(pct / maxPct) * 100}%` }} /></span>
                 <b>{pct}%</b>
-              </div>
+              </button>
             ))}
           </div>
           <p className="lp-fine">Estimates from each word's frequency ranking. The first few hundred words do most of the work.</p>
@@ -219,10 +251,11 @@ export default function Landing({ wordCount, demo, curve }) {
         <h2>Missions: small wins in real life</h2>
         <p className="lp-sub">Finish a word pack, then try it for real and tick it off.</p>
         <div className="lp-missions">
-          {MISSIONS[persona].map(([where, th, text]) => (
+          {MISSIONS[persona].map(([where, th, rom, text]) => (
             <div key={where} className="lp-mission">
               <span className="lp-where">{where}</span>
               <span className="lp-mth" lang="th">{th}</span>
+              <span className="lp-mrom">{rom}</span>
               <p>{text}</p>
             </div>
           ))}
@@ -237,14 +270,15 @@ export default function Landing({ wordCount, demo, curve }) {
             <p className="lp-sub light">Role-play a 7-Eleven checkout, a taxi ride or a market stall, using only the words you've learned so far.</p>
           </div>
           <div className="lp-chat" aria-label="Example role-play at 7-Eleven">
-            <div className="lp-msg them"><small>Cashier</small><span lang="th">รับถุงไหมคะ</span><em>Do you want a bag?</em></div>
-            <div className="lp-msg me"><small>You</small><span lang="th">ไม่เอาถุง ขอบคุณ</span><em>No bag, thanks.</em></div>
+            <div className="lp-msg them"><small>Cashier</small><span lang="th">รับถุงไหมคะ</span><i className="lp-rom">ráp thǔng mǎi khá</i><em>Do you want a bag?</em></div>
+            <div className="lp-msg me"><small>You</small><span lang="th">ไม่เอาถุง ขอบคุณ</span><i className="lp-rom">mâi ao thǔng, khàawp-khun</i><em>No bag, thanks.</em></div>
           </div>
         </div>
       </section>
 
       <section className="lp-close">
         <span className="lp-big-th" lang="th">เริ่มกันเลย</span>
+        <span className="lp-big-rom">rôeem gan loeei</span>
         <h2>Let's get started</h2>
         {cta}
       </section>

@@ -17,10 +17,8 @@ export default async function VocabularyPage() {
   return (
     <main className="page">
       {/* Compact title, so the whole card fits on screen without scrolling */}
-      <div className="fc-page-title">
-        <h1>Flashcards</h1>
-        <span>Most useful first</span>
-      </div>
+      {/* The header already says Vocabulary; the title stays for screen readers only */}
+      <h1 className="sr-only">Vocabulary flashcards, most useful first</h1>
 
       <ProgressProvider>
         <Deck words={words} />
