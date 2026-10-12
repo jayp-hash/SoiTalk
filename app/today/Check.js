@@ -172,28 +172,24 @@ export default function CheckSession({ queue, allWords, progress, onAnswer, onDo
         <button type="button" className="today-quit" onClick={onQuit}>End session</button>
       </div>
 
-      <section className="ck-card" aria-live="polite">
-        <div className="ck-band">
-          <span>{item.practice ? 'One more try' : item.kind === 'sentence' ? 'Listen to the sentence' : 'Listen'}</span>
-          <span>{cat.name}</span>
-        </div>
+      <section className="ck-card is-compact" aria-live="polite">
         <div className="ck-body">
+          <p className="ck-eyebrow">{item.practice ? 'One more try' : 'Listen'}{cat.name ? ` · ${cat.name}` : ''}</p>
           <p className="ck-q">{item.kind === 'sentence' ? 'What does it mean?' : 'What does this word mean?'}</p>
-          <div className="ck-audio">
-            <button type="button" className={`ck-play${playing ? ' on' : ''}`} onClick={() => play(item.audio)} aria-label="Play again"><PlayIcon /></button>
+          <div className="ck-row">
+            <button type="button" className={`ck-play${playing ? ' on' : ''}`} onClick={() => play(item.audio)} aria-label={playing ? 'Playing' : 'Play again'}><PlayIcon /></button>
             <button type="button" className="ck-slow" onClick={() => play(item.audio, 0.65)} aria-label="Play slowly"><SlowIcon /></button>
-          </div>
-          <p className="ck-tap">{playing ? 'Playing…' : 'Tap to hear it again'}</p>
-
-          {picked == null && !hinted && (
-            <button type="button" className="ck-hint" onClick={() => setHinted(true)}>Show the {item.kind === 'sentence' ? 'sentence' : 'word'}</button>
-          )}
-          {(hinted || picked != null) && (
-            <div className={`ck-reveal${item.kind === 'sentence' ? ' is-sentence' : ''}`}>
-              <span className="th" lang="th">{item.reveal.th}</span>
-              <span className="rom">{item.reveal.rom}</span>
+            <div className="ck-reveal-slot">
+              {(hinted || picked != null) ? (
+                <div className={`ck-reveal${item.kind === 'sentence' ? ' is-sentence' : ''}`}>
+                  <span className="th" lang="th">{item.reveal.th}</span>
+                  <span className="rom">{item.reveal.rom}</span>
+                </div>
+              ) : (
+                <button type="button" className="ck-hint" onClick={() => setHinted(true)}>Show the {item.kind === 'sentence' ? 'sentence' : 'word'}</button>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="ck-options" role="group" aria-label="Choose the meaning">
             {item.options.map((o, k) => {

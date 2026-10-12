@@ -37,11 +37,13 @@ export const SCENES = {
       // Order = the order of swaps. Cashiers ask spoon and fork together
       // (ช้อนส้อม), so no fork on its own (Thai Teacher, 12 Oct).
       { th: 'ถุง', rom: 'thǔng', en: 'bag', a: 'a bag' },
-      { th: 'ใบเสร็จ', rom: 'bai-sèt', en: 'receipt', a: 'the receipt' },
       { th: 'ช้อน', rom: 'cháawn', en: 'spoon', a: 'a spoon' },
+      { th: 'ใบเสร็จ', rom: 'bai-sèt', en: 'receipt', a: 'the receipt' },
+      // Spares: you make 3 sentences, and can keep swapping to these
       { th: 'หลอด', rom: 'lǎawt', en: 'straw', a: 'a straw' },
+      { th: 'ตะเกียบ', rom: 'dtà-gìap', en: 'chopsticks', a: 'chopsticks' },
     ],
-    mission: 'Next time you pay at 7-Eleven, say it before they bag your things.',
+    mission: 'At the 7-Eleven checkout, before they bag your things.',
     // Tomorrow: the restaurant scene (they already know ไม่)
     teaser: { title: 'Tomorrow: order Thai food your way', th: 'ไม่เผ็ด', rom: 'mâi phèt', en: 'Not spicy.' },
   },
@@ -77,7 +79,7 @@ export const SCENES = {
     // What the waitress will often ask next (heard, not taught yet)
     next: { th: 'หมูหรือไก่คะ', rom: 'mǔu rǔue gài khá', en: 'Pork or chicken?' },
     recall: '7eleven', // day 2 opens with yesterday's line
-    mission: 'Next time you order, say how spicy you want it.',
+    mission: 'Next time you order Thai food.',
     teaser: { title: 'Tomorrow: order two drinks', th: 'ขอน้ำเปล่าสองขวด', rom: 'khǎaw náam-bplàao sǎawng khùat', en: 'Two bottles of water, please.' },
   },
 };

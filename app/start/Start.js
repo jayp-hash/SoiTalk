@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore, dayKey } from '../lib/progress';
-import { getRegister, setRegister } from '../lib/register';
+import { getRegister, setRegister, registerChosen } from '../lib/register';
 import { useUser } from '../lib/useUser';
 import { soundRight, soundWrong, soundDone } from '../lib/sfx';
 import { supabaseBrowser } from '../lib/supabase-browser';
@@ -65,7 +65,7 @@ function SlowBtn({ id, clips, player }) {
   return (
     <button type="button" className={`st-slow${on ? ' is-on' : ''}`} aria-label={on ? 'Stop' : 'Play slowly, word by word'} title="Slowly, word by word"
       onClick={(e) => { e.stopPropagation(); player.play(id, clips); }}>
-      {on ? <StopIcon /> : <SlowIcon />}
+      <SlowIcon />
     </button>
   );
 }
@@ -141,7 +141,8 @@ export default function Start({ sceneId }) {
   const [spiceIdx, setSpiceIdx] = useState(0);
 
   const [reg, setReg] = useState('female');
-  useEffect(() => { setReg(getRegister()); }, []);
+  const [regChosen, setRegChosen] = useState(true);
+  useEffect(() => { setReg(getRegister()); setRegChosen(registerChosen()); }, []);
   const voice = reg;
   const [itemIdx, setItemIdx] = useState(0);
   const [made, setMade] = useState([scene.items[0].th]); // items used in sentences so far
@@ -164,7 +165,7 @@ export default function Start({ sceneId }) {
   const go = (s) => { player.stop(); setStep(s); window.scrollTo(0, 0); };
 
   const switchReg = (r) => {
-    setReg(r); setRegister(r);
+    setReg(r); setRegister(r); setRegChosen(true);
     player.play('reply', [{ text: joinTh(replyParts(scene, item, r)), voice: r }]);
   };
 
@@ -389,9 +390,17 @@ export default function Start({ sceneId }) {
         )}
 
         {step === 'scene' && (
-          <section className="st-card">
+          <section className={`st-card${regChosen ? '' : ' is-wait'}`}>
             <p className="st-place">{scene.place}</p>
             <h1 className="st-title">{scene.promise}</h1>
+            <div className={`st-reg is-top${regChosen ? '' : ' is-ask'}`} role="radiogroup" aria-label="I speak as">
+              <span>{regChosen ? 'I speak as' : 'First, you speak as'}</span>
+              {[['female', 'Woman', 'ค่ะ'], ['male', 'Man', 'ครับ']].map(([r, label, end]) => (
+                <button key={r} type="button" role="radio" aria-checked={regChosen && reg === r} className={regChosen && reg === r ? 'on' : ''} onClick={() => switchReg(r)}>
+                  {label} <span lang="th">{end}</span>
+                </button>
+              ))}
+            </div>
             <div className="st-bubble is-them">
               <span className="st-who">{scene.staff.who} asks</span>
               <div className="st-line">
@@ -404,14 +413,6 @@ export default function Start({ sceneId }) {
               <div className="st-line">
                 <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play your answer" />
                 <div><p className="th" lang="th">{joinTh(parts)}</p><p className="rom">{joinRom(parts)}</p><p className="en">{scene.replyEn(item)}</p></div>
-              </div>
-              <div className="st-reg" role="radiogroup" aria-label="I speak as">
-                <span>I speak as</span>
-                {[['female', 'Woman', 'ค่ะ'], ['male', 'Man', 'ครับ']].map(([r, label, end]) => (
-                  <button key={r} type="button" role="radio" aria-checked={reg === r} className={reg === r ? 'on' : ''} onClick={() => switchReg(r)}>
-                    {label} <span lang="th">{end}</span>
-                  </button>
-                ))}
               </div>
             </div>
             {fu && (
@@ -432,9 +433,9 @@ export default function Start({ sceneId }) {
                 </div>
               </>
             )}
-            <button type="button" className="st-cta" onClick={() => {
+            <button type="button" className="st-cta" disabled={!regChosen} onClick={() => {
               if (!heard) { setHeard(true); player.play('both', conversation()); } else go('parts');
-            }}>{heard ? 'Next: how it works' : 'Hear the conversation'}</button>
+            }}>{!regChosen ? 'Choose woman or man above' : heard ? 'Next: how it works' : 'Hear the conversation'}</button>
           </section>
         )}
 
@@ -599,7 +600,7 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
   ];
   const mission = missionParts(scene, reg, spiceIdx);
   const [all, setAll] = useState(false);
-  const shown = all ? lines : lines.slice(0, 3);
+  const missionEn = fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
   const [inApp, setInApp] = useState(false);
   useEffect(() => { setInApp(inAppBrowser()); soundDone(); }, []);
   const google = async () => {
@@ -615,42 +616,43 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
         </div>
         <p className="dn-cheer" lang="th">เก่งมาก! <span>gèng mâak · great job</span></p>
         <p className="dn-count"><b>{lines.length}</b> new things you can say in Thai</p>
-        <p className="dn-where">{scene.place}, done in about {scene.minutes} minutes.</p>
       </div>
 
-      <div className="dn-lines" role="list">
-        {shown.map((l) => {
-          const on = player.playing === l.id;
-          return (
-            <button key={l.id} type="button" role="listitem" className={`dn-line${on ? ' is-on' : ''}`}
-              onClick={() => player.play(l.id, [{ text: joinTh(l.parts), voice }])} aria-label={`Play: ${l.en}`}>
-              <span className="dn-line-text">
-                <span className="th" lang="th">{joinTh(l.parts)}</span>
-                <span className="rom">{joinRom(l.parts)}</span>
-              </span>
-              <span className="en">{l.en}</span>
-              <span className="dn-line-play" aria-hidden="true">{on ? <StopIcon /> : <PlayIcon />}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* The one line to use today: the big thing on this screen */}
+      <button type="button" className={`dn-use${player.playing === 'mission' ? ' is-on' : ''}`}
+        onClick={() => player.play('mission', [{ text: joinTh(mission), voice }])} aria-label={`Play: ${joinTh(mission)}`}>
+        <span className="dn-label">Say it today</span>
+        <span className="dn-use-line" lang="th">{joinTh(mission)}</span>
+        <span className="dn-use-rom">{joinRom(mission)}</span>
+        <span className="dn-use-text">{missionEn} {scene.mission}</span>
+        <span className="dn-use-play" aria-hidden="true">{player.playing === 'mission' ? <StopIcon /> : <PlayIcon />}</span>
+      </button>
 
-      {lines.length > 3 && !all && (
-        <button type="button" className="dn-more" onClick={() => setAll(true)}>Show {lines.length - 3} more</button>
+      {all ? (
+        <div className="dn-lines" role="list">
+          {lines.map((l) => {
+            const on = player.playing === l.id;
+            return (
+              <button key={l.id} type="button" role="listitem" className={`dn-line${on ? ' is-on' : ''}`}
+                onClick={() => player.play(l.id, [{ text: joinTh(l.parts), voice }])} aria-label={`Play: ${l.en}`}>
+                <span className="dn-line-text">
+                  <span className="th" lang="th">{joinTh(l.parts)}</span>
+                  <span className="rom">{joinRom(l.parts)}</span>
+                </span>
+                <span className="en">{l.en}</span>
+                <span className="dn-line-play" aria-hidden="true">{on ? <StopIcon /> : <PlayIcon />}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <button type="button" className="dn-more" onClick={() => setAll(true)}>See all {lines.length} phrases</button>
       )}
-
-      <div className="dn-use">
-        <p className="dn-label">Use it today</p>
-        <p className="dn-use-line" lang="th">{joinTh(mission)}</p>
-        <p className="dn-use-rom">{joinRom(mission)}</p>
-        <p className="dn-use-text">{scene.mission} Tick it off tomorrow.</p>
-      </div>
 
       <button type="button" className={`dn-tomorrow${player.playing === 'teaser' ? ' is-on' : ''}`}
         onClick={() => player.play('teaser', [{ text: scene.teaser.th + endingFor(reg).th, voice }])}>
         <span className="dn-label">{scene.teaser.title}</span>
-        <span className="th" lang="th">{scene.teaser.th}{endingFor(reg).th}</span>
-        <span className="rom">{scene.teaser.rom} {endingFor(reg).rom} · {scene.teaser.en}</span>
+        <span className="th" lang="th">{scene.teaser.th}{endingFor(reg).th} <i className="rom">{scene.teaser.rom} {endingFor(reg).rom}</i></span>
         <span className="dn-line-play" aria-hidden="true">{player.playing === 'teaser' ? <StopIcon /> : <PlayIcon />}</span>
       </button>
 
