@@ -26,6 +26,7 @@ const ROUND = 5;
 const PREVIEW_KEY = 'tsc-pattern-preview';
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 
+const SLOW_NUDGE = 0.9;
 function useAudio() {
   const ref = useRef(null); const token = useRef(0);
   const [playing, setPlaying] = useState(false);
@@ -34,8 +35,9 @@ function useAudio() {
     try {
       ref.current?.pause();
       const voice = readStore('tsc-help', {}).voice || 'female';
-      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}&v=${AUDIO_VERSION}`);
-      a.playbackRate = rate; a.preservesPitch = true; a.webkitPreservesPitch = true;
+      const slow = rate < 1; // slow clip from the voice itself, nudged a touch slower
+      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${AUDIO_VERSION}`);
+      a.playbackRate = slow ? SLOW_NUDGE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
       ref.current = a; setPlaying(true);
       a.onended = a.onerror = () => { if (token.current === my) setPlaying(false); };
       a.play().catch(() => { if (token.current === my) setPlaying(false); });

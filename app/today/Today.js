@@ -17,25 +17,34 @@ const EXTRA_NEW = 5;       // "Learn 5 more"
 const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice per session
 
 // Under 10% show one decimal, so the first few words visibly move the meter
-// First days: the words the first two patterns need come early, so the daily
-// pattern practice starts on day 2 (Saying what you like) and day 3-4 (Ordering).
-// After these, new words follow the course order. "I" is ผม for men, ฉัน for women.
+// First days: the words the patterns need come first, so every day has a
+// pattern to practise, starting on day 1. After these, new words follow the
+// course order. Each learner gets their own forms: "I" is ผม for men and
+// ฉัน for women; the polite ending is ครับ for men, ค่ะ for women.
 const FAST_TRACK = [
-  // day 1: polite basics (unchanged)
-  'สวัสดี', 'ขอบคุณ', 'ครับ', 'ค่ะ', 'ขอโทษ',
-  // day 2: I, you, like, eat, sleep -> pattern 'Saying what you like' opens
+  // day 1: I, you, like, eat, sleep -> 'Saying what you like' opens
   'ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน',
-  // day 3: ask for, beer, water, bottle, two
-  'ขอ', 'เบียร์', 'น้ำเปล่า', 'ขวด', 'สอง',
-  // day 4: three -> pattern 'Ordering with counting words' opens; plus not, no worries
-  'สาม', 'ไม่', 'ไม่เป็นไร', 'ใช่', 'อร่อยมาก',
+  // day 2: hello, thank you, your polite ending, not, ask for -> add ไม่ (don't like)
+  'สวัสดี', 'ขอบคุณ', 'ENDING', 'ไม่', 'ขอ',
+  // day 3: beer, water, bottle, two, three -> 'Ordering' opens
+  'เบียร์', 'น้ำเปล่า', 'ขวด', 'สอง', 'สาม',
+  // day 4: sorry, no worries, yes, how many, want -> ordering level 2 (กี่)
+  'ขอโทษ', 'ไม่เป็นไร', 'ใช่', 'กี่', 'เอา',
 ];
+// The other gender's ending (to recognise it when you hear it) waits until later
+const OTHER_ENDING_AFTER = 60;
 function fastTrack(words, reg) {
-  const list = FAST_TRACK.map((t) => (t === 'ฉัน' && reg === 'male' ? 'ผม' : t));
+  const male = reg === 'male';
+  const own = male ? 'ครับ' : 'ค่ะ';
+  const other = male ? 'ค่ะ' : 'ครับ';
+  const list = FAST_TRACK.map((t) => (t === 'ฉัน' && male ? 'ผม' : t === 'ENDING' ? own : t));
   const byThai = new Map(words.map((w) => [w.thai, w]));
   const first = list.map((t) => byThai.get(t)).filter(Boolean);
   const inFirst = new Set(first.map((w) => w.thai));
-  return [...first, ...words.filter((w) => !inFirst.has(w.thai))];
+  const rest = words.filter((w) => !inFirst.has(w.thai) && w.thai !== other);
+  const out = [...first, ...rest];
+  if (byThai.has(other)) out.splice(Math.min(OTHER_ENDING_AFTER, out.length), 0, byThai.get(other));
+  return out;
 }
 
 const pct = (x) => { const v = x * 100; return v > 0 && v < 10 ? `${(Math.round(v * 10) / 10).toFixed(1)}%` : `${Math.round(v)}%`; };
@@ -116,14 +125,22 @@ function Meter({ value, from, milestones = {}, knownCount = 0, learningCount = 0
   );
 }
 
-// First visit: who's speaking? Picks the voice and the forms (ผม/ครับ or ฉัน/ค่ะ) everywhere.
-function RegisterChooser({ onChoose }) {
+// First Start: who's speaking? (a dialog, asked once) Picks the voice and the forms (ผม/ครับ or ฉัน/ค่ะ) everywhere.
+function RegisterChooser({ onChoose, onClose }) {
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', esc);
+    document.body.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', esc); document.body.style.overflow = ''; };
+  }, [onClose]);
   const sample = (reg) => {
     try { new Audio(`/api/speak?text=${encodeURIComponent(reg === 'male' ? 'สวัสดีครับ' : 'สวัสดีค่ะ')}&voice=${reg}&v=2`).play().catch(() => {}); } catch {}
   };
   return (
-    <section className="today-step reg" aria-label="How you speak">
-      <p className="reg-q">First, who's speaking?</p>
+    <div className="reg-overlay" onClick={onClose}>
+    <section className="reg reg-dialog" role="dialog" aria-modal="true" aria-labelledby="reg-q" onClick={(e) => e.stopPropagation()}>
+      <button type="button" className="reg-close" onClick={onClose} aria-label="Close">×</button>
+      <p className="reg-q" id="reg-q">Before you start: who's speaking?</p>
       <p className="reg-sub">Thai changes a little depending on who's talking. You'll see the right words and hear a matching voice. You can change it later in Aa.</p>
       <div className="reg-opts">
         <button type="button" className="reg-opt" onClick={() => { sample('female'); onChoose('female'); }}>
@@ -134,6 +151,7 @@ function RegisterChooser({ onChoose }) {
         </button>
       </div>
     </section>
+    </div>
   );
 }
 
@@ -248,7 +266,10 @@ export default function Today({ words, milestones }) {
   const [patternPick, setPatternPick] = useState(null); // today's pattern block
   const [patternScore, setPatternScore] = useState(null);
   const [chosen, setChosen] = useState(true);   // has the learner picked how they speak?
-  useEffect(() => { setChosen(registerChosen()); }, []);
+  const [reg, setReg] = useState('female');
+  const [askReg, setAskReg] = useState(false);  // the "who's speaking?" dialog
+  const [startAfterChoice, setStartAfterChoice] = useState(false);
+  useEffect(() => { setChosen(registerChosen()); setReg(getRegister()); }, []);
   const lex = useMemo(() => Object.fromEntries(words.map((w) => [w.thai, { rom: w.romanization, en: w.english }])), [words]);
   const [before, setBefore] = useState(0);
   const repeats = useRef(new Map());
@@ -261,11 +282,11 @@ export default function Today({ words, milestones }) {
       .filter((w) => progress[w.thai] && progress[w.thai].due <= cutoff)
       .sort((a, b) => progress[a.thai].due - progress[b.thai].due);
     const due = allDue.slice(0, REVIEW_CAP);
-    const fresh = fastTrack(words, getRegister()).filter((w) => !progress[w.thai]);
+    const fresh = fastTrack(words, reg).filter((w) => !progress[w.thai]);
     const paused = allDue.length > REVIEW_CAP; // catch up before adding more
     const newLeft = paused ? 0 : Math.max(goal - newToday, 0);
     return { due, fresh, newLeft, paused, newCards: fresh.slice(0, newLeft) };
-  }, [words, progress, goal, newToday]);
+  }, [words, progress, goal, newToday, reg]);
 
   const known = useMemo(() => coverage(words, progress), [words, progress]);
   const knownCount = useMemo(() => countKnown(words, progress), [words, progress]);
@@ -314,6 +335,14 @@ export default function Today({ words, milestones }) {
     if (pick) { setPatternPick(pick); setMode('pattern'); window.scrollTo(0, 0); } else onDone();
   }, [mode, progress]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // After the "who's speaking?" choice, start once the plan has the right words
+  const beginRef = useRef(null);
+  useEffect(() => {
+    if (!startAfterChoice) return;
+    setStartAfterChoice(false);
+    beginRef.current?.();
+  }, [startAfterChoice]);
+
   if (!loaded) return <div className="today-wrap"><p className="today-note">Loading…</p></div>;
 
   if (mode === 'picking') return <div className="today-wrap"><p className="today-note">Loading…</p></div>;
@@ -342,6 +371,10 @@ export default function Today({ words, milestones }) {
   }
 
   const todayPattern = pickTodayPattern(progress);
+  const beginToday = () => (plan.due.length || plan.newCards.length
+    ? start(plan.due, plan.newCards)
+    : (setPatternPick(todayPattern), setRun((n) => n + 1), setMode('pattern')));
+  beginRef.current = beginToday;
   // The goal line counts a pattern that today's new words will open
   const goalPattern = todayPattern || pickTodayPattern({ ...progress, ...Object.fromEntries(plan.newCards.map((w) => [w.thai, { s: 1 }])) });
   const nothingLeft = plan.due.length === 0 && plan.newCards.length === 0 && !todayPattern;
@@ -380,10 +413,8 @@ export default function Today({ words, milestones }) {
             )}
           </div>
 
-          {!chosen && <RegisterChooser onChoose={(r) => { setRegister(r); setChosen(true); }} />}
-
           {/* Step 1: the one thing to do first */}
-          {chosen && <section className="today-step" aria-label="Learn">
+          <section className="today-step" aria-label="Learn">
             <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today's goal</p>
             {nothingLeft ? (
               <div className="today-step-body">
@@ -408,10 +439,14 @@ export default function Today({ words, milestones }) {
                   </span>
                 </div>
                 <button type="button" className="auth-btn primary today-start"
-                  onClick={() => (plan.due.length || plan.newCards.length ? start(plan.due, plan.newCards) : (setPatternPick(todayPattern), setRun((n) => n + 1), setMode('pattern')))}>Start</button>
+                  onClick={() => (chosen ? beginToday() : setAskReg(true))}>Start</button>
               </div>
             )}
-          </section>}
+          </section>
+          {askReg && (
+            <RegisterChooser onClose={() => setAskReg(false)}
+              onChoose={(r) => { setRegister(r); setReg(r); setChosen(true); setAskReg(false); setStartAfterChoice(true); }} />
+          )}
 
           <section className="today-progress" aria-label="Your progress">
             <p className="today-section-label">Your week</p>

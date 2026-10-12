@@ -1446,3 +1446,13 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
   .fc-toolbar.is-session > * { grid-area: auto !important; }
   .fc-toolbar.is-session .fc-progress { display: block; }
 }
+
+/* ---- "Who's speaking?" as a dialog on first Start (2026-10-12) ---- */
+.reg-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px; background: rgba(20, 28, 45, .55); animation: reg-fade .15s ease-out; }
+.reg-dialog { position: relative; width: min(520px, 100%); display: grid; gap: 12px; padding: 24px 20px 20px; border-radius: 20px; background: #fff; box-shadow: 0 20px 60px rgba(0,0,0,.25); animation: reg-pop .18s ease-out; }
+.reg-dialog .reg-q { padding-right: 36px; }
+.reg-close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; font-size: 26px; line-height: 1; color: #5B6472; cursor: pointer; }
+.reg-close:hover { background: #F1F3F7; }
+@keyframes reg-fade { from { opacity: 0; } }
+@keyframes reg-pop { from { transform: translateY(8px) scale(.98); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .reg-overlay, .reg-dialog { animation: none; } }

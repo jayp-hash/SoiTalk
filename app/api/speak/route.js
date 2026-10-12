@@ -70,6 +70,9 @@ export async function GET(request) {
   const params = new URL(request.url).searchParams;
   const text = (params.get('text') || '').trim();
   const voice = params.get('voice') === 'male' ? 'male' : 'female';
+  // Turtle button: a clip spoken slowly by the voice itself. (Stretching the
+  // normal clip in the browser made an echo, worst on the male voice.)
+  const slow = params.get('slow') === '1';
 
   if (!text) {
     return Response.json({ ok: false, error: 'Missing "text".' }, { status: 400 });
@@ -105,7 +108,7 @@ export async function GET(request) {
           similarity_boost: 0.75,
           style: 0,
           use_speaker_boost: true,
-          speed: 0.85,
+          speed: slow ? 0.7 : 0.85, // 0.7 is ElevenLabs' slowest
         },
       }),
     });

@@ -6,7 +6,7 @@ import { renderSentence, setRegister } from '../lib/register';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const SET_SIZE = 20;
-const SLOW_RATE = 0.65; // turtle button: 65% of the (already slightly slow) voice, same pitch
+const SLOW_RATE = 0.9; // turtle button: a slow clip from the voice (see api/speak), played at 90%
 
 // Until words have categories (round 2), every card uses this band.
 const DEFAULT_CATEGORY = { name: 'Vocabulary', color: '#4F5BD5', edge: '#353FA6' };
@@ -23,11 +23,11 @@ const AUDIO_VERSION = 2; // 2 = eleven_v4, stability 0.8, speed 0.85
 // Female or male voice, from the Aa settings
 let currentVoice = 'female';
 
-async function loadAudio(text) {
-  const key = `${currentVoice}|${text}`;
+async function loadAudio(text, slow = false) {
+  const key = `${currentVoice}|${slow ? 'slow|' : ''}${text}`;
   if (audioCache.has(key)) return audioCache.get(key);
   // GET so the browser and Vercel's CDN can cache the clip (see api/speak)
-  const res = await fetch(`/api/speak?text=${encodeURIComponent(text)}&voice=${currentVoice}&v=${AUDIO_VERSION}`);
+  const res = await fetch(`/api/speak?text=${encodeURIComponent(text)}&voice=${currentVoice}${slow ? '&slow=1' : ''}&v=${AUDIO_VERSION}`);
   if (!res.ok) throw new Error('speak request failed');
   const audio = new Audio(URL.createObjectURL(await res.blob()));
   // Keep the voice's pitch when slowed down (Safari and Firefox use prefixed names)
@@ -65,7 +65,7 @@ function usePlayer() {
     const mine = request.current;
     setLoading(id);
     try {
-      const audio = await loadAudio(text);
+      const audio = await loadAudio(text, rate < 1);
       // Another button was pressed while this clip was loading: drop this one,
       // so quick taps never play two clips on top of each other.
       if (mine !== request.current) return;
