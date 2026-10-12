@@ -12,7 +12,9 @@ const MAX_REVIEWS = 30;    // review cap per day; any backlog rolls over, so a s
 const EXTRA_NEW = 5;       // "Learn 5 more"
 const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice per session
 
-const pct = (x) => `${Math.round(x * 100)}%`;
+// Under 10% show one decimal, so the first few words visibly move the meter
+const pct = (x) => { const v = x * 100; return v > 0 && v < 10 ? `${(Math.round(v * 10) / 10).toFixed(1)}%` : `${Math.round(v)}%`; };
+const width = (x) => `${Math.min(100, x * 100)}%`;
 
 // Streak shown with Thailand's colours of the day (Sunday red, Monday
 // yellow, Tuesday pink, Wednesday green, Thursday orange, Friday blue,
@@ -70,8 +72,8 @@ function Meter({ value, from, milestones = {}, knownCount = 0 }) {
         <p className="today-meter-copy"><b>Your street meter</b>How much everyday Thai you understand. Milestones below are words learned; each one turns gold.</p>
       </div>
       <div className="today-bar flag" role="img" aria-label={`About ${pct(value)}`}>
-        {from != null && <i className="was" style={{ width: pct(from) }} />}
-        <i style={{ width: pct(value) }} />
+        {from != null && <i className="was" style={{ width: width(from) }} />}
+        <i style={{ width: width(value), minWidth: value > 0 ? 4 : 0 }} />
         {miles.map((m) => <span key={m.n} className={`tick${knownCount >= m.n ? ' on' : ''}`} style={{ left: `${m.p}%` }} />)}
       </div>
       {miles.length > 0 && (
@@ -136,6 +138,13 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
     if (user) supabaseBrowser().from('said_it').upsert({ user_id: user.id, day: today, kind: 'sayit', line: line.day })
       .then(({ error }) => { if (error) console.warn('Could not save said_it', error); });
   };
+  // Tapped by mistake: tap again to untick (today only)
+  const unmarkSaid = () => {
+    const next = { ...said }; delete next[today];
+    writeStore(SAID_KEY, next); setSaid(next); onSaid?.();
+    if (user) supabaseBrowser().from('said_it').delete().eq('user_id', user.id).eq('day', today).eq('kind', 'sayit')
+      .then(({ error }) => { if (error) console.warn('Could not remove said_it', error); });
+  };
   const play = () => {
     try {
       const voice = readStore('tsc-help', {}).voice || 'female';
@@ -160,11 +169,11 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
       </div>
       <p className="sayit-where">{line.where}</p>
       <button type="button" role="checkbox" aria-checked={doneToday} className={`sayit-check${doneToday ? ' is-on' : ''}`}
-        onClick={() => { if (!doneToday) markSaid(); }} disabled={doneToday}>
+        onClick={() => (doneToday ? unmarkSaid() : markSaid())}>
         <span className="box" aria-hidden="true">{doneToday && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
         <span className="txt">
           {doneToday
-            ? <><b>Said it!</b> {total === 1 ? 'Day 1 of Thai out loud.' : `Thai out loud: ${total} days.`}</>
+            ? <><b>Said it!</b> {total === 1 ? 'Day 1 of Thai out loud.' : `Thai out loud: ${total} days.`} <small className="undo">Tap again to undo.</small></>
             : <><b>I said it to someone</b> Tick this once you've used it for real. It adds a ★ to today.</>}
         </span>
       </button>

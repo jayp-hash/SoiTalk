@@ -1243,3 +1243,6 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .today-week li:last-child .day-peek { left: auto; right: 0; transform: none; animation-name: fc-peek-in-side; }
 .today-week .lbl { font-size: 12px; }
 .today-week { overflow: visible; }
+.sayit-check.is-on { cursor: pointer; }
+.sayit-check.is-on:hover { background: rgba(143,227,180,.18); }
+.sayit-check .undo { color: #9FB0CC; font-size: 12px; }
