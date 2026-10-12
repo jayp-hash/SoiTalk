@@ -9,7 +9,7 @@ export const metadata = { title: 'Today · Soi Talk' };
 export default async function TodayPage() {
   const words = await loadWords();
   // Street-meter milestones: everyday Thai understood after this many words
-  const milestones = coverageCurve(words, [50, 120, 300, 500, words.length]);
+  const milestones = coverageCurve(words, [50, 150, 300, 500, words.length]);
   return (
     <main className="page">
       <ProgressProvider>

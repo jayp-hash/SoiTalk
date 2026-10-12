@@ -306,7 +306,7 @@ function hexToRgba(hex, alpha) {
 // session = the daily review: one list of cards, no sets or shuffle.
 //   onRated(word, knewIt) -> return true if the word was put back in the queue
 //   onDone() is called after rating the last card.
-export default function Deck({ words: allWords, session = false, onRated, onDone, topic: topicProp = null, onTopics }) {
+export default function Deck({ words: allWords, session = false, onRated, onDone, topic: topicProp = null, onTopics, startSet = 0 }) {
   // Topic filter (browse mode): learn only one category, e.g. Food & drink.
   // On /vocabulary the topic comes from the topic page (onTopics goes back to it).
   const [topic, setTopic] = useState(topicProp);
@@ -331,7 +331,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
   }, [allWords]);
   const size = session ? Math.max(words.length, 1) : SET_SIZE;
   const setCount = Math.ceil(words.length / size);
-  const [setIndex, setSetIndex] = useState(0);
+  const [setIndex, setSetIndex] = useState(() => Math.max(0, Math.min(startSet, Math.ceil(words.length / (session ? Math.max(words.length, 1) : SET_SIZE)) - 1)));
   const [order, setOrder] = useState(null); // null = normal order; array = shuffled
   const [cardIndex, setCardIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);

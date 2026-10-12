@@ -60,7 +60,7 @@ function Meter({ value, from, milestones = {}, knownCount = 0 }) {
       <div className="today-meter-top">
         <SoiSign width={168} th="ซอย" en="Your street" number={pct(value)} tab={false} gold={reached.length > 0}
           title={`Street meter: ${pct(value)} of everyday Thai`} />
-        <p className="today-meter-copy"><b>Your street meter</b>How much everyday Thai you understand. It rises with every word you learn.</p>
+        <p className="today-meter-copy"><b>Your street meter</b>How much everyday Thai you understand. Milestones below are words learned; each one turns gold.</p>
       </div>
       <div className="today-bar flag" role="img" aria-label={`About ${pct(value)}`}>
         {from != null && <i className="was" style={{ width: pct(from) }} />}
@@ -68,10 +68,10 @@ function Meter({ value, from, milestones = {}, knownCount = 0 }) {
         {miles.map((m) => <span key={m.n} className={`tick${knownCount >= m.n ? ' on' : ''}`} style={{ left: `${m.p}%` }} />)}
       </div>
       {miles.length > 0 && (
-        <ol className="today-miles" aria-label="Milestones">
+        <ol className="today-miles" aria-label="Milestones: words learned">
           {miles.map((m) => (
             <li key={m.n} className={knownCount >= m.n ? 'on' : ''}>
-              <b>{m.n.toLocaleString('en')}</b><span>words</span><em>{m.p}%</em>
+              <b>{knownCount >= m.n && <span aria-hidden="true">✓ </span>}{m.n.toLocaleString('en')}</b><em>{m.p}%</em>
             </li>
           ))}
         </ol>
@@ -297,9 +297,6 @@ export default function Today({ words, milestones }) {
             )}
           </section>
 
-          {/* Bonus: use one line in real life */}
-          <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
-
           <section className="today-progress" aria-label="Your progress">
             <p className="today-section-label">Your week</p>
             <Week days={days} said={said} />
@@ -318,6 +315,9 @@ export default function Today({ words, milestones }) {
           {signedOut && (
             <p className="today-note">Your progress is saved in this browser. <a href="/signin">Sign in</a> to keep your streak on every device.</p>
           )}
+
+          {/* Bonus, last: take one line out into real life */}
+          <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
         </div>
       )}
     </div>

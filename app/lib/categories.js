@@ -54,3 +54,10 @@ export const TOPIC_BLURB = {
   'Grammar words': 'The small words that hold sentences together.',
   'Work & society': 'Work, news and formal Thai. Save these for later.',
 };
+
+// The one word that sells each topic on the topic page (must be in that topic)
+export const TOPIC_HERO = {
+  'Useful phrases': 'สวัสดี', 'Question words': 'เท่าไหร่', 'Numbers & counting': 'หนึ่ง', 'Food & drink': 'น้ำ',
+  'Places & position': 'ตรงไป', 'Time & dates': 'วันนี้', 'People & animals': 'เพื่อน', 'Actions': 'ไป',
+  'Describing words': 'อร่อย', 'Things & objects': 'เงิน', 'Body & health': 'หิว', 'Grammar words': 'ไม่', 'Work & society': 'งาน',
+};
