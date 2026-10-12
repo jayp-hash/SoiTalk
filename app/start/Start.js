@@ -166,7 +166,7 @@ export default function Start({ sceneId }) {
 
   const switchReg = (r) => {
     setReg(r); setRegister(r); setRegChosen(true);
-    player.play('reply', [{ text: joinTh(replyParts(scene, item, r)), voice: r }]);
+    player.play('both', [{ text: scene.staff.ask(item).th, voice: 'female' }, { text: joinTh(replyParts(scene, item, r)), voice: r }]);
   };
 
   // ---- 0. recall (day 2+): yesterday's line from memory, then 2 of its words
@@ -221,7 +221,7 @@ export default function Start({ sceneId }) {
     const it = scene.items[next];
     setItemIdx(next);
     setFlash(true); setTimeout(() => setFlash(false), 450);
-    player.play('reply', [{ text: joinTh(replyParts(scene, it, reg)), voice }]);
+    player.play('both', [{ text: scene.staff.ask(it).th, voice: 'female' }, { text: joinTh(replyParts(scene, it, reg)), voice }]);
     setMade((m) => {
       if (m.includes(it.th)) return m;
       const n = [...m, it.th];
@@ -392,9 +392,9 @@ export default function Start({ sceneId }) {
         {step === 'scene' && (
           <section className={`st-card${regChosen ? '' : ' is-wait'}`}>
             <p className="st-place">{scene.place}</p>
-            <h1 className="st-title">{scene.promise}</h1>
+            <h1 className="st-title">The conversation</h1>
             <div className={`st-reg is-top${regChosen ? '' : ' is-ask'}`} role="radiogroup" aria-label="I speak as">
-              <span>{regChosen ? 'I speak as' : 'First, you speak as'}</span>
+              <span>I'm speaking as:</span>
               {[['female', 'Woman', 'ค่ะ'], ['male', 'Man', 'ครับ']].map(([r, label, end]) => (
                 <button key={r} type="button" role="radio" aria-checked={regChosen && reg === r} className={regChosen && reg === r ? 'on' : ''} onClick={() => switchReg(r)}>
                   {label} <span lang="th">{end}</span>
@@ -461,7 +461,6 @@ export default function Start({ sceneId }) {
                 </div>
               </>
             )}
-            <p className="st-note"><span lang="th">{endingFor(reg).th}</span> makes it polite. You'll add it to almost everything you say.</p>
             <button type="button" className="st-cta" onClick={() => go('swap')}>Next: make your own</button>
           </section>
         )}
@@ -470,14 +469,32 @@ export default function Start({ sceneId }) {
           <section className="st-card">
             <p className="st-place">{scene.place}</p>
             <h1 className="st-title">Now make your own</h1>
-            <p className="st-sub">Swap {scene.slotLabel} and you have a new sentence.</p>
-            <div className="st-bubble is-them is-small">
-              <div className="st-line">
-                <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" />
-                <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><p className="en">{ask.en}</p></div>
-              </div>
-            </div>
-            <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1} flash={flash} />
+            {scene.swapOn === 'ask' ? (
+              <>
+                <p className="st-sub">Tap her question to change what she offers. Your answer changes with it.</p>
+                <button type="button" className={`st-bubble is-them is-small is-swap${flash ? ' is-flash' : ''}`} onClick={swap} aria-label={`${ask.th}, ${ask.en} Tap to change`}>
+                  <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>
+                  {made.length === 1 && <span className="st-hint is-below" role="status">Tap to change</span>}
+                  <span className="st-who">{scene.staff.who} asks</span>
+                  <span className="th" lang="th">{ask.th}</span>
+                  <span className="rom">{ask.rom}</span>
+                  <span className="en">{ask.en}</span>
+                </button>
+                <p className="st-you-say">You say:</p>
+                <Tiles parts={parts} onTap={say} swapIndex={swapIndex} flash={flash} />
+              </>
+            ) : (
+              <>
+                <p className="st-sub">Swap {scene.slotLabel} and you have a new sentence.</p>
+                <div className="st-bubble is-them is-small">
+                  <div className="st-line">
+                    <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" />
+                    <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><p className="en">{ask.en}</p></div>
+                  </div>
+                </div>
+                <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1} flash={flash} />
+              </>
+            )}
             <div className="st-whole">
               <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play the sentence" />
               <SlowBtn id="slow" clips={[{ text: spaced(parts), voice, slow: true }]} player={player} />
@@ -508,7 +525,7 @@ export default function Start({ sceneId }) {
             {made.length < needSwaps ? (
               <p className="st-gate" aria-live="polite">
                 <span className="dots" aria-hidden="true">{Array.from({ length: needSwaps }, (_, k) => <i key={k} className={k < made.length ? 'on' : ''} />)}</span>
-                {made.length} of {needSwaps} sentences made. Tap ↻ to make another.
+                {made.length} of {needSwaps} sentences made. {scene.swapOn === 'ask' ? 'Tap her question to make another.' : 'Tap ↻ to make another.'}
               </p>
             ) : (
               <button type="button" className="st-cta" onClick={() => go('listen')}>Next: test your ear</button>
@@ -590,6 +607,20 @@ const GoogleG = () => (
 const inAppBrowser = () => {
   try { return /FBAN|FBAV|Instagram|Line\/|TikTok|musical_ly|Bytedance/i.test(navigator.userAgent); } catch { return false; }
 };
+const CalIcon = () => <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>;
+// A calendar reminder for tomorrow at 8am (works on phones and laptops, no account needed)
+function reminderIcs(scene) {
+  const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(8, 0, 0, 0);
+  const pad = (n) => String(n).padStart(2, '0');
+  const stamp = (x) => `${x.getFullYear()}${pad(x.getMonth() + 1)}${pad(x.getDate())}T${pad(x.getHours())}${pad(x.getMinutes())}00`;
+  const end = new Date(d.getTime() + 10 * 60000);
+  const title = `Soi Talk: ${scene.tomorrow || 'today\'s Thai'} (2 min)`;
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Soi Talk//EN', 'BEGIN:VEVENT', `UID:${Date.now()}@soitalk.app`,
+    `DTSTAMP:${stamp(new Date())}`, `DTSTART:${stamp(d)}`, `DTEND:${stamp(end)}`, `SUMMARY:${title}`,
+    'DESCRIPTION:Your next 2 minutes of Thai: https://soitalk.app/today', 'URL:https://soitalk.app/today',
+    'BEGIN:VALARM', 'TRIGGER:PT0M', 'ACTION:DISPLAY', `DESCRIPTION:${title}`, 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+}
 const CONFETTI = ['#ED1C24', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#F2C200', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#FFFFFF', '#F2C200', '#241D4F', '#ED1C24', '#F2C200', '#FFFFFF'];
 
 function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
@@ -614,8 +645,11 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
         <div className="dn-confetti" aria-hidden="true">
           {CONFETTI.map((c, i) => <i key={i} style={{ '--c': c, '--x': `${i % 2 ? 78 + ((i * 7) % 20) : 2 + ((i * 11) % 18)}%`, '--d': `${(i % 5) * 0.06}s`, '--r': `${(i * 53) % 360}deg` }} />)}
         </div>
-        <p className="dn-cheer" lang="th">เก่งมาก! <span>gèng mâak · great job</span></p>
-        <p className="dn-count"><b>{lines.length}</b> new things you can say in Thai</p>
+        <b className="dn-num">{lines.length}</b>
+        <div className="dn-hero-text">
+          <p className="dn-cheer"><span lang="th">เก่งมาก!</span> <i>gèng mâak · great job</i></p>
+          <p className="dn-count">new things you can say in Thai</p>
+        </div>
       </div>
 
       {/* The one line to use today: the big thing on this screen */}
@@ -624,7 +658,8 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
         <span className="dn-label">Say it today</span>
         <span className="dn-use-line" lang="th">{joinTh(mission)}</span>
         <span className="dn-use-rom">{joinRom(mission)}</span>
-        <span className="dn-use-text">{missionEn} {scene.mission}</span>
+        <span className="dn-use-en">{missionEn}</span>
+        <span className="dn-use-when">When: {scene.mission.charAt(0).toLowerCase()}{scene.mission.slice(1)}</span>
         <span className="dn-use-play" aria-hidden="true">{player.playing === 'mission' ? <StopIcon /> : <PlayIcon />}</span>
       </button>
 
@@ -649,12 +684,18 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
         <button type="button" className="dn-more" onClick={() => setAll(true)}>See all {lines.length} phrases</button>
       )}
 
-      <button type="button" className={`dn-tomorrow${player.playing === 'teaser' ? ' is-on' : ''}`}
-        onClick={() => player.play('teaser', [{ text: scene.teaser.th + endingFor(reg).th, voice }])}>
-        <span className="dn-label">{scene.teaser.title}</span>
-        <span className="th" lang="th">{scene.teaser.th}{endingFor(reg).th} <i className="rom">{scene.teaser.rom} {endingFor(reg).rom}</i></span>
-        <span className="dn-line-play" aria-hidden="true">{player.playing === 'teaser' ? <StopIcon /> : <PlayIcon />}</span>
-      </button>
+      <div className="dn-back">
+        <p className="dn-label">Tomorrow · about 2 minutes</p>
+        <p className="dn-back-title">{scene.tomorrow || scene.teaser.title.replace(/^Tomorrow: /, '')}</p>
+        <button type="button" className={`dn-back-line${player.playing === 'teaser' ? ' is-on' : ''}`}
+          onClick={() => player.play('teaser', [{ text: scene.teaser.th + endingFor(reg).th, voice }])} aria-label="Hear tomorrow's sentence">
+          <span className="dn-line-play" aria-hidden="true">{player.playing === 'teaser' ? <StopIcon /> : <PlayIcon />}</span>
+          <span><span className="th" lang="th">{scene.teaser.th}{endingFor(reg).th}</span><span className="rom">{scene.teaser.rom} {endingFor(reg).rom} · {scene.teaser.en}</span></span>
+        </button>
+        <a className="dn-remind" href={reminderIcs(scene)} download="soi-talk-tomorrow.ics">
+          <CalIcon /> Remind me tomorrow
+        </a>
+      </div>
 
       <div className="dn-save">
         {user ? (

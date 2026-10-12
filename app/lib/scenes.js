@@ -33,6 +33,7 @@ export const SCENES = {
     alsoHeard: { th: 'ไม่ต้อง', rom: 'mâi tâwng', en: 'no need' },
     replyEn: (it) => `No ${it.en}, thanks.`,
     slotLabel: 'the thing',
+    swapOn: 'ask', // tap the cashier's question to change what she offers
     items: [
       // Order = the order of swaps. Cashiers ask spoon and fork together
       // (ช้อนส้อม), so no fork on its own (Thai Teacher, 12 Oct).
@@ -44,6 +45,7 @@ export const SCENES = {
       { th: 'ตะเกียบ', rom: 'dtà-gìap', en: 'chopsticks', a: 'chopsticks' },
     ],
     mission: 'At the 7-Eleven checkout, before they bag your things.',
+    tomorrow: 'Order Thai food your way',
     // Tomorrow: the restaurant scene (they already know ไม่)
     teaser: { title: 'Tomorrow: order Thai food your way', th: 'ไม่เผ็ด', rom: 'mâi phèt', en: 'Not spicy.' },
   },
@@ -80,6 +82,7 @@ export const SCENES = {
     next: { th: 'หมูหรือไก่คะ', rom: 'mǔu rǔue gài khá', en: 'Pork or chicken?' },
     recall: '7eleven', // day 2 opens with yesterday's line
     mission: 'Next time you order Thai food.',
+    tomorrow: 'Order two drinks',
     teaser: { title: 'Tomorrow: order two drinks', th: 'ขอน้ำเปล่าสองขวด', rom: 'khǎaw náam-bplàao sǎawng khùat', en: 'Two bottles of water, please.' },
   },
 };
