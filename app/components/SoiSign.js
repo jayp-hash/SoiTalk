@@ -4,8 +4,8 @@
 //   district = optional green plate underneath (used for topics)
 //   gold     = gold frame for milestones and special cards
 // Without a district plate, a small tab under the sign shows today's colour (--day).
-export default function SoiSign({ th = 'ซอยทอล์ก', en = 'Soi Talk', number, district, gold = false, width = 260, title }) {
-  const h = district ? 116 : 96;
+export default function SoiSign({ th = 'ซอยทอล์ก', en = 'Soi Talk', number, district, gold = false, tab = true, width = 260, title }) {
+  const h = district ? 116 : tab ? 96 : 86;
   const frame = gold ? 'url(#soi-gold)' : '#0E2E63';
   return (
     <svg viewBox={`0 0 260 ${h}`} width={width} height={(width * h) / 260} role="img" aria-label={title || `${en}${number != null ? ` ${number}` : ''}`} className="soi-sign">
@@ -26,7 +26,7 @@ export default function SoiSign({ th = 'ซอยทอล์ก', en = 'Soi Tal
           <rect x="63" y="89" width="134" height="20" rx="2" fill="#1E8A4C" stroke="#fff" strokeWidth="1.5" />
           <text x="130" y="103" textAnchor="middle" fill="#fff" style={{ font: '500 11px var(--font-sign), sans-serif' }}>{district}</text>
         </g>
-      ) : (
+      ) : tab && (
         <rect x="113" y="86" width="34" height="6" rx="3" style={{ fill: 'var(--day, #F2C200)' }} />
       )}
     </svg>

@@ -1039,3 +1039,58 @@ body:has(.fc) .page { padding-bottom: 0; }
 .lp-play, .lp-play.sm { box-shadow: 0 4px 12px rgba(14,46,99,.18); }
 .lp-word i { font: italic 600 15px/1.2 var(--font-body), sans-serif; color: #6b7385; }
 .lp-msg .lp-rom { color: rgba(255,255,255,.82); opacity: 1; margin-bottom: 4px; }
+
+/* ---------- Today: two clear steps, then progress (12 Oct) ---------- */
+.today-card { gap: 18px; }
+.today-step-n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; margin-right: 8px;
+  font: 800 12px/1 var(--font-body), sans-serif; letter-spacing: 0; background: var(--soi); color: #fff; vertical-align: middle; }
+.today-step { background: var(--soi-tint); border-radius: 18px; padding: 16px 18px 18px; display: grid; gap: 10px; }
+.today-step-label, .today-section-label { margin: 0; font: 800 12px/1 var(--font-body), sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--soi-ink); }
+.today-step-body { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.today-step-body strong { font: 800 20px/1.25 var(--font-body), sans-serif; display: block; color: #1f2533; }
+.today-step-body span { font-size: 14px; color: #4f5868; }
+.today-step-body span[lang="th"] { font: 700 16px/1 var(--font-thai), sans-serif; color: #1f2533; }
+.today-step-body .auth-btn { width: auto; padding: 14px 30px; font-size: 17px; }
+.sayit-eyebrow .today-step-n { background: #FFC83D; color: #1B2A4A; }
+.today-progress { display: grid; gap: 14px; padding-top: 6px; border-top: 1px solid #E6EAF1; }
+.today-progress .today-section-label { color: #6b7385; margin-top: 10px; }
+
+/* Say it: play button states + a tick box instead of "I said it!" */
+.sayit-play { transition: transform .12s, box-shadow .12s, background .12s; }
+.sayit-play:hover { background: #FFD45E; box-shadow: 0 0 0 6px rgba(255,200,61,.22) !important; transform: scale(1.04); }
+.sayit-play:active { transform: scale(.96); }
+.sayit-play.on { box-shadow: 0 0 0 6px rgba(255,200,61,.3) !important; transform: none; }
+.sayit-play:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.sayit-check { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.06); color: #fff; border-radius: 12px; padding: 12px 14px; cursor: pointer; font: 500 14px/1.35 var(--font-body), sans-serif; transition: background .12s, border-color .12s; }
+.sayit-check:hover:not(:disabled) { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.35); }
+.sayit-check:focus-visible { outline: 3px solid #FFC83D; outline-offset: 2px; }
+.sayit-check .box { width: 24px; height: 24px; flex: none; border-radius: 7px; border: 2px solid rgba(255,255,255,.7); display: grid; place-items: center; }
+.sayit-check .box svg { width: 16px; height: 16px; }
+.sayit-check .txt { color: #C9D2E3; }
+.sayit-check .txt b { color: #fff; font-weight: 800; margin-right: 4px; }
+.sayit-check.is-on { cursor: default; border-color: rgba(143,227,180,.5); background: rgba(143,227,180,.12); }
+.sayit-check.is-on .box { background: #8FE3B4; border-color: #8FE3B4; color: #1B2A4A; }
+
+/* Week: Thai day, its romanization and English, no tooltip */
+.today-week li { gap: 4px; }
+.today-week .rom { font: italic 600 11px/1.15 var(--font-body), sans-serif; color: #4f5868; text-align: center; max-width: 100%; overflow-wrap: anywhere; }
+.today-week .lbl { font-size: 11px; color: #8A93A5; }
+.today-week li.today .rom, .today-week li.today .lbl { color: var(--soi-ink); font-weight: 800; }
+
+/* Header logo: bigger, sits on the nav's centre line */
+.site-header .brand .soi-sign { width: 172px; }
+@media (max-width: 560px) { .site-header .brand .soi-sign { width: 116px; } }
+
+/* Topic menu groups */
+.fc-topic-group { display: grid; }
+.fc-topic-group + .fc-topic-group { border-top: 1px solid #E6EAF1; margin-top: 4px; padding-top: 4px; }
+.fc-topic-head { margin: 6px 10px 2px; font: 800 11px/1 var(--fc-body); letter-spacing: .1em; text-transform: uppercase; color: #8A93A5; }
+.fc-topic-opt.is-all::after { display: none; }
+.fc-topic-menu { max-height: min(680px, calc(100vh - 150px)); }
+.sayit-check .txt { display: grid; gap: 2px; }
+.sayit-check .txt b { margin: 0; }
+.today-week { gap: 2px; }
+.today-week .rom { min-height: 2.3em; display: flex; align-items: flex-start; justify-content: center; font-size: 10.5px; }
+@media (max-width: 560px) { .today-card { padding: 22px 16px; } }
+@media (min-width: 561px) { .today-week .rom { min-height: 0; white-space: nowrap; font-size: 11.5px; } }

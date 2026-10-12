@@ -49,7 +49,7 @@ export default function Header() {
   return (
     <header className="site-header">
       <a href="/" className="brand" aria-label="Soi Talk home">
-        <SoiSign width={128} title="Soi Talk" />
+        <SoiSign width={172} tab={false} title="Soi Talk" />
       </a>
       <nav>
         {LINKS.map((link) => (

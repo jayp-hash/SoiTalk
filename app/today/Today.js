@@ -17,13 +17,13 @@ const pct = (x) => `${Math.round(x * 100)}%`;
 // yellow, Tuesday pink, Wednesday green, Thursday orange, Friday blue,
 // Saturday purple). A finished day fills with its colour.
 const THAI_DAY = [
-  { en: 'Sun', th: 'อา', color: '#E5383B' },
-  { en: 'Mon', th: 'จ', color: '#F2C200' },
-  { en: 'Tue', th: 'อ', color: '#EC6AA8' },
-  { en: 'Wed', th: 'พ', color: '#2BA84A' },
-  { en: 'Thu', th: 'พฤ', color: '#F28C28' },
-  { en: 'Fri', th: 'ศ', color: '#3A8DDE' },
-  { en: 'Sat', th: 'ส', color: '#8E5CC9' },
+  { en: 'Sun', th: 'อา', rom: 'aa-thít', color: '#E5383B' },
+  { en: 'Mon', th: 'จ', rom: 'jan', color: '#F2C200' },
+  { en: 'Tue', th: 'อ', rom: 'ang-khaan', color: '#EC6AA8' },
+  { en: 'Wed', th: 'พ', rom: 'phút', color: '#2BA84A' },
+  { en: 'Thu', th: 'พฤ', rom: 'phá-rúe-hàt', color: '#F28C28' },
+  { en: 'Fri', th: 'ศ', rom: 'sùk', color: '#3A8DDE' },
+  { en: 'Sat', th: 'ส', rom: 'sǎo', color: '#8E5CC9' },
 ];
 
 function Week({ days }) {
@@ -33,9 +33,11 @@ function Week({ days }) {
     const d = THAI_DAY[new Date(t).getDay()];
     const done = !!days[dayKey(t)]?.done;
     cells.push(
-      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': d.color }} title={`${d.en}${done ? ': done' : ''}`}>
-        <span className="dot" lang="th">{d.th}</span>
-        <span className="lbl">{back === 0 ? 'Today' : d.en}</span>
+      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': d.color }}
+        aria-label={`${d.en}${back === 0 ? ' (today)' : ''}${done ? ', done' : ''}`}>
+        <span className="dot" lang="th" aria-hidden="true">{d.th}</span>
+        <span className="rom" aria-hidden="true">{d.rom}</span>
+        <span className="lbl" aria-hidden="true">{back === 0 ? 'Today' : d.en}</span>
       </li>
     );
   }
@@ -66,7 +68,7 @@ function Meter({ value, from }) {
 // account (said_it table).
 const SAID_KEY = 'tsc-said';          // { "2026-10-09": 12 (line number), ... }
 const TODAY_LINE_KEY = 'tsc-sayit-day'; // { day: "2026-10-09", line: 12 }
-function SayIt({ studiedBeforeToday }) {
+function SayIt({ studiedBeforeToday, step }) {
   const { user } = useUser();
   const [said, setSaid] = useState({});
   const [lineNo, setLineNo] = useState(null);
@@ -120,7 +122,7 @@ function SayIt({ studiedBeforeToday }) {
   };
   return (
     <section className="sayit" aria-label="Say it today">
-      <p className="sayit-eyebrow">Say it today</p>
+      <p className="sayit-eyebrow">{step ? <><span className="today-step-n">{step}</span>Say it out loud today</> : 'Say it out loud today'}</p>
       <div className="sayit-line">
         <button type="button" className={`sayit-play${playing ? ' on' : ''}`} onClick={play} aria-label={`Play ${line.thai}`}>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
@@ -132,11 +134,15 @@ function SayIt({ studiedBeforeToday }) {
         </div>
       </div>
       <p className="sayit-where">{line.where}</p>
-      {doneToday ? (
-        <p className="sayit-done">Nice! {total === 1 ? 'Day 1 of Thai out loud.' : `Thai out loud: ${total} days.`}</p>
-      ) : (
-        <button type="button" className="sayit-btn" onClick={markSaid}>I said it!</button>
-      )}
+      <button type="button" role="checkbox" aria-checked={doneToday} className={`sayit-check${doneToday ? ' is-on' : ''}`}
+        onClick={() => { if (!doneToday) markSaid(); }} disabled={doneToday}>
+        <span className="box" aria-hidden="true">{doneToday && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+        <span className="txt">
+          {doneToday
+            ? <><b>Said it!</b> {total === 1 ? 'Day 1 of Thai out loud.' : `Thai out loud: ${total} days.`}</>
+            : <><b>I said it to someone</b> Tick this once you've used it for real.</>}
+        </span>
+      </button>
     </section>
   );
 }
@@ -207,6 +213,7 @@ export default function Today({ words }) {
   }
 
   const nothingLeft = plan.due.length === 0 && plan.newCards.length === 0;
+  const brandNew = studiedBeforeToday === 0 && plan.due.length === 0 && reviewedInSession.current === 0;
   const signedOut = ready && !user;
 
   return (
@@ -233,29 +240,45 @@ export default function Today({ words }) {
         <div className="today-card">
           <div className="today-head">
             <h1 className="today-title">Today</h1>
-            <span className="today-streak" title="Days in a row you finished your review"><i style={{ background: todayColour() }} />{streak > 0 ? `${streak} day${streak === 1 ? '' : 's'} in a row` : 'Start today'}</span>
+            {streak > 0 && (
+              <span className="today-streak" title="Days in a row you finished your review"><i style={{ background: todayColour() }} />{streak} day{streak === 1 ? '' : 's'} in a row</span>
+            )}
           </div>
 
-          <SayIt studiedBeforeToday={studiedBeforeToday} />
-          <Meter value={known} />
-          <Week days={days} />
-
-          {nothingLeft ? (
-            <div className="today-due">
-              <div><strong>All done for today</strong><span>Come back tomorrow to keep your streak going.</span></div>
-              {plan.fresh.length > 0 && (
-                <button type="button" className="auth-btn primary" onClick={() => start(plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more</button>
-              )}
-            </div>
-          ) : (
-            <div className="today-due">
-              <div>
-                <strong>{plan.due.length} to review · {plan.newCards.length} new</strong>
-                <span>About {Math.max(1, Math.round((plan.due.length * 10 + plan.newCards.length * 25) / 60))} minutes</span>
+          {/* Step 1: the one thing to do first */}
+          <section className="today-step" aria-label="Learn">
+            <p className="today-step-label"><span className="today-step-n">1</span>{brandNew ? 'Learn your first words' : 'Learn'}</p>
+            {nothingLeft ? (
+              <div className="today-step-body">
+                <div><strong>All done for today</strong><span>Come back tomorrow to keep your week going.</span></div>
+                {plan.fresh.length > 0 && (
+                  <button type="button" className="auth-btn primary" onClick={() => start(plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more</button>
+                )}
               </div>
-              <button type="button" className="auth-btn primary" onClick={() => start([...plan.due, ...plan.newCards])}>Start</button>
-            </div>
-          )}
+            ) : (
+              <div className="today-step-body">
+                <div>
+                  <strong>
+                    {plan.due.length > 0 ? `${plan.due.length} to review · ` : ''}{plan.newCards.length} new word{plan.newCards.length === 1 ? '' : 's'}
+                  </strong>
+                  <span>
+                    {brandNew && plan.newCards[0] ? <>Starting with <span lang="th">{plan.newCards[0].thai}</span> ({plan.newCards[0].romanization}). </> : null}
+                    About {Math.max(1, Math.round((plan.due.length * 10 + plan.newCards.length * 25) / 60))} minutes.
+                  </span>
+                </div>
+                <button type="button" className="auth-btn primary today-start" onClick={() => start([...plan.due, ...plan.newCards])}>Start</button>
+              </div>
+            )}
+          </section>
+
+          {/* Step 2: use one line in real life */}
+          <SayIt studiedBeforeToday={studiedBeforeToday} step={2} />
+
+          <section className="today-progress" aria-label="Your progress">
+            <p className="today-section-label">Your progress</p>
+            <Meter value={known} />
+            <Week days={days} />
+          </section>
 
           <div className="today-goal">
             <span id="goal-label">Learning goal: new words a day</span>

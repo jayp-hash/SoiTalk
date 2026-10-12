@@ -201,10 +201,21 @@ const TIPS = {
 const Check = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
 const Chevron = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>;
 
+// Topics are grouped by when a learner needs them, so the menu reads as a path.
+const TOPIC_GROUPS = [
+  { label: 'Start here', names: ['Useful phrases', 'Question words', 'Numbers & counting', 'Food & drink', 'Places & position', 'Time & dates', 'People & animals'] },
+  { label: 'Building blocks', names: ['Actions', 'Describing words', 'Things & objects', 'Body & health', 'Grammar words'] },
+  { label: 'Formal Thai', names: ['Work & society'] },
+];
+
 // Topic menu: a plain listbox. Arrow keys move, Enter picks, Esc closes.
 function TopicPicker({ topics, total, value, open, setOpen, wrapRef, onChoose }) {
   const listRef = useRef(null);
-  const rows = [{ name: null, n: total, color: null }, ...topics];
+  const byName = new Map(topics.map((t) => [t.name, t]));
+  const grouped = TOPIC_GROUPS.map((g) => ({ ...g, items: g.names.map((n) => byName.get(n)).filter(Boolean) }));
+  const leftover = topics.filter((t) => !TOPIC_GROUPS.some((g) => g.names.includes(t.name)));
+  if (leftover.length) grouped[1].items.push(...leftover);
+  const rows = [{ name: null, n: total, color: null }, ...grouped.flatMap((g) => g.items)];
   const current = rows.find((r) => r.name === value) || rows[0];
   useEffect(() => {
     if (!open) return;
@@ -228,15 +239,20 @@ function TopicPicker({ topics, total, value, open, setOpen, wrapRef, onChoose })
       </button>
       {open && (
         <div className="fc-topic-menu" role="listbox" aria-label="Topic" ref={listRef} onKeyDown={onKey}>
-          {rows.map((r, k) => (
-            <button key={r.name || 'all'} type="button" role="option" aria-selected={r.name === value}
-              className={`fc-topic-opt${r.name === value ? ' is-on' : ''}${k === 0 ? ' is-all' : ''}`}
-              style={r.color ? { '--tc': r.color } : undefined} onClick={() => onChoose(r.name)}>
-              <i aria-hidden="true" />
-              <span>{r.name || 'All topics'}</span>
-              <small>{r.n.toLocaleString('en')}</small>
-              <b>{r.name === value && <Check />}</b>
-            </button>
+          {[{ label: null, items: [rows[0]] }, ...grouped].map((g) => (
+            <div key={g.label || 'all'} role="group" aria-label={g.label || 'All topics'} className="fc-topic-group">
+              {g.label && <p className="fc-topic-head" aria-hidden="true">{g.label}</p>}
+              {g.items.map((r) => (
+                <button key={r.name || 'all'} type="button" role="option" aria-selected={r.name === value}
+                  className={`fc-topic-opt${r.name === value ? ' is-on' : ''}`}
+                  style={r.color ? { '--tc': r.color } : undefined} onClick={() => onChoose(r.name)}>
+                  <i aria-hidden="true" />
+                  <span>{r.name || 'All topics'}</span>
+                  <small>{r.n.toLocaleString('en')}</small>
+                  <b>{r.name === value && <Check />}</b>
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}
