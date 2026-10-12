@@ -1,10 +1,10 @@
 // Privacy policy. Google requires this page before the
 // "Continue with Google" sign-in can be opened to everyone.
 // To show a contact email, fill in CONTACT_EMAIL.
-const CONTACT_EMAIL = '';
-const UPDATED = '7 October 2026';
+const CONTACT_EMAIL = 'jasonpshyk@gmail.com';
+const UPDATED = '12 October 2026';
 
-export const metadata = { title: 'Privacy policy · Thai Study Companion' };
+export const metadata = { title: 'Privacy policy · Soi Talk' };
 
 export default function Privacy() {
   const contact = CONTACT_EMAIL
@@ -14,7 +14,7 @@ export default function Privacy() {
     <main className="page prose">
       <p className="eyebrow">Last updated {UPDATED}</p>
       <h1 className="page-title">Privacy policy</h1>
-      <p>Thai Study Companion is a small, independent app for learning Thai. This page explains what we store about you and why.</p>
+      <p>Soi Talk is a small, independent app for learning Thai. This page explains what we store about you and why.</p>
 
       <h2>Using the app without an account</h2>
       <p>You can study without signing in. Your progress and settings are then kept only in your own browser (local storage) and are not sent to us.</p>
@@ -22,7 +22,7 @@ export default function Privacy() {
       <h2>What we store when you sign in</h2>
       <ul>
         <li><b>Your email address</b>, and your name if you sign in with Google. We use these to sign you in and to show you who you're signed in as.</li>
-        <li><b>Your learning progress</b>: which words you've studied, how well you knew them and when you last saw them. We use this to show you the right cards and to follow your progress across devices.</li>
+        <li><b>Your learning progress</b>: which words you've studied, how well you knew them and when you last saw them, your daily word goal, and the days you tapped "I said it!". We use this to show you the right cards and to follow your progress across devices.</li>
       </ul>
       <p>We don't sell your data, show ads or share your information with advertisers.</p>
 

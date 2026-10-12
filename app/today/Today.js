@@ -233,7 +233,7 @@ export default function Today({ words }) {
         <div className="today-card">
           <div className="today-head">
             <h1 className="today-title">Today</h1>
-            <span className="today-streak" title="Days in a row you finished your review"><i style={{ background: todayColour() }} />{streak} day{streak === 1 ? '' : 's'} in a row</span>
+            <span className="today-streak" title="Days in a row you finished your review"><i style={{ background: todayColour() }} />{streak > 0 ? `${streak} day${streak === 1 ? '' : 's'} in a row` : 'Start today'}</span>
           </div>
 
           <SayIt studiedBeforeToday={studiedBeforeToday} />

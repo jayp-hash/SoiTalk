@@ -56,7 +56,7 @@ export default function Header() {
           <a
             key={link.href}
             href={link.href}
-            className={pathname === link.href ? 'active' : ''}
+            className={`${pathname === link.href ? 'active' : ''}${link.href === '/' ? ' nav-home' : ''}`.trim() || undefined}
           >
             {link.label}
           </a>

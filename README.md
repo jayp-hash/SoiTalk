@@ -1,68 +1,73 @@
-# Thai Study Companion
+# Soi Talk
 
-A web app for learning Thai, built around the words people actually use most.
+**Thai for your street.** A web app that teaches the Thai people around you actually use, most useful words first.
 
-I live in Bangkok and started learning Thai in a classroom. The lessons were fine, but practice at home was the hard part. Most apps either teach random travel phrases or make you memorize lists with no context. I wanted something that starts with the most common words, shows them in real sentences, and lets you hear them spoken by a Thai voice. So I'm building it.
+Live (beta): https://thai-study-companion.vercel.app
 
-I spent about 15 years in English teaching and EdTech (including a digital platform launch for 2.5 million learners in China), so this is also a chance to build the kind of learning product I used to manage, this time hands-on.
+<p>
+  <img src="docs/screenshots/home-desktop.png" alt="Soi Talk home page" width="560">
+  <img src="docs/screenshots/card-phone.png" alt="A flashcard on a phone" width="180">
+  <img src="docs/screenshots/today-phone.png" alt="The Today screen on a phone" width="180">
+</p>
+
+## Why I'm building it
+
+I live in Bangkok. I took Thai classes, and the classes were fine. Practising at home was the problem. Most apps teach random travel phrases, or hand you a list to memorise with no context.
+
+So I built the app I wanted: start with the most common words, show every word in a sentence you can actually understand, and hear it from a Thai voice. Then go and say something to a real person that day.
+
+I spent about 15 years in English teaching and EdTech, including a platform launch for 2.5 million learners in China. This time I'm building the product myself.
 
 ## What works today
 
-- **Vocabulary flashcards.** 896 words, ordered by how common they are, in sets of 20. Tap to flip, press play to hear the word, arrow keys to move through the set. Example sentences sit on the back of the card.
-- **Thai audio.** Every word can be played aloud using ElevenLabs text-to-speech.
-- **A real database.** Words, sentences and the links between them live in Supabase (Postgres), loaded from a curriculum spreadsheet by an import script.
+- **1,083 words in learner order.** Survival words and phrases first (greetings, food, getting around), everyday Thai next, formal and news Thai last. Every card shows which topic it belongs to, and you can study one topic at a time.
+- **Sentences that only use words you've met.** Each card's example sentence is built from earlier words in the course, so you can always work it out. Tap any word in the sentence to hear it on its own.
+- **Real Thai audio.** Every word and sentence can be played, with a slow mode. Audio comes from ElevenLabs and is cached after the first play.
+- **Today screen.** Cards that are due for review plus 5 new words a day (you can pick 10 to 30). Reviews come back after 1, 3, 7, 14, 30 and 60 days.
+- **Say it Today.** One short line a day to say out loud to someone real, like the condo guard or a taxi driver, and an "I said it!" button.
+- **Street meter.** An estimate of how much everyday Thai you understand, based on how often Thai people use each word you know.
+- **Thailand's colours of the day.** The week strip uses the traditional colour for each day (yellow Monday, pink Tuesday and so on) instead of a streak flame.
+- **Accounts.** Study without signing up. Sign in with Google or email to keep your progress on every device.
 
-Sentence Patterns, Sentence Structures and Activities are designed but not built yet. They show as "Coming soon" on the home page.
+Still to build: listening practice at real speed, a sentence "pattern machine", real-life missions, a tones lesson, and iOS and Android versions.
 
 ## Where the content comes from
 
-The word list is my own. I cross-referenced three Thai word-frequency lists, kept the top 500 words, and added the classifiers and function words (แก้ว, ใบ, กี่, หน่อย and so on) that show up in basic sentences but miss the frequency lists. That gives 896 words. Older versions of the CU-TFL (Chulalongkorn University's Test of Thai as a Foreign Language) are a reference for what a learner should be able to do at each level, so the course works toward a real goal.
+The word list is my own. I cross-referenced three Thai word-frequency lists, kept the most common words, then added the classifiers, function words and everyday phrases that basic sentences need but frequency lists miss. Older versions of the CU-TFL (Chulalongkorn University's Test of Thai as a Foreign Language) are a reference for what a learner should be able to do at each level.
 
-Sentences come from my curriculum spreadsheet. Some were drafted with AI help for the most common words, and every sentence carries a review status (unreviewed, needs native review, approved, rejected). Rejected sentences never reach the app.
+Everything lives in one Excel workbook. An import script loads it into the database, so content changes never touch the code.
+
+Some example sentences were drafted with AI help. Every sentence has a review status, and a native Thai review of the first stage is in progress. Rejected sentences never reach the app.
 
 ## Product decisions
 
-A few choices that shaped the app, and why:
-
-- **Practice by speech style, not "pick your gender".** Thai speakers end sentences with ครับ (khrap) or ค่ะ/คะ (kha) and use different words for "I". The app will ask which style you want to practice. Sentences are stored once, in a neutral form, and the right particles are swapped in when the page loads. Each sentence is tagged as a statement or a question, because that decides ค่ะ versus คะ.
-- **Flashcards teach the textbook version.** Casual Thai often differs from the textbook. Example: เรา is often glossed as "we", but in everyday speech it is closer to an informal "I". The cards use the safe, correct form (พวกเรา for "we"). The gaps are being collected for a future "Real Talk vs Textbook" section.
-- **ElevenLabs over Google for audio.** I compared Thai voices from Google Cloud, Botnoi and ElevenLabs by ear. ElevenLabs sounded the most natural. It needs the eleven_v3 model, the only one that actually supports Thai. After listening tests across several stability settings, the flashcards use the "Amy" voice at 0.3.
-- **Numbers are generated, not written.** Practice sentences with numbers will get random numbers that scale with level (1 to 10 early on, up to 100 and beyond later), so learners can't just memorize the answer.
-- **A placement test, not a fixed start.** New users can take an optional test: chunks of 5 questions per level, move up after 3 out of 5, get a fresh chunk after a miss, and stop after two misses at the same level.
-- **Built for real situations.** The longer-term goal is role-play practice for moments like asking 7-Eleven staff if they take credit cards, not just repeating sentences.
+- **Most useful first, not alphabetical or by textbook chapter.** The first few hundred words cover a big share of everyday speech, so the order matters more than the total.
+- **No gamification.** No points, leagues or guilt. Missing a day costs nothing. The goal is a calm habit, and saying something real to a real person.
+- **Textbook-safe forms on the cards.** Casual Thai often differs from the textbook (เรา is often an informal "I", not just "we"). Cards teach the safe form, and the differences are being collected for a later "real talk" section.
+- **ครับ / ค่ะ explained once.** Example sentences leave the polite particle off, and a one-time tip tells you which one to add.
+- **Tones later.** A small tip on day 2 points out the tone marks. A proper tones lesson comes after the first stage, once you have words to hang it on.
+- **ElevenLabs for audio.** I compared Thai voices from Google Cloud, Botnoi and ElevenLabs by ear. ElevenLabs sounded the most natural.
 
 ## How it's built
 
+I built this with AI coding tools (Claude). I made the product, curriculum and design decisions, wrote the specs, and reviewed and tested each change.
+
 | Part | Tool | Why |
 | --- | --- | --- |
-| Website | Next.js 14 (React) | One codebase for pages and the small server functions behind them |
-| Database | Supabase (Postgres) | SQL tables for words and sentences, with row-level security |
+| Website | Next.js 14 (React) | Pages and small server functions in one codebase |
+| Database and accounts | Supabase (Postgres) | Words, sentences, sign-in and progress, with row-level security |
 | Audio | ElevenLabs API | The most natural Thai voices I tested |
-| Hosting | Vercel | Deploys the site from this repo |
-| Content | Excel workbook + Node import script | The spreadsheet stays the source of truth, so content edits never touch code |
+| Hosting | Vercel | Deploys straight from this repo |
+| Content | Excel workbook + Node import script | The spreadsheet stays the source of truth |
 
-**The data model**, in plain terms:
+How the data fits together:
 
-- `vocabulary`: one row per word (Thai, romanization, English, frequency rank)
-- `sentences`: one row per example sentence, with its type and review status
-- `word_sentences`: a link table, since one sentence contains many words and one word appears in many sentences
+- `vocabulary`: one row per word (Thai, romanization, English, frequency rank, topic, course order)
+- `sentences`: one row per example sentence, with its review status
+- `word_sentences`: links words to the sentences they appear in, and marks each card's chosen sentence
+- `profiles`, `word_progress`, `study_days`, `said_it`: each user's settings and progress, readable only by that user
 
-Row-level security means the public website can only **read** these tables. Only the import script, running on my own computer with a private key, can write to them. The vocabulary page refreshes from the database at most once an hour, so new content appears without redeploying the site.
-
-## Known issues
-
-- **Audio consistency.** The same word can come out with slightly different pacing or pitch between generations. The plan is to generate each word once, check it, and store the file instead of generating audio live.
-- **The audio endpoint is open.** `/api/speak` will turn any text into speech. Before wider release it needs limits so nobody can run up the ElevenLabs bill.
-
-## Roadmap
-
-1. Lock down `/api/speak` and pre-generate approved audio for every word
-2. Sentence Patterns and Sentence Structures sections, including common-mistake examples
-3. The ครับ/ค่ะ speech-style switch
-4. Survival Thai: visas, banking, landlords, doctors, driving
-5. Placement test
-6. Accounts, progress tracking and spaced repetition
-7. Role-play practice for real situations
+The public website can only read course content. Only the import script, run with a private key, can change it. The audio endpoint only speaks text that is in the course, so it can't be used to run up the ElevenLabs bill.
 
 ## Run it locally
 
@@ -72,14 +77,14 @@ cp .env.example .env.local   # then add your own Supabase and ElevenLabs keys
 npm run dev                  # opens at http://localhost:3000
 ```
 
-To load content, create the tables by running `supabase/001_vocabulary_and_sentences.sql` in the Supabase SQL editor, then run:
+Create the tables by running the files in `supabase/` (001 to 008) in order in the Supabase SQL editor, then load the content:
 
 ```bash
 node scripts/import-curriculum.js path/to/your-workbook.xlsx
 ```
 
-Keys go in `.env.local`, which is never committed (see `.gitignore`). On Vercel they are set as encrypted environment variables.
+Keys go in `.env.local`, which is never committed. On Vercel they are set as encrypted environment variables.
 
 ## About me
 
-I'm Jason Pshyk, a strategy and operations lead with an MBA and a PMP, based in Bangkok. This is a side project I build in my spare time, with Claude as a coding partner.
+I'm Jason Pshyk, a strategy and operations lead based in Bangkok, with an MBA and a PMP. Soi Talk is my side project. Feedback is welcome: jasonpshyk@gmail.com

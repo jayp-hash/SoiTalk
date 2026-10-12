@@ -696,7 +696,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
                 )}
                 <div className="fc-top-text">
                 <div className="fc-word-line">
-                  <span className="fc-word" lang="th">{word.thai}</span>
+                  <span className={`fc-word${[...word.thai].length > 8 ? ' is-long' : ''}`} lang="th">{word.thai}</span>
                   <span className="fc-word-roman">
                     <Roman text={word.romanization} mode={romanMode} revealed={isRevealed('back')} onReveal={() => reveal('back')} />
                   </span>

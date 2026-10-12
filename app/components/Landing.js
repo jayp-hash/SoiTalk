@@ -139,7 +139,7 @@ export default function Landing({ wordCount, demo, curve }) {
     : <a className="lp-btn" href="/today">Start learning free</a>;
   const curvePts = Object.entries(curve).map(([n, pct]) => ({ n: Number(n), pct }));
   const maxPct = Math.max(...curvePts.map((p) => p.pct), 1);
-  const goal = curvePts.find((p) => p.n >= 500) || curvePts[curvePts.length - 1] || { n: 500, pct: 50 };
+  const goal = curvePts.find((p) => p.n >= 300) || curvePts[curvePts.length - 1] || { n: 500, pct: 50 };
   const meter = useCountUp(goal.pct);
 
   return (
@@ -148,8 +148,7 @@ export default function Landing({ wordCount, demo, curve }) {
         <div className="lp-pitch">
           <div className="lp-brand">
             <SoiSign width={300} number={meter} title={`Soi Talk street sign showing ${meter}`} />
-            <p className="lp-tag">Thai for your street.</p>
-            <p className="lp-meter-note">The number on your sign is your street meter: the share of everyday Thai you understand. Learn {goal.n.toLocaleString('en')} words and it reads {goal.pct}.</p>
+            <p className="lp-meter-note">The number on your sign is your <b>street meter</b>: how much everyday Thai you understand. Learn the first {goal.n.toLocaleString('en')} words and it reads {goal.pct}%.</p>
           </div>
           <p className="lp-who-label" id="who-label">I'm learning Thai because</p>
           <div className="lp-who" role="group" aria-labelledby="who-label">
@@ -251,7 +250,7 @@ export default function Landing({ wordCount, demo, curve }) {
       </section>
 
       <footer className="lp-foot">
-        <span>Thai Study Companion · made in Bangkok</span>
+        <span>Soi Talk · made in Bangkok</span>
         <span><a href="/vocabulary">All words</a> · <a href="/privacy">Privacy</a></span>
       </footer>
     </main>

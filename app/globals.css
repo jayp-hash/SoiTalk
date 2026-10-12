@@ -897,3 +897,67 @@ body:has(.fc) .site-header { margin-bottom: 12px; padding-block: 14px; }
 .lp-btn { font-family: var(--font-sign), var(--font-body), sans-serif; font-weight: 700; background: var(--soi); border-radius: 8px; box-shadow: inset 0 0 0 2px var(--soi), inset 0 0 0 4px #fff; padding: 18px 28px; transition: background .15s; }
 .lp-btn:hover { background: var(--soi-ink); box-shadow: inset 0 0 0 2px var(--soi-ink), inset 0 0 0 4px #fff; }
 .lp-btn:active { transform: none; box-shadow: inset 0 0 0 2px var(--soi-ink), inset 0 0 0 4px #fff; }
+
+/* ---------- Soi Talk brand layer, app-wide (12 Oct) ----------
+   One primary colour (soi blue), flat sign-style buttons, soft shadows.
+   Category colours stay on the cards; green is no longer the brand. */
+:root {
+  --color-accent: #1D4FA0; --color-accent-dark: #0E2E63; --color-accent-soft: #E8EFFA;
+  --lift: 0 1px 2px rgba(14,46,99,.06), 0 10px 28px rgba(14,46,99,.08);
+}
+.fc, .today-wrap { --fc-primary: #1D4FA0; --fc-primary-edge: #0E2E63; }
+
+/* Header: fits a 360px phone (logo = home, so the Home link hides there) */
+.site-header nav { align-items: center; }
+.acct-signin, .acct-btn { background: var(--soi); box-shadow: none; white-space: nowrap; }
+.acct-signin { border-radius: 8px; }
+.acct-signin:hover, .acct-btn:hover { background: var(--soi-ink); }
+.acct-signin:active { transform: none; box-shadow: none; }
+@media (max-width: 560px) {
+  .site-header, body:has(.fc) .site-header { padding: 10px 16px; margin-bottom: 20px; }
+  .site-header .brand .soi-sign { width: 96px; }
+  .site-header nav, body:has(.fc) .site-header nav { gap: 14px; font-size: 14px; }
+  .site-header nav .nav-home { display: none; }
+  .acct-signin { padding: 7px 12px; }
+}
+
+/* Buttons: flat, no 3D edge */
+.auth-btn.primary, .fc-btn.primary, .sayit-btn { background: var(--soi); color: #fff; box-shadow: none; border-color: var(--soi); }
+.auth-btn.primary:hover, .fc-btn.primary:hover, .sayit-btn:hover { background: var(--soi-ink); }
+.auth-btn, .fc-btn, .fc-rate-btn, .fc-shuffle, .fc-aa, .fc-slow, .fc-help, .sayit-play, .fc-set select { box-shadow: none !important; }
+.fc-btn:active, .fc-rate-btn:active, .sayit-btn:active, .auth-btn:active { transform: scale(.98); box-shadow: none; }
+.fc-rate-btn.got { border-color: var(--cat); }
+.sayit-btn { background: #fff; color: #1B2A4A; border-radius: 8px; }
+.sayit-btn:hover { background: #E8EFFA; }
+.fc-play, .lp-play { box-shadow: 0 4px 12px rgba(14,46,99,.18); }
+.fc-play:hover { transform: none; box-shadow: 0 6px 16px rgba(14,46,99,.24), 0 0 0 8px var(--cat-tint); }
+.fc-play:active { transform: scale(.96); box-shadow: 0 2px 6px rgba(14,46,99,.2); }
+.fc-play.is-playing { box-shadow: 0 0 0 8px var(--cat-tint); }
+@keyframes fc-ring { 50% { box-shadow: 0 0 0 14px transparent; } }
+
+/* Cards and panels: soft lift instead of a hard bottom edge */
+.today-card, .auth-card, .lp-panel, .lp-face, .sayit { box-shadow: var(--lift); }
+.fc-face { box-shadow: var(--lift) !important; }
+
+/* Greens → soi blue */
+.today-eyebrow, .today-note a, .auth-link { color: var(--soi); }
+.today-meter-top b, .lp-curve-row b, .lp-big-th { color: var(--soi); }
+.today-bar i, .lp-ticks i, .lp-msg.me { background: var(--soi); }
+.today-due { background: var(--soi-tint); }
+.auth-form input:focus { border-color: var(--soi); }
+
+/* Flashcard back: long phrases stay on one line */
+.fc-word.is-long { font-size: calc(var(--fc-s, 1) * 30px); }
+
+/* Flashcard toolbar fits a 360px phone */
+@media (max-width: 560px) {
+  .fc-toolbar:has(.fc-set) { grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; }
+  .fc-toolbar:has(.fc-set) .fc-progress { display: none; }
+  .fc-set, .fc-set select { min-width: 0; width: 100%; }
+}
+.lp-meter-note b { color: var(--soi-ink); }
+
+/* Today card never wider than a small phone */
+.today-card { min-width: 0; max-width: 100%; }
+.today-card > * { min-width: 0; }
+.today-week { grid-template-columns: repeat(7, minmax(0, 1fr)); }
