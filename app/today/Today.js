@@ -1,14 +1,16 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Deck from '../vocabulary/Deck';
-import { useProgressStore, coverage, endOfToday, dayKey, GOAL_OPTIONS } from '../lib/progress';
+import { useProgressStore, coverage, countKnown, countLearning, endOfToday, dayKey, GOAL_OPTIONS } from '../lib/progress';
+import CheckSession from './Check';
 import { useUser } from '../lib/useUser';
 import { SAY_IT, sayItFor } from '../lib/sayit';
 import { supabaseBrowser } from '../lib/supabase-browser';
 import { readStore, writeStore, dayKey as todayKey } from '../lib/progress';
 import SoiSign from '../components/SoiSign';
 
-const MAX_REVIEWS = 30;    // review cap per day; any backlog rolls over, so a session stays ~5-7 minutes
+const REVIEW_CAP = 25;     // checks per day; any backlog rolls over, so a session stays ~5 minutes
+                           // (and new words pause while more than this are waiting)
 const EXTRA_NEW = 5;       // "Learn 5 more"
 const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice per session
 
@@ -61,7 +63,7 @@ const todayColour = () => THAI_DAY[new Date().getDay()].color;
 
 // The street meter: your sign shows how much everyday Thai you understand.
 // The bar is in the Thai flag's colours; milestones turn gold when reached.
-function Meter({ value, from, milestones = {}, knownCount = 0 }) {
+function Meter({ value, from, milestones = {}, knownCount = 0, learningCount = 0 }) {
   const miles = Object.entries(milestones).map(([n, p]) => ({ n: Number(n), p }));
   const reached = miles.filter((m) => knownCount >= m.n);
   return (
@@ -69,7 +71,9 @@ function Meter({ value, from, milestones = {}, knownCount = 0 }) {
       <div className="today-meter-top">
         <SoiSign width={168} th="ซอย" en="Your street" number={pct(value)} tab={false} gold={reached.length > 0}
           title={`Street meter: ${pct(value)} of everyday Thai`} />
-        <p className="today-meter-copy"><b>Your street meter</b>How much everyday Thai you understand. Milestones below are words learned; each one turns gold.</p>
+        <p className="today-meter-copy"><b>Your street meter</b>How much everyday Thai you'd understand right now. Words count more as they stick.
+          <span className="today-counts"><span><b>{knownCount}</b> known</span><span><b>{learningCount}</b> in progress</span></span>
+        </p>
       </div>
       <div className="today-bar flag" role="img" aria-label={`About ${pct(value)}`}>
         {from != null && <i className="was" style={{ width: width(from) }} />}
@@ -77,7 +81,7 @@ function Meter({ value, from, milestones = {}, knownCount = 0 }) {
         {miles.map((m) => <span key={m.n} className={`tick${knownCount >= m.n ? ' on' : ''}`} style={{ left: `${m.p}%` }} />)}
       </div>
       {miles.length > 0 && (
-        <ol className="today-miles" aria-label="Milestones: words learned">
+        <ol className="today-miles" aria-label="Milestones: known words">
           {miles.map((m) => (
             <li key={m.n} className={knownCount >= m.n ? 'on' : ''}>
               <b>{knownCount >= m.n && <span aria-hidden="true">✓ </span>}{m.n.toLocaleString('en')}</b><em>{m.p}%</em>
@@ -183,15 +187,18 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
 
 export default function Today({ words, milestones }) {
   const store = useProgressStore();
-  const { progress, goal, setGoal, streak, newToday, loaded, finishToday, days } = store;
+  const { progress, goal, setGoal, streak, newToday, loaded, finishToday, days, check } = store;
   const { user, ready } = useUser();
   // Items first studied before today (picks today's Say it line)
   const studiedBeforeToday = useMemo(() => {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     return Object.values(progress).filter((v) => v.intro < start.getTime()).length;
   }, [progress]);
-  const [mode, setMode] = useState('home'); // home | session | done
-  const [queue, setQueue] = useState([]);
+  const [mode, setMode] = useState('home'); // home | checks | session | done
+  const [queue, setQueue] = useState([]);       // new words (flashcards)
+  const [checkQueue, setCheckQueue] = useState([]); // words due for a check
+  const [score, setScore] = useState(null);     // { right, total } from today's checks
+  const [run, setRun] = useState(0);            // remounts the check session each time
   const [before, setBefore] = useState(0);
   const repeats = useRef(new Map());
   const reviewedInSession = useRef(0);
@@ -199,30 +206,40 @@ export default function Today({ words, milestones }) {
   // What's waiting today
   const plan = useMemo(() => {
     const cutoff = endOfToday();
-    const due = words
+    const allDue = words
       .filter((w) => progress[w.thai] && progress[w.thai].due <= cutoff)
-      .sort((a, b) => progress[a.thai].due - progress[b.thai].due)
-      .slice(0, MAX_REVIEWS);
+      .sort((a, b) => progress[a.thai].due - progress[b.thai].due);
+    const due = allDue.slice(0, REVIEW_CAP);
     const fresh = words.filter((w) => !progress[w.thai]);
-    const newLeft = Math.max(goal - newToday, 0);
-    return { due, fresh, newLeft, newCards: fresh.slice(0, newLeft) };
+    const paused = allDue.length > REVIEW_CAP; // catch up before adding more
+    const newLeft = paused ? 0 : Math.max(goal - newToday, 0);
+    return { due, fresh, newLeft, paused, newCards: fresh.slice(0, newLeft) };
   }, [words, progress, goal, newToday]);
 
   const known = useMemo(() => coverage(words, progress), [words, progress]);
-  const knownCount = useMemo(() => words.filter((w) => (progress[w.thai]?.got || 0) >= 1).length, [words, progress]);
+  const knownCount = useMemo(() => countKnown(words, progress), [words, progress]);
+  const learningCount = useMemo(() => countLearning(words, progress), [words, progress]);
   // Days you said the line out loud (stars on the week); refreshed when you tick it
   const [said, setSaidDays] = useState({});
   const refreshSaid = () => setSaidDays(readStore(SAID_KEY, {}));
   useEffect(refreshSaid, []);
   const day = THAI_DAY[new Date().getDay()];
 
-  const start = (cards) => {
+  // Checks first (words you've met before), then today's new words
+  const start = (checks, news) => {
     repeats.current = new Map();
     reviewedInSession.current = 0;
     setBefore(known);
-    setQueue(cards);
-    setMode('session');
+    setScore(null);
+    setCheckQueue(checks);
+    setQueue(news);
+    setRun((n) => n + 1);
+    setMode(checks.length ? 'checks' : 'session');
     window.scrollTo(0, 0);
+  };
+  const afterChecks = (result) => {
+    setScore(result);
+    if (queue.length) { setMode('session'); window.scrollTo(0, 0); } else onDone();
   };
 
   // "Still learning": the card comes back later in this session
@@ -239,6 +256,13 @@ export default function Today({ words, milestones }) {
   const onDone = () => { finishToday(); setMode('done'); window.scrollTo(0, 0); };
 
   if (!loaded) return <div className="today-wrap"><p className="today-note">Loading…</p></div>;
+
+  if (mode === 'checks') {
+    return (
+      <CheckSession key={run} queue={checkQueue} allWords={words} progress={progress}
+        onAnswer={(w, grade, opts) => check(w.thai, grade, opts)} onDone={afterChecks} onQuit={() => setMode('home')} />
+    );
+  }
 
   if (mode === 'session') {
     return (
@@ -261,18 +285,19 @@ export default function Today({ words, milestones }) {
       {mode === 'done' ? (
         <div className="today-card today-done">
           <p className="today-eyebrow">Session complete</p>
-          <h1 className="today-title">Nice work!</h1>
+          <h1 className="today-title">Done for today</h1>
           <p className="today-goal-done"><i style={{ background: day.color }} />Today's goal is done. {day.full} lights up {day.colour} on your week.</p>
           <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
           <div className="today-stats">
-            <div><b>{reviewedInSession.current}</b><span>cards studied</span></div>
+            {score?.total > 0 && <div><b>{score.right}/{score.total}</b><span>remembered</span></div>}
+            {reviewedInSession.current > 0 && <div><b>{new Set(queue.map((w) => w.thai)).size}</b><span>new words met</span></div>}
             <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
           </div>
           <Week days={days} said={said} />
-          <Meter value={known} from={before} milestones={milestones} knownCount={knownCount} />
+          <Meter value={known} from={before} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />
           <div className="today-actions">
             {plan.fresh.length > 0 && (
-              <button type="button" className="auth-btn primary" onClick={() => start(plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more words</button>
+              <button type="button" className="auth-btn primary" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more words</button>
             )}
             <a className="auth-btn google" href="/vocabulary">Browse all words</a>
           </div>
@@ -293,22 +318,24 @@ export default function Today({ words, milestones }) {
               <div className="today-step-body">
                 <div><strong>Goal done ✓</strong><span>{day.full} lights up {day.colour} on your week. See you tomorrow.</span></div>
                 {plan.fresh.length > 0 && (
-                  <button type="button" className="auth-btn primary" onClick={() => start(plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more</button>
+                  <button type="button" className="auth-btn primary" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more</button>
                 )}
               </div>
             ) : (
               <div className="today-step-body">
                 <div>
                   <strong>
-                    {brandNew ? 'Learn your first ' : 'Learn '}{plan.newCards.length > 0 ? `${plan.newCards.length} ${brandNew ? '' : 'new '}word${plan.newCards.length === 1 ? '' : 's'}` : ''}
-                    {plan.due.length > 0 ? `${plan.newCards.length > 0 ? ' and review ' : 'Review '}${plan.due.length}` : ''}
+                    {[
+                      plan.due.length > 0 ? `Check ${plan.due.length} word${plan.due.length === 1 ? '' : 's'}` : null,
+                      plan.newCards.length > 0 ? `${brandNew ? 'Learn your first' : 'learn'} ${plan.newCards.length} ${brandNew ? '' : 'new '}word${plan.newCards.length === 1 ? '' : 's'}` : null,
+                    ].filter(Boolean).join(', then ').replace(/^l/, 'L')}
                   </strong>
                   <span>
                     {brandNew && plan.newCards[0] ? <>Starting with <span lang="th">{plan.newCards[0].thai}</span> ({plan.newCards[0].romanization}). </> : null}
-                    About {Math.max(1, Math.round((plan.due.length * 10 + plan.newCards.length * 25) / 60))} minutes. Finish them and {day.full} lights up {day.colour}.
+                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25) / 60))} minutes. Finish and {day.full} lights up {day.colour}.
                   </span>
                 </div>
-                <button type="button" className="auth-btn primary today-start" onClick={() => start([...plan.due, ...plan.newCards])}>Start</button>
+                <button type="button" className="auth-btn primary today-start" onClick={() => start(plan.due, plan.newCards)}>Start</button>
               </div>
             )}
           </section>
@@ -316,7 +343,7 @@ export default function Today({ words, milestones }) {
           <section className="today-progress" aria-label="Your progress">
             <p className="today-section-label">Your week</p>
             <Week days={days} said={said} />
-            <Meter value={known} milestones={milestones} knownCount={knownCount} />
+            <Meter value={known} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />
           </section>
 
           <div className="today-goal">

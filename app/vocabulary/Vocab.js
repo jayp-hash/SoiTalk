@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Deck from './Deck';
 import TopicIcon from './TopicIcon';
 import { useProgressStore } from '../lib/progress';
+import { isKnown as knownEntry } from '../lib/memory';
 import { TOPIC_GROUPS, TOPIC_HERO } from '../lib/categories';
 
 // /vocabulary: a topic page first, then the cards for what you pick.
@@ -44,7 +45,9 @@ const shortMeaning = (en = '') => en.split(';')[0].replace(/[()]/g, '').trim();
 
 function TopicPage({ words, onOpen }) {
   const { progress } = useProgressStore();
-  const isKnown = (w) => (progress[w.thai]?.got || 0) >= 1;
+  // 'Met' = in your memory (from Today); 'known' = checked over time (lib/memory.js)
+  const isMet = (w) => !!progress[w.thai];
+  const isKnown = (w) => knownEntry(progress[w.thai]);
   const topics = useMemo(() => {
     const map = new Map();
     for (const w of words) {
@@ -57,8 +60,9 @@ function TopicPage({ words, onOpen }) {
   }, [words]);
 
   // Where "All words" picks up: the set holding the first word not learned yet
-  const learnedAll = words.filter(isKnown).length;
-  const firstGap = words.findIndex((w) => !isKnown(w));
+  const learnedAll = words.filter(isMet).length;
+  const knownAll = words.filter(isKnown).length;
+  const firstGap = words.findIndex((w) => !isMet(w));
   const nextSet = firstGap < 0 ? 0 : Math.floor(firstGap / SET_SIZE);
   const started = learnedAll > 0;
   const group = (label) => (TOPIC_GROUPS.find((g) => g.label === label)?.names || []).map((n) => topics.get(n)).filter(Boolean);
@@ -70,7 +74,7 @@ function TopicPage({ words, onOpen }) {
     <div className="tp">
       <div className="tp-head">
         <h1>Word library</h1>
-        <p>Browse words by topic. Your daily lesson is on Today.</p>
+        <p>Browse and practise by topic. Words are added and checked on Today.</p>
       </div>
 
       {/* Today is the main path; the library points there */}
@@ -80,7 +84,7 @@ function TopicPage({ words, onOpen }) {
           <span className="tp-start-title">{started ? 'Continue on Today' : 'Start on Today'}</span>
           <span className="tp-start-sub">
             {started
-              ? <>{learnedAll} of {words.length.toLocaleString('en')} words learned. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
+              ? <>{learnedAll} words met, {knownAll} known. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
               : <>A few new words a day, most useful first. First up: <span lang="th">สวัสดี</span> (sà-wàt-dii), hello.</>}
           </span>
           {started && <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(learnedAll / words.length) * 100}%` }} /></span>}
@@ -94,7 +98,8 @@ function TopicPage({ words, onOpen }) {
         <h2 id="tp-start-here">Everyday topics</h2>
         <div className="tp-tiles">
           {startHere.map((t, i) => {
-            const done = t.words.filter(isKnown).length;
+            const done = t.words.filter(isMet).length;
+            const known = t.words.filter(isKnown).length;
             return (
               <button key={t.name} type="button" className={`tp-tile${i === 0 ? ' is-wide' : ''}`} style={{ '--tc': t.color }} onClick={() => onOpen(t.name)}>
                 <span className="tp-tile-top">
@@ -106,13 +111,13 @@ function TopicPage({ words, onOpen }) {
                   <span className="rom">{t.hero.romanization}</span>
                   <span className="en">{shortMeaning(t.hero.english)}</span>
                 </span>
-                {done > 0 && done < t.words.length && (
+                {done > 0 && known < t.words.length && (
                   <span className="tp-tile-progress">
                     <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(done / t.words.length) * 100}%` }} /></span>
-                    <span>{done} of {t.words.length}</span>
+                    <span>{done} met{known ? ` · ${known} known` : ''}</span>
                   </span>
                 )}
-                {done > 0 && done >= t.words.length && <span className="tp-done">✓ Done</span>}
+                {known >= t.words.length && <span className="tp-done">✓ All known</span>}
               </button>
             );
           })}
@@ -124,12 +129,13 @@ function TopicPage({ words, onOpen }) {
         <p className="tp-section-sub">Verbs, describing words and the small words that hold sentences together.</p>
         <div className="tp-chips">
           {blocks.map((t) => {
-            const done = t.words.filter(isKnown).length;
+            const done = t.words.filter(isMet).length;
+            const known = t.words.filter(isKnown).length;
             return (
               <button key={t.name} type="button" className="tp-chip" style={{ '--tc': t.color }} onClick={() => onOpen(t.name)}>
                 <span className="tp-icon sm"><TopicIcon name={t.name} size={18} /></span>
                 <span className="tp-chip-name">{t.name}</span>
-                <span className="tp-chip-n">{done >= t.words.length ? '✓ Done' : done > 0 ? `${done} of ${t.words.length}` : `${t.words.length} words`}</span>
+                <span className="tp-chip-n">{known >= t.words.length ? '✓ All known' : done > 0 ? `${done} of ${t.words.length} met` : `${t.words.length} words`}</span>
               </button>
             );
           })}

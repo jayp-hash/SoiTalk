@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { supabaseBrowser } from './supabase-browser';
 import { useUser } from './useUser';
+import { introduce, afterCheck, meterWeight, isKnown } from './memory';
 
 // ---------------------------------------------------------------------
 // Learning progress, shared by the Today session and the full deck.
@@ -9,24 +10,25 @@ import { useUser } from './useUser';
 // Always saved in this browser (works without an account). When signed
 // in, also saved to the account so it follows you to other devices.
 //
-// progress = { "ที่": { got: 3, seen, due, intro }, ... }   (times in ms)
-//   got   = "Got it" presses in a row (Still learning resets it to 0)
-//   seen  = last time you rated it
-//   due   = when it should come back for review
-//   intro = the first time you studied it (used to count new words per day)
+// progress = { "ที่": { s, d, last, seen, due, intro, checks, lapses, longest, got }, ... }
+//   s, d    = memory stability (days) and difficulty: see lib/memory.js
+//   last    = last time it was checked (or first met)
+//   due     = when the next check is due
+//   intro   = the first time you met it (used to count new words per day)
+//   checks / lapses = right / wrong checks; longest = longest gap (days) before a right answer
+//   got     = right checks in a row (drives the fading help on cards)
 // days = { "2026-10-07": { reviewed: 14, done: true }, ... }
 // ---------------------------------------------------------------------
 
-export const PROGRESS_KEY = 'tsc-progress';
+// 'tsc-memory' replaced 'tsc-progress' (12 Oct 2026) when words started being
+// checked over time; the old one-tap progress is not carried over.
+export const PROGRESS_KEY = 'tsc-memory';
 const DAYS_KEY = 'tsc-days';
 const GOAL_KEY = 'tsc-goal';
 export const GOAL_OPTIONS = [5, 10, 15, 20, 30];
 export const DEFAULT_GOAL = 5; // eager learners can raise it on the Today screen
 
 const DAY = 24 * 60 * 60 * 1000;
-// Spaced repetition: each "Got it" in a row waits longer before the word comes back.
-const INTERVAL_DAYS = [1, 3, 7, 14, 30, 60];
-const intervalFor = (got) => (got <= 0 ? 0 : INTERVAL_DAYS[Math.min(got, INTERVAL_DAYS.length) - 1] * DAY);
 
 export const readStore = (key, fallback) => {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
@@ -43,16 +45,23 @@ export const dayKey = (t = Date.now()) => {
 export const endOfToday = () => { const d = new Date(); d.setHours(23, 59, 59, 999); return d.getTime(); };
 const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
 
-// Fill in fields that older saved progress doesn't have yet
-const normalise = (v) => {
-  const seen = v.seen || Date.now();
-  return { got: v.got || 0, seen, due: v.due ?? seen + intervalFor(v.got || 0), intro: v.intro || seen };
-};
-const normaliseAll = (p) => Object.fromEntries(Object.entries(p || {}).map(([k, v]) => [k, normalise(v)]));
+// Keep only entries in the memory format (old one-tap rows have no stability)
+const normalise = (v) => (v && v.s > 0 ? {
+  s: v.s, d: v.d || 5, last: v.last || v.seen, seen: v.seen || v.last, due: v.due, intro: v.intro || v.seen,
+  checks: v.checks || 0, lapses: v.lapses || 0, longest: v.longest || 0, got: v.got || 0,
+} : null);
+const normaliseAll = (p) => Object.fromEntries(Object.entries(p || {}).map(([k, v]) => [k, normalise(v)]).filter(([, v]) => v));
 
 const iso = (t) => new Date(t).toISOString();
-const toRow = (userId, thai, v) => ({ user_id: userId, thai, got: v.got, seen: iso(v.seen), due: iso(v.due), introduced_at: iso(v.intro) });
-const fromRow = (r) => normalise({ got: r.got, seen: Date.parse(r.seen), due: r.due ? Date.parse(r.due) : undefined, intro: r.introduced_at ? Date.parse(r.introduced_at) : undefined });
+const toRow = (userId, thai, v) => ({
+  user_id: userId, thai, got: v.got, seen: iso(v.seen), due: iso(v.due), introduced_at: iso(v.intro),
+  stability: v.s, difficulty: v.d, last_check: iso(v.last), checks: v.checks, lapses: v.lapses, longest_gap: v.longest,
+});
+const fromRow = (r) => normalise({
+  s: r.stability, d: r.difficulty, last: r.last_check ? Date.parse(r.last_check) : undefined, seen: Date.parse(r.seen),
+  due: r.due ? Date.parse(r.due) : undefined, intro: r.introduced_at ? Date.parse(r.introduced_at) : undefined,
+  checks: r.checks, lapses: r.lapses, longest: r.longest_gap, got: r.got,
+});
 
 async function loadAll(db, table, select) {
   const all = [];
@@ -79,18 +88,24 @@ export function streakFrom(days) {
 // 1/r as often as the most common word. So the share of everyday Thai you
 // can follow ≈ sum of 1/rank for the words you know, divided by the same
 // sum over an everyday vocabulary of ~10,000 words.
+// Each word counts by the chance you'd recognise it right now (memory.js),
+// so the meter reflects real memory, not taps.
 const EVERYDAY_VOCAB = 10000;
 let H = 0; for (let r = 1; r <= EVERYDAY_VOCAB; r++) H += 1 / r;
 export function coverage(words, progress, extraKnown) {
   let sum = 0;
   for (const w of words) {
-    const known = (progress[w.thai]?.got || 0) >= 1 || extraKnown?.has(w.thai);
-    if (!known) continue;
+    const weight = extraKnown?.has(w.thai) ? 1 : meterWeight(progress[w.thai]);
+    if (!weight) continue;
     const rank = w.frequencyRank > 0 ? w.frequencyRank : 2000 + w.position; // unranked words count as rare
-    sum += 1 / rank;
+    sum += weight / rank;
   }
   return Math.min(sum / H, 0.99);
 }
+
+// Words that count as Known (checked over time), and words in progress
+export const countKnown = (words, progress) => words.filter((w) => isKnown(progress[w.thai])).length;
+export const countLearning = (words, progress) => words.filter((w) => progress[w.thai] && !isKnown(progress[w.thai])).length;
 
 // --- The shared state --------------------------------------------------
 const ProgressContext = createContext(null);
@@ -117,8 +132,8 @@ export function ProgressProvider({ children }) {
     (async () => {
       const db = supabaseBrowser();
       try {
-        const rows = await loadAll(db, 'word_progress', 'thai, got, seen, due, introduced_at');
-        const remote = Object.fromEntries(rows.map((r) => [r.thai, fromRow(r)]));
+        const rows = await loadAll(db, 'word_progress', 'thai, got, seen, due, introduced_at, stability, difficulty, last_check, checks, lapses, longest_gap');
+        const remote = Object.fromEntries(rows.map((r) => [r.thai, fromRow(r)]).filter(([, v]) => v));
         const local = normaliseAll(readStore(PROGRESS_KEY, {}));
         const merged = { ...remote };
         const upload = [];
@@ -172,11 +187,9 @@ export function ProgressProvider({ children }) {
     return next;
   });
 
-  const rate = (thai, knewIt) => {
+  const update = (thai, fn) => {
     setProgress((p) => {
-      const now = Date.now();
-      const got = knewIt ? (p[thai]?.got || 0) + 1 : 0; // "Still learning" = full help again
-      const entry = { got, seen: now, due: now + intervalFor(got), intro: p[thai]?.intro || now };
+      const entry = fn(p[thai]);
       const next = { ...p, [thai]: entry };
       writeStore(PROGRESS_KEY, next);
       save('word_progress', toRow(userId, thai, entry));
@@ -184,6 +197,10 @@ export function ProgressProvider({ children }) {
     });
     bumpDay((cur) => ({ ...cur, reviewed: cur.reviewed + 1 }));
   };
+  // First time you meet a word (flashcard in Today). Self-rated, so it only sets a small starting strength.
+  const learn = (thai, knewIt) => update(thai, (prev) => introduce(prev, knewIt));
+  // A listen-and-choose check. grade: 'good' | 'hard' (used a hint) | 'again'
+  const check = (thai, grade, opts) => update(thai, (prev) => afterCheck(prev, grade, Date.now(), opts));
 
   const finishToday = () => bumpDay((cur) => ({ ...cur, done: true }));
 
@@ -200,7 +217,7 @@ export function ProgressProvider({ children }) {
   };
 
   const value = useMemo(() => ({
-    progress, days, goal, loaded, rate, reset, finishToday, setGoal,
+    progress, days, goal, loaded, learn, check, reset, finishToday, setGoal,
     streak: streakFrom(days),
     newToday: Object.values(progress).filter((v) => v.intro >= startOfToday()).length,
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -23,9 +23,10 @@ I spent about 15 years in English teaching and EdTech, including a platform laun
 - **1,083 words in learner order.** Survival words and phrases first (greetings, food, getting around), everyday Thai next, formal and news Thai last. Every card shows which topic it belongs to, and you can study one topic at a time.
 - **Sentences that only use words you've met.** Each card's example sentence is built from earlier words in the course, so you can always work it out. Tap any word in the sentence to hear it on its own.
 - **Real Thai audio.** Every word and sentence can be played, with a slow mode. Audio comes from ElevenLabs and is cached after the first play.
-- **Today screen.** Cards that are due for review plus 5 new words a day (you can pick 10 to 30). Reviews come back after 1, 3, 7, 14, 30 and 60 days.
+- **Today screen.** A short listening check on words you've met before, then 5 new words a day (you can pick 10 to 30).
+- **Memory tracked over time, not taps.** Each word has a memory strength based on FSRS, the open scheduling algorithm Anki uses. Only listening checks (hear it, pick the meaning from 5, no sound-alike options) make a word stronger, and a right answer after a long gap counts far more than one a few minutes later. A word is "known" once you'd very likely still recognise it three weeks later and you've proved it after a gap of a week or more.
 - **Say it Today.** One short line a day to say out loud to someone real, like the condo guard or a taxi driver, and an "I said it!" button.
-- **Street meter.** An estimate of how much everyday Thai you understand, based on how often Thai people use each word you know.
+- **Street meter.** An estimate of how much everyday Thai you'd understand right now: each word counts by how often Thai people use it and how likely you are to remember it today.
 - **Thailand's colours of the day.** The week strip uses the traditional colour for each day (yellow Monday, pink Tuesday and so on) instead of a streak flame.
 - **Accounts.** Study without signing up. Sign in with Google or email to keep your progress on every device.
 
@@ -65,7 +66,7 @@ How the data fits together:
 - `vocabulary`: one row per word (Thai, romanization, English, frequency rank, topic, course order)
 - `sentences`: one row per example sentence, with its review status
 - `word_sentences`: links words to the sentences they appear in, and marks each card's chosen sentence
-- `profiles`, `word_progress`, `study_days`, `said_it`: each user's settings and progress, readable only by that user
+- `profiles`, `word_progress` (memory strength per word), `study_days`, `said_it`: each user's settings and progress, readable only by that user
 
 The public website can only read course content. Only the import script, run with a private key, can change it. The audio endpoint only speaks text that is in the course, so it can't be used to run up the ElevenLabs bill.
 
@@ -77,7 +78,7 @@ cp .env.example .env.local   # then add your own Supabase and ElevenLabs keys
 npm run dev                  # opens at http://localhost:3000
 ```
 
-Create the tables by running the files in `supabase/` (001 to 008) in order in the Supabase SQL editor, then load the content:
+Create the tables by running the files in `supabase/` (001 to 009) in order in the Supabase SQL editor, then load the content:
 
 ```bash
 node scripts/import-curriculum.js path/to/your-workbook.xlsx

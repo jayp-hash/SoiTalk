@@ -337,7 +337,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
   const [flipped, setFlipped] = useState(false);
   const player = usePlayer();
   const [help, setHelp] = useHelpSettings();
-  const { progress, rate: rateWord, reset: resetProgress } = useProgressStore();
+  const { progress, learn: learnWord, reset: resetProgress } = useProgressStore();
   const [panelOpen, setPanelOpen] = useState(false);
   const [tipsSeen, setTipsSeen] = useState(() => new Set());
   useEffect(() => { setTipsSeen(new Set(readStore(TIPS_KEY, []))); }, []);
@@ -553,7 +553,8 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
   // "Still learning" / "Got it": record it for this word, then go to the next card
   const rateCard = (knewIt) => {
     if (!word) return;
-    rateWord(word.thai, knewIt);
+    // Only Today's session puts a word into your memory; the Word library is practice
+    if (session) learnWord(word.thai, knewIt);
     if (!session) { next(); return; }
     const requeued = onRated?.(word, knewIt);
     if (isLastCard && !requeued) { stop(); onDone?.(); return; }

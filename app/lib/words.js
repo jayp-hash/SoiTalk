@@ -37,7 +37,9 @@ export async function loadWords() {
     thai: w.thai,
     romanization: w.romanization,
     english: w.english,
-    frequencyRank: ordinal.get(w.thai) || null, // for the everyday-Thai estimate
+    // For the everyday-Thai estimate. Survival phrases (สวัสดี, ขอบคุณ...) aren't in the
+    // word-frequency lists, but people hear them constantly: estimate them as common.
+    frequencyRank: ordinal.get(w.thai) || (w.category === 'Useful phrases' ? 100 + i : null),
     category: categoryFor(w.category), // { name, color, edge } for the card's band
     // One sample sentence per card: the one chosen in the Sentence Worksheet.
     // Words without a chosen sentence show "coming soon" for now.
