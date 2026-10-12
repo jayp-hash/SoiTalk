@@ -1,4 +1,4 @@
-import Deck from './Deck';
+import Vocab from './Vocab';
 import { loadWords } from '../lib/words';
 import { ProgressProvider } from '../lib/progress';
 
@@ -16,12 +16,8 @@ export default async function VocabularyPage() {
 
   return (
     <main className="page">
-      {/* Compact title, so the whole card fits on screen without scrolling */}
-      {/* The header already says Vocabulary; the title stays for screen readers only */}
-      <h1 className="sr-only">Vocabulary flashcards, most useful first</h1>
-
       <ProgressProvider>
-        <Deck words={words} />
+        <Vocab words={words} />
       </ProgressProvider>
     </main>
   );

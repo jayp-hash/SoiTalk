@@ -1094,3 +1094,76 @@ body:has(.fc) .page { padding-bottom: 0; }
 .today-week .rom { min-height: 2.3em; display: flex; align-items: flex-start; justify-content: center; font-size: 10.5px; }
 @media (max-width: 560px) { .today-card { padding: 22px 16px; } }
 @media (min-width: 561px) { .today-week .rom { min-height: 0; white-space: nowrap; font-size: 11.5px; } }
+
+/* ---------- Today: goal vs bonus, day colours, flag-colour street meter (12 Oct) ---------- */
+.today-daydot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: -1px; box-shadow: 0 0 0 3px #fff; }
+.today-bonus { display: inline-block; margin-right: 8px; padding: 3px 7px; border-radius: 6px; background: #FFC83D; color: #1B2A4A; font: 800 10px/1 var(--font-body), sans-serif; letter-spacing: .08em; vertical-align: 1px; }
+.today-goal-done { margin: 0; display: flex; align-items: center; gap: 10px; font-weight: 700; color: #1f2533; }
+.today-goal-done i { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+.today-week .dot { position: relative; }
+.today-week .star { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: #FFC83D; color: #1B2A4A;
+  font: 700 11px/18px var(--font-body), sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff; }
+.today-week li.done .dot { box-shadow: none; }
+
+.today-meter { display: grid; gap: 12px; }
+.today-meter-top { display: flex; align-items: center; gap: 16px; }
+.today-meter-top .soi-sign { flex: none; height: auto; filter: drop-shadow(0 4px 10px rgba(14,46,99,.16)); }
+.today-meter-copy { margin: 0; font-size: 14px; line-height: 1.45; color: #4f5868; }
+.today-meter-copy b { display: block; font: 800 16px/1.3 var(--font-body), sans-serif; color: #1f2533; }
+/* Thai flag stripes: red, white, blue (double), white, red */
+.today-bar.flag { height: 20px; background: #EEF1F6; overflow: visible; }
+.today-bar.flag > i { border-radius: 4px; background: linear-gradient(to bottom, #A51931 0 16.66%, #F4F5F8 16.66% 33.33%, #2D2A4A 33.33% 66.66%, #F4F5F8 66.66% 83.33%, #A51931 83.33% 100%); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+.today-bar.flag > i.was { opacity: .35; }
+.today-bar.flag { border-radius: 4px; }
+.today-bar .tick { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: #C3CAD6; border-radius: 1px; }
+.today-bar .tick.on { background: #C9971F; }
+.today-miles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.today-miles li { border: 1px solid #E1E5EC; border-radius: 10px; padding: 7px 6px; text-align: center; display: grid; gap: 2px; background: #fff; }
+.today-miles b { font: 800 14px/1 var(--font-body), sans-serif; color: #1f2533; }
+.today-miles span { font: 600 10.5px/1.2 var(--font-body), sans-serif; color: #8A93A5; }
+.today-miles li.on { border-color: #D9A93A; background: linear-gradient(135deg, #FFF6DC, #FBE7B0); }
+.today-miles li.on b { color: #7A5410; }
+.today-miles li.on span { color: #8A6A2A; }
+@media (max-width: 560px) {
+  .today-meter-top { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .today-miles { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .today-miles li { padding: 6px 2px; }
+}
+
+/* ---------- Vocabulary: topic page (12 Oct) ---------- */
+.tp { max-width: 960px; margin: 0 auto; padding-bottom: 48px; display: grid; gap: 28px; }
+.tp-head h1 { font: 700 clamp(26px, 3.4vw, 34px)/1.15 var(--font-sign), var(--font-display), sans-serif; margin: 0; color: #1f2533; }
+.tp-head p { margin: 6px 0 0; color: #6b7385; }
+.tp-all { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 18px; text-align: left; cursor: pointer;
+  background: var(--soi); color: #fff; border: 0; border-radius: 16px; padding: 20px 22px; box-shadow: var(--lift); font: inherit; transition: background .15s, transform .15s; }
+.tp-all:hover { background: var(--soi-ink); transform: translateY(-1px); }
+.tp-all-tag { grid-column: 1 / -1; justify-self: start; font: 800 10.5px/1 var(--font-body), sans-serif; letter-spacing: .1em; text-transform: uppercase; background: #FFC83D; color: #1B2A4A; padding: 4px 8px; border-radius: 6px; }
+.tp-all-title { grid-column: 1 / -1; font: 700 22px/1.2 var(--font-sign), sans-serif; }
+.tp-all-sub { grid-column: 1 / -1; color: #D6E0F3; font-size: 15px; }
+.tp-all .tp-progress { background: rgba(255,255,255,.2); }
+.tp-all .tp-progress i { background: #fff; }
+.tp-all .tp-count { color: #fff; }
+.tp-group h2 { margin: 0 0 12px; font: 800 12px/1 var(--font-body), sans-serif; letter-spacing: .12em; text-transform: uppercase; color: #6b7385; }
+.tp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.tp-tile { display: grid; grid-template-rows: auto 1fr; text-align: left; padding: 0; border: 1px solid #E1E5EC; border-radius: 16px; overflow: hidden;
+  background: #fff; cursor: pointer; font: inherit; color: #1f2533; box-shadow: 0 1px 2px rgba(14,46,99,.05); transition: transform .15s, box-shadow .15s, border-color .15s; }
+.tp-tile:hover { transform: translateY(-2px); box-shadow: var(--lift); border-color: color-mix(in srgb, var(--tc) 45%, #E1E5EC); }
+.tp-tile:focus-visible, .tp-all:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
+.tp-band { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--tc); color: #fff; padding: 12px 16px; }
+.tp-band b { font: 800 15px/1.2 var(--font-body), sans-serif; }
+.tp-band small { font: 700 12px/1 var(--font-body), sans-serif; opacity: .85; white-space: nowrap; }
+.tp-body { display: grid; gap: 12px; padding: 14px 16px 16px; align-content: start; }
+.tp-blurb { font-size: 14px; color: #4f5868; line-height: 1.4; }
+.tp-samples { display: grid; gap: 8px; }
+.tp-sample { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: baseline; }
+.tp-sample .th { grid-row: 1 / 3; font: 700 22px/1.5 var(--font-thai), sans-serif; min-width: 3.2em; }
+.tp-sample .rom { font: italic 600 13px/1.2 var(--font-body), sans-serif; color: #6b7385; }
+.tp-sample .en { font: 600 13px/1.2 var(--font-body), sans-serif; color: #1f2533; }
+.tp-foot { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; margin-top: 2px; }
+.tp-progress { height: 6px; border-radius: 99px; background: #EEF1F6; overflow: hidden; display: block; }
+.tp-progress i { display: block; height: 100%; background: var(--tc, var(--soi)); border-radius: 99px; }
+.tp-count { font: 700 12px/1 var(--font-body), sans-serif; color: #8A93A5; white-space: nowrap; }
+.fc-topic-btn .grid { width: 14px; height: 14px; color: var(--soi); flex: none; }
+.today-meter-copy { font-weight: 400; }
+.today-miles em { font: 800 11px/1 var(--font-body), sans-serif; font-style: normal; color: var(--soi); }
+.today-miles li.on em { color: #7A5410; }

@@ -6,6 +6,7 @@ import { useUser } from '../lib/useUser';
 import { SAY_IT, sayItFor } from '../lib/sayit';
 import { supabaseBrowser } from '../lib/supabase-browser';
 import { readStore, writeStore, dayKey as todayKey } from '../lib/progress';
+import SoiSign from '../components/SoiSign';
 
 const MAX_REVIEWS = 30;    // review cap per day; any backlog rolls over, so a session stays ~5-7 minutes
 const EXTRA_NEW = 5;       // "Learn 5 more"
@@ -17,25 +18,28 @@ const pct = (x) => `${Math.round(x * 100)}%`;
 // yellow, Tuesday pink, Wednesday green, Thursday orange, Friday blue,
 // Saturday purple). A finished day fills with its colour.
 const THAI_DAY = [
-  { en: 'Sun', th: 'อา', rom: 'aa-thít', color: '#E5383B' },
-  { en: 'Mon', th: 'จ', rom: 'jan', color: '#F2C200' },
-  { en: 'Tue', th: 'อ', rom: 'ang-khaan', color: '#EC6AA8' },
-  { en: 'Wed', th: 'พ', rom: 'phút', color: '#2BA84A' },
-  { en: 'Thu', th: 'พฤ', rom: 'phá-rúe-hàt', color: '#F28C28' },
-  { en: 'Fri', th: 'ศ', rom: 'sùk', color: '#3A8DDE' },
-  { en: 'Sat', th: 'ส', rom: 'sǎo', color: '#8E5CC9' },
+  { en: 'Sun', full: 'Sunday', th: 'อา', rom: 'aa-thít', colour: 'red', color: '#E5383B' },
+  { en: 'Mon', full: 'Monday', th: 'จ', rom: 'jan', colour: 'yellow', color: '#F2C200' },
+  { en: 'Tue', full: 'Tuesday', th: 'อ', rom: 'ang-khaan', colour: 'pink', color: '#EC6AA8' },
+  { en: 'Wed', full: 'Wednesday', th: 'พ', rom: 'phút', colour: 'green', color: '#2BA84A' },
+  { en: 'Thu', full: 'Thursday', th: 'พฤ', rom: 'phá-rúe-hàt', colour: 'orange', color: '#F28C28' },
+  { en: 'Fri', full: 'Friday', th: 'ศ', rom: 'sùk', colour: 'blue', color: '#3A8DDE' },
+  { en: 'Sat', full: 'Saturday', th: 'ส', rom: 'sǎo', colour: 'purple', color: '#8E5CC9' },
 ];
 
-function Week({ days }) {
+// A day fills with its colour when the day's goal (the words) is done;
+// a star means you also said that day's line out loud (the bonus).
+function Week({ days, said = {} }) {
   const cells = [];
   for (let back = 6; back >= 0; back--) {
     const t = Date.now() - back * 864e5;
     const d = THAI_DAY[new Date(t).getDay()];
     const done = !!days[dayKey(t)]?.done;
+    const star = said[dayKey(t)] != null;
     cells.push(
       <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': d.color }}
-        aria-label={`${d.en}${back === 0 ? ' (today)' : ''}${done ? ', done' : ''}`}>
-        <span className="dot" lang="th" aria-hidden="true">{d.th}</span>
+        aria-label={`${d.en}${back === 0 ? ' (today)' : ''}${done ? ', goal done' : ''}${star ? ', said it out loud' : ''}`}>
+        <span className="dot" lang="th" aria-hidden="true">{d.th}{star && <span className="star">★</span>}</span>
         <span className="rom" aria-hidden="true">{d.rom}</span>
         <span className="lbl" aria-hidden="true">{back === 0 ? 'Today' : d.en}</span>
       </li>
@@ -46,18 +50,32 @@ function Week({ days }) {
 
 const todayColour = () => THAI_DAY[new Date().getDay()].color;
 
-function Meter({ value, from }) {
+// The street meter: your sign shows how much everyday Thai you understand.
+// The bar is in the Thai flag's colours; milestones turn gold when reached.
+function Meter({ value, from, milestones = {}, knownCount = 0 }) {
+  const miles = Object.entries(milestones).map(([n, p]) => ({ n: Number(n), p }));
+  const reached = miles.filter((m) => knownCount >= m.n);
   return (
     <div className="today-meter">
       <div className="today-meter-top">
-        <span>Everyday Thai you understand</span>
-        <b>{pct(value)}</b>
+        <SoiSign width={168} th="ซอย" en="Your street" number={pct(value)} tab={false} gold={reached.length > 0}
+          title={`Street meter: ${pct(value)} of everyday Thai`} />
+        <p className="today-meter-copy"><b>Your street meter</b>How much everyday Thai you understand. It rises with every word you learn.</p>
       </div>
-      <div className="today-bar" role="img" aria-label={`About ${pct(value)}`}>
+      <div className="today-bar flag" role="img" aria-label={`About ${pct(value)}`}>
         {from != null && <i className="was" style={{ width: pct(from) }} />}
         <i style={{ width: pct(value) }} />
+        {miles.map((m) => <span key={m.n} className={`tick${knownCount >= m.n ? ' on' : ''}`} style={{ left: `${m.p}%` }} />)}
       </div>
-      <p className="today-note">An estimate, based on how often Thai people use each word you know.</p>
+      {miles.length > 0 && (
+        <ol className="today-miles" aria-label="Milestones">
+          {miles.map((m) => (
+            <li key={m.n} className={knownCount >= m.n ? 'on' : ''}>
+              <b>{m.n.toLocaleString('en')}</b><span>words</span><em>{m.p}%</em>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }
@@ -68,7 +86,7 @@ function Meter({ value, from }) {
 // account (said_it table).
 const SAID_KEY = 'tsc-said';          // { "2026-10-09": 12 (line number), ... }
 const TODAY_LINE_KEY = 'tsc-sayit-day'; // { day: "2026-10-09", line: 12 }
-function SayIt({ studiedBeforeToday, step }) {
+function SayIt({ studiedBeforeToday, bonus, onSaid }) {
   const { user } = useUser();
   const [said, setSaid] = useState({});
   const [lineNo, setLineNo] = useState(null);
@@ -107,7 +125,7 @@ function SayIt({ studiedBeforeToday, step }) {
   const total = Object.keys(said).length;
   const markSaid = () => {
     const next = { ...said, [today]: line.day };
-    writeStore(SAID_KEY, next); setSaid(next);
+    writeStore(SAID_KEY, next); setSaid(next); onSaid?.();
     if (user) supabaseBrowser().from('said_it').upsert({ user_id: user.id, day: today, kind: 'sayit', line: line.day })
       .then(({ error }) => { if (error) console.warn('Could not save said_it', error); });
   };
@@ -122,7 +140,7 @@ function SayIt({ studiedBeforeToday, step }) {
   };
   return (
     <section className="sayit" aria-label="Say it today">
-      <p className="sayit-eyebrow">{step ? <><span className="today-step-n">{step}</span>Say it out loud today</> : 'Say it out loud today'}</p>
+      <p className="sayit-eyebrow">{bonus && <span className="today-bonus">Bonus</span>}Say it out loud today</p>
       <div className="sayit-line">
         <button type="button" className={`sayit-play${playing ? ' on' : ''}`} onClick={play} aria-label={`Play ${line.thai}`}>
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>
@@ -140,14 +158,14 @@ function SayIt({ studiedBeforeToday, step }) {
         <span className="txt">
           {doneToday
             ? <><b>Said it!</b> {total === 1 ? 'Day 1 of Thai out loud.' : `Thai out loud: ${total} days.`}</>
-            : <><b>I said it to someone</b> Tick this once you've used it for real.</>}
+            : <><b>I said it to someone</b> Tick this once you've used it for real. It adds a ★ to today.</>}
         </span>
       </button>
     </section>
   );
 }
 
-export default function Today({ words }) {
+export default function Today({ words, milestones }) {
   const store = useProgressStore();
   const { progress, goal, setGoal, streak, newToday, loaded, finishToday, days } = store;
   const { user, ready } = useUser();
@@ -175,6 +193,12 @@ export default function Today({ words }) {
   }, [words, progress, goal, newToday]);
 
   const known = useMemo(() => coverage(words, progress), [words, progress]);
+  const knownCount = useMemo(() => words.filter((w) => (progress[w.thai]?.got || 0) >= 1).length, [words, progress]);
+  // Days you said the line out loud (stars on the week); refreshed when you tick it
+  const [said, setSaidDays] = useState({});
+  const refreshSaid = () => setSaidDays(readStore(SAID_KEY, {}));
+  useEffect(refreshSaid, []);
+  const day = THAI_DAY[new Date().getDay()];
 
   const start = (cards) => {
     repeats.current = new Map();
@@ -222,13 +246,14 @@ export default function Today({ words }) {
         <div className="today-card today-done">
           <p className="today-eyebrow">Session complete</p>
           <h1 className="today-title">Nice work!</h1>
-          <SayIt studiedBeforeToday={studiedBeforeToday} />
+          <p className="today-goal-done"><i style={{ background: day.color }} />Today's goal is done. {day.full} lights up {day.colour} on your week.</p>
+          <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
           <div className="today-stats">
             <div><b>{reviewedInSession.current}</b><span>cards studied</span></div>
             <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
           </div>
-          <Week days={days} />
-          <Meter value={known} from={before} />
+          <Week days={days} said={said} />
+          <Meter value={known} from={before} milestones={milestones} knownCount={knownCount} />
           <div className="today-actions">
             {plan.fresh.length > 0 && (
               <button type="button" className="auth-btn primary" onClick={() => start(plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more words</button>
@@ -247,10 +272,10 @@ export default function Today({ words }) {
 
           {/* Step 1: the one thing to do first */}
           <section className="today-step" aria-label="Learn">
-            <p className="today-step-label"><span className="today-step-n">1</span>{brandNew ? 'Learn your first words' : 'Learn'}</p>
+            <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today's goal</p>
             {nothingLeft ? (
               <div className="today-step-body">
-                <div><strong>All done for today</strong><span>Come back tomorrow to keep your week going.</span></div>
+                <div><strong>Goal done ✓</strong><span>{day.full} lights up {day.colour} on your week. See you tomorrow.</span></div>
                 {plan.fresh.length > 0 && (
                   <button type="button" className="auth-btn primary" onClick={() => start(plan.fresh.slice(0, EXTRA_NEW))}>Learn {EXTRA_NEW} more</button>
                 )}
@@ -259,11 +284,12 @@ export default function Today({ words }) {
               <div className="today-step-body">
                 <div>
                   <strong>
-                    {plan.due.length > 0 ? `${plan.due.length} to review · ` : ''}{plan.newCards.length} new word{plan.newCards.length === 1 ? '' : 's'}
+                    {brandNew ? 'Learn your first ' : 'Learn '}{plan.newCards.length > 0 ? `${plan.newCards.length} ${brandNew ? '' : 'new '}word${plan.newCards.length === 1 ? '' : 's'}` : ''}
+                    {plan.due.length > 0 ? `${plan.newCards.length > 0 ? ' and review ' : 'Review '}${plan.due.length}` : ''}
                   </strong>
                   <span>
                     {brandNew && plan.newCards[0] ? <>Starting with <span lang="th">{plan.newCards[0].thai}</span> ({plan.newCards[0].romanization}). </> : null}
-                    About {Math.max(1, Math.round((plan.due.length * 10 + plan.newCards.length * 25) / 60))} minutes.
+                    About {Math.max(1, Math.round((plan.due.length * 10 + plan.newCards.length * 25) / 60))} minutes. Finish them and {day.full} lights up {day.colour}.
                   </span>
                 </div>
                 <button type="button" className="auth-btn primary today-start" onClick={() => start([...plan.due, ...plan.newCards])}>Start</button>
@@ -271,13 +297,13 @@ export default function Today({ words }) {
             )}
           </section>
 
-          {/* Step 2: use one line in real life */}
-          <SayIt studiedBeforeToday={studiedBeforeToday} step={2} />
+          {/* Bonus: use one line in real life */}
+          <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />
 
           <section className="today-progress" aria-label="Your progress">
-            <p className="today-section-label">Your progress</p>
-            <Meter value={known} />
-            <Week days={days} />
+            <p className="today-section-label">Your week</p>
+            <Week days={days} said={said} />
+            <Meter value={known} milestones={milestones} knownCount={knownCount} />
           </section>
 
           <div className="today-goal">

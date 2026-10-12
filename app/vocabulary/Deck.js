@@ -1,6 +1,7 @@
 'use client';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import Tour, { tourSteps, TOUR_KEY, HINT_BACK_KEY } from './Tour';
+import { TOPIC_GROUPS } from '../lib/categories';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const SET_SIZE = 20;
@@ -201,12 +202,6 @@ const TIPS = {
 const Check = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
 const Chevron = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>;
 
-// Topics are grouped by when a learner needs them, so the menu reads as a path.
-const TOPIC_GROUPS = [
-  { label: 'Start here', names: ['Useful phrases', 'Question words', 'Numbers & counting', 'Food & drink', 'Places & position', 'Time & dates', 'People & animals'] },
-  { label: 'Building blocks', names: ['Actions', 'Describing words', 'Things & objects', 'Body & health', 'Grammar words'] },
-  { label: 'Formal Thai', names: ['Work & society'] },
-];
 
 // Topic menu: a plain listbox. Arrow keys move, Enter picks, Esc closes.
 function TopicPicker({ topics, total, value, open, setOpen, wrapRef, onChoose }) {
@@ -311,9 +306,10 @@ function hexToRgba(hex, alpha) {
 // session = the daily review: one list of cards, no sets or shuffle.
 //   onRated(word, knewIt) -> return true if the word was put back in the queue
 //   onDone() is called after rating the last card.
-export default function Deck({ words: allWords, session = false, onRated, onDone }) {
-  // Topic filter (browse mode): learn only one category, e.g. Food & drink
-  const [topic, setTopic] = useState(null);
+export default function Deck({ words: allWords, session = false, onRated, onDone, topic: topicProp = null, onTopics }) {
+  // Topic filter (browse mode): learn only one category, e.g. Food & drink.
+  // On /vocabulary the topic comes from the topic page (onTopics goes back to it).
+  const [topic, setTopic] = useState(topicProp);
   const [topicOpen, setTopicOpen] = useState(false);
   const topicRef = useRef(null);
   useEffect(() => {
@@ -631,7 +627,13 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
   return (
     <div className="fc">
       <div className={`fc-toolbar${session ? ' is-session' : ''}`}>
-        {!session && (
+        {!session && onTopics && (
+          <button type="button" className="fc-topic-btn" onClick={onTopics} aria-label={`Topic: ${topic || 'All words'}. Show all topics`}>
+            <svg className="grid" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><rect x="3" y="3" width="8" height="8" rx="2" /><rect x="13" y="3" width="8" height="8" rx="2" /><rect x="3" y="13" width="8" height="8" rx="2" /><rect x="13" y="13" width="8" height="8" rx="2" /></svg>
+            <span className="fc-topic-label">{topic || 'All words'}</span>
+          </button>
+        )}
+        {!session && !onTopics && (
           <TopicPicker topics={topics} total={allWords.length} value={topic} open={topicOpen} setOpen={setTopicOpen}
             wrapRef={topicRef} onChoose={(t) => { chooseTopic(t); setTopicOpen(false); }} />
         )}

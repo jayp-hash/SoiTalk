@@ -30,3 +30,27 @@ export function categoryFor(name) {
   const c = CATEGORIES[name];
   return { name: c ? name : 'Vocabulary', ...(c || FALLBACK) };
 }
+
+// Topics grouped by when a learner needs them (topic page and menu).
+export const TOPIC_GROUPS = [
+  { label: 'Start here', names: ['Useful phrases', 'Question words', 'Numbers & counting', 'Food & drink', 'Places & position', 'Time & dates', 'People & animals'] },
+  { label: 'Building blocks', names: ['Actions', 'Describing words', 'Things & objects', 'Body & health', 'Grammar words'] },
+  { label: 'Formal Thai', names: ['Work & society'] },
+];
+
+// One plain line per topic for the topic page
+export const TOPIC_BLURB = {
+  'Useful phrases': 'Hello, thank you, sorry and the lines you need on day one.',
+  'Question words': 'What, where, how much and when.',
+  'Numbers & counting': 'Prices, times and counting words.',
+  'Food & drink': 'Order at a stall, a café or a restaurant.',
+  'Places & position': 'Getting around, directions and where things are.',
+  'Time & dates': 'Days, times and when things happen.',
+  'People & animals': 'Family, friends, people around you, pets.',
+  'Actions': 'The verbs you use every day.',
+  'Describing words': 'Hot, cheap, far, delicious and more.',
+  'Things & objects': 'Everyday things at home and out.',
+  'Body & health': 'The body, feeling sick, the pharmacy.',
+  'Grammar words': 'The small words that hold sentences together.',
+  'Work & society': 'Work, news and formal Thai. Save these for later.',
+};
