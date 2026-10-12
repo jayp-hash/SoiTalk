@@ -8,6 +8,9 @@ import {
 import { dayKey, endOfToday } from '../lib/progress';
 import { getRegister, particleFor } from '../lib/register';
 
+// Has the learner met this word? Men meet ผม for "I", which fills the ฉัน slot (shown as ผม).
+const met = (progress, th) => !!progress[th] || (th === 'ฉัน' && !!progress['ผม']);
+
 // The patterns as this learner sees them (ผม/ครับ or ฉัน/ค่ะ/คะ)
 const usePatterns = () => useMemo(() => inRegister(PATTERNS, getRegister(), particleFor), []);
 
@@ -70,7 +73,7 @@ export default function Patterns({ lex }) {
     setView({ p, l }); window.scrollTo(0, 0);
   };
   // A word is usable once you've met it on Today (or anything, in preview)
-  const can = (th) => preview || !!progress[th];
+  const can = (th) => preview || met(progress, th);
   if (!view) return null;
   const pattern = view.p && PATS.find((x) => x.id === view.p);
   if (!pattern) return <PatternList pats={PATS} lex={lex} can={can} progress={progress} preview={preview} setPreview={setPreview} onOpen={open} />;
@@ -434,7 +437,7 @@ const TODAY_LISTEN = 3;
 const TODAY_SPINS = 3;
 
 export function pickTodayPattern(progress) {
-  const can = (th) => !!progress[th];
+  const can = (th) => met(progress, th);
   const pats = inRegister(PATTERNS, getRegister(), particleFor);
   let fresh = null;
   for (const p of pats) {
@@ -452,7 +455,7 @@ export function pickTodayPattern(progress) {
 
 export function TodayPattern({ pick, lex, onDone, onQuit }) {
   const { progress, check } = useProgressStore();
-  const can = (th) => !!progress[th];
+  const can = (th) => met(progress, th);
   const { p, level, isNew } = pick;
   const total = (isNew ? TODAY_SPINS : 0) + TODAY_LISTEN;
   const [step, setStep] = useState(0);

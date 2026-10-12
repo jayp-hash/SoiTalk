@@ -17,6 +17,27 @@ const EXTRA_NEW = 5;       // "Learn 5 more"
 const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice per session
 
 // Under 10% show one decimal, so the first few words visibly move the meter
+// First days: the words the first two patterns need come early, so the daily
+// pattern practice starts on day 2 (Saying what you like) and day 3-4 (Ordering).
+// After these, new words follow the course order. "I" is ผม for men, ฉัน for women.
+const FAST_TRACK = [
+  // day 1: polite basics (unchanged)
+  'สวัสดี', 'ขอบคุณ', 'ครับ', 'ค่ะ', 'ขอโทษ',
+  // day 2: I, you, like, eat, sleep -> pattern 'Saying what you like' opens
+  'ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน',
+  // day 3: ask for, beer, water, bottle, two
+  'ขอ', 'เบียร์', 'น้ำเปล่า', 'ขวด', 'สอง',
+  // day 4: three -> pattern 'Ordering with counting words' opens; plus not, no worries
+  'สาม', 'ไม่', 'ไม่เป็นไร', 'ใช่', 'อร่อยมาก',
+];
+function fastTrack(words, reg) {
+  const list = FAST_TRACK.map((t) => (t === 'ฉัน' && reg === 'male' ? 'ผม' : t));
+  const byThai = new Map(words.map((w) => [w.thai, w]));
+  const first = list.map((t) => byThai.get(t)).filter(Boolean);
+  const inFirst = new Set(first.map((w) => w.thai));
+  return [...first, ...words.filter((w) => !inFirst.has(w.thai))];
+}
+
 const pct = (x) => { const v = x * 100; return v > 0 && v < 10 ? `${(Math.round(v * 10) / 10).toFixed(1)}%` : `${Math.round(v)}%`; };
 const width = (x) => `${Math.min(100, x * 100)}%`;
 
@@ -240,7 +261,7 @@ export default function Today({ words, milestones }) {
       .filter((w) => progress[w.thai] && progress[w.thai].due <= cutoff)
       .sort((a, b) => progress[a.thai].due - progress[b.thai].due);
     const due = allDue.slice(0, REVIEW_CAP);
-    const fresh = words.filter((w) => !progress[w.thai]);
+    const fresh = fastTrack(words, getRegister()).filter((w) => !progress[w.thai]);
     const paused = allDue.length > REVIEW_CAP; // catch up before adding more
     const newLeft = paused ? 0 : Math.max(goal - newToday, 0);
     return { due, fresh, newLeft, paused, newCards: fresh.slice(0, newLeft) };
@@ -272,10 +293,8 @@ export default function Today({ words, milestones }) {
     if (queue.length) { setMode('session'); window.scrollTo(0, 0); } else afterWords();
   };
   // Words done: today's pattern practice (if one is open), then the day is done
-  const afterWords = () => {
-    const pick = pickTodayPattern(progressRef.current);
-    if (pick) { setPatternPick(pick); setMode('pattern'); window.scrollTo(0, 0); } else onDone();
-  };
+  // (picked in an effect below, once the last word's progress has been saved)
+  const afterWords = () => setMode('picking');
 
   // "Still learning": the card comes back later in this session
   const onRated = (word, knewIt) => {
@@ -289,10 +308,15 @@ export default function Today({ words, milestones }) {
   };
 
   const onDone = () => { finishToday(); setMode('done'); window.scrollTo(0, 0); };
-  const progressRef = useRef(progress);
-  progressRef.current = progress;
+  useEffect(() => {
+    if (mode !== 'picking') return;
+    const pick = pickTodayPattern(progress);
+    if (pick) { setPatternPick(pick); setMode('pattern'); window.scrollTo(0, 0); } else onDone();
+  }, [mode, progress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!loaded) return <div className="today-wrap"><p className="today-note">Loading…</p></div>;
+
+  if (mode === 'picking') return <div className="today-wrap"><p className="today-note">Loading…</p></div>;
 
   if (mode === 'pattern' && patternPick) {
     return <TodayPattern key={run} pick={patternPick} lex={lex} onDone={(r) => { setPatternScore(r); onDone(); }} onQuit={() => setMode('home')} />;
@@ -318,6 +342,8 @@ export default function Today({ words, milestones }) {
   }
 
   const todayPattern = pickTodayPattern(progress);
+  // The goal line counts a pattern that today's new words will open
+  const goalPattern = todayPattern || pickTodayPattern({ ...progress, ...Object.fromEntries(plan.newCards.map((w) => [w.thai, { s: 1 }])) });
   const nothingLeft = plan.due.length === 0 && plan.newCards.length === 0 && !todayPattern;
   const brandNew = studiedBeforeToday === 0 && plan.due.length === 0 && reviewedInSession.current === 0;
   const signedOut = ready && !user;
@@ -373,12 +399,12 @@ export default function Today({ words, milestones }) {
                     {[
                       plan.due.length > 0 ? `Check ${plan.due.length} word${plan.due.length === 1 ? '' : 's'}` : null,
                       plan.newCards.length > 0 ? `${brandNew ? 'Learn your first' : 'learn'} ${plan.newCards.length} ${brandNew ? '' : 'new '}word${plan.newCards.length === 1 ? '' : 's'}` : null,
-                      todayPattern ? `practise ${todayPattern.isNew ? 'a new pattern' : 'a pattern'}` : null,
+                      goalPattern ? `practise ${goalPattern.isNew ? 'a new pattern' : 'a pattern'}` : null,
                     ].filter(Boolean).join(', then ').replace(/^l/, 'L').replace(/^p/, 'P')}
                   </strong>
                   <span>
                     {brandNew && plan.newCards[0] ? <>Starting with <span lang="th">{plan.newCards[0].thai}</span> ({plan.newCards[0].romanization}). </> : null}
-                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (todayPattern ? 60 : 0)) / 60))} minutes. Finish and {day.full} lights up {day.colour}.
+                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (goalPattern ? 60 : 0)) / 60))} minutes. Finish and {day.full} lights up {day.colour}.
                   </span>
                 </div>
                 <button type="button" className="auth-btn primary today-start"
