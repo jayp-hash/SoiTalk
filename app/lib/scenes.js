@@ -45,6 +45,44 @@ export const SCENES = {
     // Tomorrow: the restaurant scene (they already know ไม่)
     teaser: { title: 'Tomorrow: order Thai food your way', th: 'ไม่เผ็ด', rom: 'mâi phèt', en: 'Not spicy.' },
   },
+  // Day 2. Order a dish (swap it), then the waitress asks about spice.
+  // Starts with yesterday's line from memory (recall), then the new scene.
+  restaurant: {
+    id: 'restaurant',
+    place: 'At a Thai restaurant',
+    promise: 'Order Thai food your way',
+    minutes: 3,
+    staff: { who: 'The waitress', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?' }) },
+    reply: [
+      { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
+      { slot: true },
+    ],
+    replyEn: (it) => `${it.en.charAt(0).toUpperCase()}${it.en.slice(1)}, please.`,
+    slotLabel: 'the dish',
+    items: [
+      { th: 'ผัดกะเพรา', rom: 'phàt-gà-phrao', en: 'holy basil stir-fry', a: 'holy basil stir-fry' },
+      // Dishes where they really ask about spice (fried rice and pad Thai aren't
+      // spicy by default: you add chilli at the table. Thai Teacher, 12 Oct)
+      { th: 'ต้มยำ', rom: 'dtôm-yam', en: 'tom yum', a: 'tom yum' },
+      { th: 'ส้มตำ', rom: 'sôm-dtam', en: 'papaya salad', a: 'papaya salad' },
+      { th: 'แกงเขียวหวาน', rom: 'gaeng-khǐao-wǎan', en: 'green curry', a: 'green curry' },
+    ],
+    // The second exchange: the waitress asks, you pick how spicy
+    followUp: {
+      staff: { th: 'เผ็ดไหมคะ', rom: 'phèt mǎi khá', en: 'Spicy?' },
+      answers: [
+        { key: 'none', parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'เผ็ด', rom: 'phèt', en: 'spicy' }], en: 'Not spicy.' },
+        { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nàawi', en: 'a little' }], en: 'A little spicy.' },
+      ],
+      wrong: 'Very spicy.', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    // What the waitress will often ask next (heard, not taught yet)
+    next: { th: 'หมูหรือไก่คะ', rom: 'mǔu rǔue gài khá', en: 'Pork or chicken?' },
+    recall: '7eleven', // day 2 opens with yesterday's line
+    mission: 'Next time you order, say how spicy you want it.',
+    teaser: { title: 'Tomorrow: order two drinks', th: 'ขอน้ำเปล่าสองขวด', rom: 'khǎaw náam-bplàao sǎawng khùat', en: 'Two bottles of water, please.' },
+  },
 };
 
 export const DEFAULT_SCENE = '7eleven';
@@ -62,14 +100,24 @@ export function replyParts(scene, item, reg) {
     { ...endingFor(reg), ending: true },
   ];
 }
+// The spice answer (or other follow-up) as word pieces, in the learner's register
+export function followParts(scene, idx, reg) {
+  const a = scene.followUp.answers[idx];
+  return [...a.parts, { ...endingFor(reg), ending: true }];
+}
+// The line the mission asks you to say for real
+export function missionParts(scene, reg, idx = 0) {
+  return scene.followUp ? followParts(scene, idx, reg) : replyParts(scene, scene.items[0], reg);
+}
 export const joinTh = (parts) => parts.map((p) => p.th).join('');
 export const joinRom = (parts) => parts.map((p) => p.rom).join(' ');
 
 // The words a scene teaches (recorded in the learner's reviews)
-export const sceneWords = (scene, made) => [
+export const sceneWords = (scene, made) => [...new Set([
   ...scene.reply.filter((p) => !p.slot).map((p) => p.th),
   ...made,
-];
+  ...(scene.followUp ? scene.followUp.answers.flatMap((a) => a.parts.map((p) => p.th)) : []),
+])];
 
 // For /api/speak: every line a scene can say
 let cache = null;
@@ -84,6 +132,14 @@ export function allSceneLines() {
     }
     for (const p of s.reply) if (!p.slot) out.add(p.th);
     for (const reg of ['male', 'female']) { out.add(s.teaser.th + endingFor(reg).th); if (s.alsoHeard) out.add(s.alsoHeard.th + endingFor(reg).th); }
+    if (s.followUp) {
+      out.add(s.followUp.staff.th);
+      if (s.next) out.add(s.next.th);
+      s.followUp.answers.forEach((a, i) => {
+        for (const p of a.parts) out.add(p.th);
+        for (const reg of ['male', 'female']) out.add(joinTh(followParts(s, i, reg)));
+      });
+    }
     out.add(s.teaser.th);
   }
   cache = out;

@@ -4,6 +4,7 @@ import Deck from '../vocabulary/Deck';
 import { useProgressStore, coverage, countKnown, countLearning, endOfToday, dayKey, GOAL_OPTIONS } from '../lib/progress';
 import CheckSession from './Check';
 import { TodayPattern, pickTodayPattern } from '../patterns/Patterns';
+import { SCENES } from '../lib/scenes';
 import { useUser } from '../lib/useUser';
 import { SAY_IT, sayItFor } from '../lib/sayit';
 import { supabaseBrowser } from '../lib/supabase-browser';
@@ -24,9 +25,10 @@ const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice 
 // "I" is ผม for men and ฉัน for women; the polite ending is ครับ / ค่ะ.
 const FAST_TRACK = [
   ['ไม่', 'เอา', 'ถุง', 'ใบเสร็จ', 'ช้อน', 'ENDING'],          // day 1: the first session
-  ['ขอ', 'น้ำเปล่า', 'เบียร์', 'ขวด', 'สอง', 'สาม'],          // day 2: ordering opens (ขอ น้ำเปล่า สอง ขวด)
-  ['ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน'],                     // day 3: saying what you like
-  ['กี่', 'สวัสดี', 'ขอบคุณ', 'ขอโทษ', 'ไม่เป็นไร'],          // day 4: the staff's question (เอากี่ขวด)
+  ['ขอ', 'ผัดกะเพรา', 'ต้มยำ', 'ส้มตำ', 'เผ็ด', 'นิดหน่อย'], // day 2: the restaurant scene (/start/restaurant)
+  ['น้ำเปล่า', 'เบียร์', 'ขวด', 'สอง', 'สาม'],              // day 3: ordering drinks opens (ขอ น้ำเปล่า สอง ขวด)
+  ['ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน'],                     // day 4: saying what you like
+  ['กี่', 'สวัสดี', 'ขอบคุณ', 'ขอโทษ', 'ไม่เป็นไร'],          // day 5: the staff's question (เอากี่ขวด)
 ];
 // The other gender's ending (to recognise it when you hear it) waits until later
 const OTHER_ENDING_AFTER = 60;
@@ -413,6 +415,12 @@ export default function Today({ words, milestones }) {
   const early = Object.keys(days).length < 3;
   const firstDaysLine = <p className="today-note"><b>{learningCount} words</b> in progress. They count toward your street meter once they stick.</p>;
 
+  // Day 2+: the next scene, if the first session was on an earlier day and it isn't done yet
+  const firstSession = readStore('tsc-first-session', null);
+  const scenesDone = readStore('tsc-scenes', {});
+  const nextSceneId = firstSession && firstSession.day !== dayKey() && !scenesDone.restaurant && !Object.values(scenesDone).includes(dayKey()) ? 'restaurant' : null;
+  const sceneToday = nextSceneId && mode === 'home' ? SCENES[nextSceneId] : null;
+
   // Brand new (nothing learned, no first session yet): one thing only, the first session
   if (mode === 'home' && Object.keys(progress).length === 0 && !readStore('tsc-first-session', null)) {
     return (
@@ -463,6 +471,18 @@ export default function Today({ words, milestones }) {
           {/* Step 1: the one thing to do first */}
           <Mission onSaid={refreshSaid} />
 
+          {sceneToday ? (
+            <section className="today-step today-scene" aria-label="Today's scene">
+              <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today</p>
+              <div className="today-step-body">
+                <div>
+                  <strong>{sceneToday.promise}</strong>
+                  <span>{sceneToday.place}. Yesterday's line first, then today's. About {sceneToday.minutes} minutes.</span>
+                </div>
+                <a className="auth-btn primary today-start" href={`/start/${sceneToday.id}`}>Start</a>
+              </div>
+            </section>
+          ) : (
           <section className="today-step" aria-label="Learn">
             <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today's goal</p>
             {nothingLeft ? (
@@ -492,6 +512,7 @@ export default function Today({ words, milestones }) {
               </div>
             )}
           </section>
+          )}
           {askReg && (
             <RegisterChooser onClose={() => setAskReg(false)}
               onChoose={(r) => { setRegister(r); setReg(r); setChosen(true); setAskReg(false); setStartAfterChoice(true); }} />
