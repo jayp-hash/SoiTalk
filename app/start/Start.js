@@ -82,17 +82,19 @@ function PlayBtn({ id, clips, player, label, big }) {
 
 // A line of Thai as word tiles with romanization and English under each
 function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash }) {
+  const first = parts.findIndex((p) => p.slot);
   return (
     <div className="st-tiles" lang="th">
       {parts.map((p, i) => {
-        const swap = i === swapIndex;
+        const swap = swapIndex === 'slot' ? !!p.slot : i === swapIndex;
+        const lead = swap && (swapIndex !== 'slot' || i === first); // badge and hint on the first tile only
         return (
           <button key={`${i}-${p.th}`} type="button"
             className={`st-tile${p.th.length > 5 ? ' is-long' : ''}${swap ? ' is-swap' : ''}${swap && flash ? ' is-flash' : ''}${p.ending ? ' is-ending' : ''}`}
             onClick={() => (swap && onSwap ? onSwap() : onTap(p))}
             aria-label={swap && onSwap ? `${p.th}, ${p.en}. Tap to swap` : `${p.th}, ${p.en}. Tap to hear`}>
-            {swap && onSwap && <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>}
-            {swap && hint && <span className="st-hint" role="status">Tap to swap</span>}
+            {lead && onSwap && <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>}
+            {lead && hint && <span className="st-hint is-below" role="status">Tap to swap</span>}
             <span className="th">{p.th}</span>
             <span className="rom">{p.rom}</span>
             <span className="en">{p.ending ? 'polite' : p.en}</span>
@@ -154,7 +156,7 @@ export default function Start({ sceneId }) {
   const ask = scene.staff.ask(item);
   const spiceParts = fu ? followParts(scene, spiceIdx, reg) : null;
   const pickSpice = (i) => { setSpiceIdx(i); player.play('spice', [{ text: joinTh(followParts(scene, i, reg)), voice }]); };
-  const swapIndex = scene.reply.findIndex((p) => p.slot);
+  const swapIndex = 'slot';
 
   const say = (p) => player.play(`w-${p.th}`, [{ text: p.th, voice: p.ending ? voice : voice }]);
   const conversation = (it = item) => [
@@ -293,7 +295,7 @@ export default function Start({ sceneId }) {
     return [...fixed, ...follow]
       .filter((w) => !seen.has(w.th) && seen.add(w.th))
       .filter((w) => !progress[w.th]) // already learning it (e.g. ไม่ from day 1)
-      .slice(0, 6);
+      .slice(0, 2); // a short check: the rest were tested in listening
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step === 'check']);
   const [ci, setCi] = useState(0);
@@ -313,14 +315,15 @@ export default function Start({ sceneId }) {
     if (ci + 1 < words.length) { setCi(ci + 1); return; }
     // Record: these words join the spaced reviews (first check tomorrow)
     for (const w of words) learn(w.th, !!results.current[w.th]);
-    for (const it of madeItems) if (!progress[it.th]) learn(it.th, false); // tested in listening; first check tomorrow
+    // Swap words were tested in listening; first check tomorrow (two-word drinks: each word)
+    for (const it of madeItems) for (const w of it.parts || [it]) if (!progress[w.th]) learn(w.th, false);
     learn(endingFor(reg).th, true);
     setRegister(reg);
     finishToday();
     if (!readStore(FIRST_KEY, null)) writeStore(FIRST_KEY, { scene: scene.id, made, day: dayKey() });
     writeStore(SCENES_KEY, { ...readStore(SCENES_KEY, {}), [scene.id]: dayKey() });
-    const mine = missionParts(scene, reg, spiceIdx);
-    const mineEn = fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
+    const mine = missionParts(scene, reg, spiceIdx, item);
+    const mineEn = scene.missionFull ? `A ${fu.answers[spiceIdx].adj} ${item.en}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
     writeStore(MISSION_KEY, { scene: scene.id, th: joinTh(mine), rom: joinRom(mine), en: mineEn, text: scene.mission, day: dayKey(), done: false });
     go('done');
   };
@@ -508,7 +511,7 @@ export default function Start({ sceneId }) {
                     <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><p className="en">{fu.staff.en}</p></div>
                   </div>
                 </div>
-                <p className="st-choose">You say (pick one)</p>
+                <p className="st-choose">You say:</p>
                 <div className="st-choices" role="radiogroup" aria-label="How spicy?">
                   {fu.answers.map((x, i) => {
                     const ps = followParts(scene, i, reg);
@@ -565,7 +568,7 @@ export default function Start({ sceneId }) {
 
         {step === 'check' && cw && (
           <section className="st-card">
-            <p className="st-place">Your {words.length} new words · {ci + 1} of {words.length}</p>
+            <p className="st-place">Quick check · {ci + 1} of {words.length}</p>
             <h1 className="st-title">What does it mean?</h1>
             <div className="st-word">
               <PlayBtn id={`c-${ci}`} clips={[{ text: cw.th, voice }]} player={player} label="Play the word" />
@@ -583,7 +586,7 @@ export default function Start({ sceneId }) {
         )}
 
         {step === 'done' && (
-          <Done scene={scene} reg={reg} voice={voice} player={player} madeItems={madeItems} spiceIdx={spiceIdx} user={ready ? user : null} />
+          <Done scene={scene} reg={reg} voice={voice} player={player} madeItems={madeItems} spiceIdx={spiceIdx} item={item} user={ready ? user : null} />
         )}
       </div>
     </div>
@@ -623,15 +626,15 @@ function reminderIcs(scene) {
 }
 const CONFETTI = ['#ED1C24', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#F2C200', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#FFFFFF', '#F2C200', '#241D4F', '#ED1C24', '#F2C200', '#FFFFFF'];
 
-function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
+function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
   const fu = scene.followUp;
   const lines = [
     ...madeItems.map((it) => ({ id: `s-${it.th}`, parts: replyParts(scene, it, reg), en: scene.replyEn(it) })),
     ...(fu ? fu.answers.map((x, i) => ({ id: `f-${x.key}`, parts: followParts(scene, i, reg), en: x.en })) : []),
   ];
-  const mission = missionParts(scene, reg, spiceIdx);
+  const mission = missionParts(scene, reg, spiceIdx, item);
   const [all, setAll] = useState(false);
-  const missionEn = fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
+  const missionEn = scene.missionFull ? `A ${fu.answers[spiceIdx].adj} ${item.en}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
   const [inApp, setInApp] = useState(false);
   useEffect(() => { setInApp(inAppBrowser()); soundDone(); }, []);
   const google = async () => {
@@ -648,7 +651,7 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, user }) {
         <b className="dn-num">{lines.length}</b>
         <div className="dn-hero-text">
           <p className="dn-cheer"><span lang="th">เก่งมาก!</span> <i>gèng mâak · great job</i></p>
-          <p className="dn-count">new things you can say in Thai</p>
+          <p className="dn-count">new phrases you can say in Thai</p>
         </div>
       </div>
 

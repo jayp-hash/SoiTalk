@@ -26,9 +26,10 @@ const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice 
 const FAST_TRACK = [
   ['ไม่', 'เอา', 'ถุง', 'ใบเสร็จ', 'ช้อน', 'ENDING'],          // day 1: the first session
   ['ขอ', 'ผัดกะเพรา', 'ต้มยำ', 'ส้มตำ', 'เผ็ด', 'นิดหน่อย'], // day 2: the restaurant scene (/start/restaurant)
-  ['น้ำเปล่า', 'เบียร์', 'ขวด', 'สอง', 'สาม'],              // day 3: ordering drinks opens (ขอ น้ำเปล่า สอง ขวด)
-  ['ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน'],                     // day 4: saying what you like
-  ['กี่', 'สวัสดี', 'ขอบคุณ', 'ขอโทษ', 'ไม่เป็นไร'],          // day 5: the staff's question (เอากี่ขวด)
+  ['กาแฟ', 'ชา', 'เย็น', 'ร้อน', 'แก้ว', 'ใหญ่', 'เล็ก'],      // day 3: the coffee shop scene (/start/cafe)
+  ['น้ำเปล่า', 'เบียร์', 'ขวด', 'สอง', 'สาม'],              // day 4: ordering drinks opens (ขอ น้ำเปล่า สอง ขวด)
+  ['ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน'],                     // day 5: saying what you like
+  ['กี่', 'สวัสดี', 'ขอบคุณ', 'ขอโทษ', 'ไม่เป็นไร'],          // day 6: the staff's question (เอากี่ขวด)
 ];
 // The other gender's ending (to recognise it when you hear it) waits until later
 const OTHER_ENDING_AFTER = 60;
@@ -418,7 +419,10 @@ export default function Today({ words, milestones }) {
   // Day 2+: the next scene, if the first session was on an earlier day and it isn't done yet
   const firstSession = readStore('tsc-first-session', null);
   const scenesDone = readStore('tsc-scenes', {});
-  const nextSceneId = firstSession && firstSession.day !== dayKey() && !scenesDone.restaurant && !Object.values(scenesDone).includes(dayKey()) ? 'restaurant' : null;
+  // One new scene a day, in order, after the first session
+  const SCENE_DAYS = ['restaurant', 'cafe'];
+  const nextSceneId = firstSession && firstSession.day !== dayKey() && !Object.values(scenesDone).includes(dayKey())
+    ? SCENE_DAYS.find((id) => !scenesDone[id]) || null : null;
   const sceneToday = nextSceneId && mode === 'home' ? SCENES[nextSceneId] : null;
 
   // Brand new (nothing learned, no first session yet): one thing only, the first session

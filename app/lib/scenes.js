@@ -82,6 +82,43 @@ export const SCENES = {
     next: { th: 'หมูหรือไก่คะ', rom: 'mǔu rǔue gài khá', en: 'Pork or chicken?' },
     recall: '7eleven', // day 2 opens with yesterday's line
     mission: 'Next time you order Thai food.',
+    tomorrow: 'Order coffee your way',
+    teaser: { title: 'Tomorrow: order coffee your way', th: 'ขอกาแฟเย็น', rom: 'khǎaw gaa-faae yen', en: 'Iced coffee, please.' },
+  },
+  // Day 3. Order a drink (swap it: coffee or tea, iced or hot), then the
+  // barista asks the size. A drink is two words (กาแฟ + เย็น), so it shows as
+  // two tiles that swap together. Opens with yesterday's order from memory.
+  cafe: {
+    id: 'cafe',
+    place: 'At a coffee shop',
+    promise: 'Order coffee your way',
+    minutes: 3,
+    staff: { who: 'The barista', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?' }) },
+    reply: [
+      { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
+      { slot: true },
+    ],
+    replyEn: (it) => `${it.en.charAt(0).toUpperCase()}${it.en.slice(1)}, please.`,
+    slotLabel: 'the drink',
+    items: [
+      { th: 'กาแฟเย็น', rom: 'gaa-faae yen', en: 'iced coffee', a: 'iced coffee', parts: [{ th: 'กาแฟ', rom: 'gaa-faae', en: 'coffee' }, { th: 'เย็น', rom: 'yen', en: 'iced' }] },
+      { th: 'กาแฟร้อน', rom: 'gaa-faae ráawn', en: 'hot coffee', a: 'hot coffee', parts: [{ th: 'กาแฟ', rom: 'gaa-faae', en: 'coffee' }, { th: 'ร้อน', rom: 'ráawn', en: 'hot' }] },
+      { th: 'ชาเย็น', rom: 'chaa yen', en: 'Thai iced tea', a: 'Thai iced tea', parts: [{ th: 'ชา', rom: 'chaa', en: 'Thai tea' }, { th: 'เย็น', rom: 'yen', en: 'iced' }] },
+      // Spare
+      { th: 'ชาร้อน', rom: 'chaa ráawn', en: 'hot tea', a: 'hot tea', parts: [{ th: 'ชา', rom: 'chaa', en: 'tea' }, { th: 'ร้อน', rom: 'ráawn', en: 'hot' }] },
+    ],
+    followUp: {
+      staff: { th: 'แก้วใหญ่หรือแก้วเล็กคะ', rom: 'gâaew yài rǔue gâaew lék khá', en: 'Large or small?' },
+      answers: [
+        { key: 'large', adj: 'large', parts: [{ th: 'แก้ว', rom: 'gâaew', en: 'cup' }, { th: 'ใหญ่', rom: 'yài', en: 'large' }], en: 'A large one.' },
+        { key: 'small', adj: 'small', parts: [{ th: 'แก้ว', rom: 'gâaew', en: 'cup' }, { th: 'เล็ก', rom: 'lék', en: 'small' }], en: 'A small one.' },
+      ],
+      wrong: 'A medium one.', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'restaurant',
+    missionFull: true, // say the whole order: ขอ + drink + size
+    mission: 'Next time you buy a coffee or a tea.',
     tomorrow: 'Order two drinks',
     teaser: { title: 'Tomorrow: order two drinks', th: 'ขอน้ำเปล่าสองขวด', rom: 'khǎaw náam-bplàao sǎawng khùat', en: 'Two bottles of water, please.' },
   },
@@ -98,7 +135,7 @@ export const endingFor = (reg) => ENDING[reg === 'male' ? 'male' : 'female'];
 // The reply as word pieces, in the learner's register
 export function replyParts(scene, item, reg) {
   return [
-    ...scene.reply.map((p) => (p.slot ? { ...item, slot: true } : p)),
+    ...scene.reply.flatMap((p) => (p.slot ? (item.parts ? item.parts.map((x) => ({ ...x, slot: true })) : [{ ...item, slot: true }]) : [p])),
     { ...endingFor(reg), ending: true },
   ];
 }
@@ -108,7 +145,11 @@ export function followParts(scene, idx, reg) {
   return [...a.parts, { ...endingFor(reg), ending: true }];
 }
 // The line the mission asks you to say for real
-export function missionParts(scene, reg, idx = 0) {
+export function missionParts(scene, reg, idx = 0, item = scene.items[0]) {
+  if (scene.missionFull && scene.followUp) {
+    // The whole order in one line: ขอกาแฟเย็นแก้วใหญ่ครับ
+    return [...replyParts(scene, item, reg).filter((p) => !p.ending), ...followParts(scene, idx, reg)];
+  }
   return scene.followUp ? followParts(scene, idx, reg) : replyParts(scene, scene.items[0], reg);
 }
 export const joinTh = (parts) => parts.map((p) => p.th).join('');
@@ -131,6 +172,7 @@ export function allSceneLines() {
       out.add(s.staff.ask(it).th);
       for (const reg of ['male', 'female']) out.add(joinTh(replyParts(s, it, reg)));
       out.add(it.th);
+      for (const x of it.parts || []) out.add(x.th);
     }
     for (const p of s.reply) if (!p.slot) out.add(p.th);
     for (const reg of ['male', 'female']) { out.add(s.teaser.th + endingFor(reg).th); if (s.alsoHeard) out.add(s.alsoHeard.th + endingFor(reg).th); }
@@ -140,6 +182,7 @@ export function allSceneLines() {
       s.followUp.answers.forEach((a, i) => {
         for (const p of a.parts) out.add(p.th);
         for (const reg of ['male', 'female']) out.add(joinTh(followParts(s, i, reg)));
+        if (s.missionFull) for (const it of s.items) for (const reg of ['male', 'female']) out.add(joinTh(missionParts(s, reg, i, it)));
       });
     }
     out.add(s.teaser.th);

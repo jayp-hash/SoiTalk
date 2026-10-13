@@ -1822,3 +1822,7 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .dn-remind:active { transform: scale(.98); }
 @media (hover: hover) { .dn-remind:hover { background: #F3F6FC; } }
 .dn-hero .dn-cheer span[lang] { display: inline; margin: 0; font: 800 22px/1.2 var(--font-thai), sans-serif; color: #F2C200; }
+/* Long staff lines (แก้วใหญ่หรือแก้วเล็กคะ) one step smaller so they don't break */
+.st-bubble .th:lang(th) { overflow-wrap: anywhere; }
+.st-bubble.is-them .st-line .th { font-size: clamp(20px, 6.2vw, 26px); }
+.dn-use .dn-use-line { font-size: clamp(24px, 7.4vw, 32px); }
