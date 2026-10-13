@@ -26,7 +26,7 @@ const MAX_REPEATS = 2;     // "Still learning" brings a card back at most twice 
 const FAST_TRACK = [
   ['ไม่', 'เอา', 'ถุง', 'ใบเสร็จ', 'ช้อน', 'ENDING'],          // day 1: the first session
   ['ขอ', 'ผัดกะเพรา', 'ต้มยำ', 'ส้มตำ', 'เผ็ด', 'นิดหน่อย'], // day 2: the restaurant scene (/start/restaurant)
-  ['กาแฟ', 'ชา', 'เย็น', 'ร้อน', 'แก้ว', 'ใหญ่', 'เล็ก'],      // day 3: the coffee shop scene (/start/cafe)
+  ['กาแฟ', 'ชา', 'เย็น', 'ร้อน', 'หวาน', 'น้อย'],            // day 3: the coffee shop scene (/start/cafe)
   ['น้ำเปล่า', 'เบียร์', 'ขวด', 'สอง', 'สาม'],              // day 4: ordering drinks opens (ขอ น้ำเปล่า สอง ขวด)
   ['ฉัน', 'คุณ', 'ชอบ', 'กิน', 'นอน'],                     // day 5: saying what you like
   ['กี่', 'สวัสดี', 'ขอบคุณ', 'ขอโทษ', 'ไม่เป็นไร'],          // day 6: the staff's question (เอากี่ขวด)

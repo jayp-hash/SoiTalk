@@ -86,7 +86,7 @@ export const SCENES = {
     teaser: { title: 'Tomorrow: order coffee your way', th: 'ขอกาแฟเย็น', rom: 'khǎaw gaa-faae yen', en: 'Iced coffee, please.' },
   },
   // Day 3. Order a drink (swap it: coffee or tea, iced or hot), then the
-  // barista asks the size. A drink is two words (กาแฟ + เย็น), so it shows as
+  // barista asks how sweet. A drink is two words (กาแฟ + เย็น), so it shows as
   // two tiles that swap together. Opens with yesterday's order from memory.
   cafe: {
     id: 'cafe',
@@ -107,20 +107,23 @@ export const SCENES = {
       // Spare
       { th: 'ชาร้อน', rom: 'chaa ráawn', en: 'hot tea', a: 'hot tea', parts: [{ th: 'ชา', rom: 'chaa', en: 'tea' }, { th: 'ร้อน', rom: 'ráawn', en: 'hot' }] },
     ],
+    // Sweetness, not size: the question baristas really ask, and no pair of
+    // opposites on the same day (Learning Scientist, Jay, 13 Oct). Size moves to day 4.
     followUp: {
-      staff: { th: 'แก้วใหญ่หรือแก้วเล็กคะ', rom: 'gâaew yài rǔue gâaew lék khá', en: 'Large or small?' },
+      staff: { th: 'หวานปกติไหมคะ', rom: 'wǎan bpòk-gà-dtì mǎi khá', en: 'Normal sweetness?' },
       answers: [
-        { key: 'large', adj: 'large', parts: [{ th: 'แก้ว', rom: 'gâaew', en: 'cup' }, { th: 'ใหญ่', rom: 'yài', en: 'large' }], en: 'A large one.' },
-        { key: 'small', adj: 'small', parts: [{ th: 'แก้ว', rom: 'gâaew', en: 'cup' }, { th: 'เล็ก', rom: 'lék', en: 'small' }], en: 'A small one.' },
+        { key: 'less', adj: 'less sweet', parts: [{ th: 'หวาน', rom: 'wǎan', en: 'sweet' }, { th: 'น้อย', rom: 'nói', en: 'less' }], en: 'Less sweet.' },
+        { key: 'none', adj: 'not sweet', notFor: ['ชาเย็น'], parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'หวาน', rom: 'wǎan', en: 'sweet' }], en: 'Not sweet.' },
       ],
-      wrong: 'A medium one.', // a listening option only
+      wrong: 'Extra sweet.', // a listening option only
+      // ชาเย็น gets its sweetness from condensed milk: order it หวานน้อย, not ไม่หวาน (Thai Teacher)
     },
     listen: ['reply', 'spice', 'reply'],
     recall: 'restaurant',
-    missionFull: true, // say the whole order: ขอ + drink + size
+    missionFull: true, // say the whole order: ขอ + drink + sweetness
     mission: 'Next time you buy a coffee or a tea.',
     tomorrow: 'Order two drinks',
-    teaser: { title: 'Tomorrow: order two drinks', th: 'ขอน้ำเปล่าสองขวด', rom: 'khǎaw náam-bplàao sǎawng khùat', en: 'Two bottles of water, please.' },
+    teaser: { title: 'Tomorrow: order two drinks', th: 'ขอชาเย็นสองแก้ว', rom: 'khǎaw chaa-yen sǎawng gâaew', en: 'Two Thai iced teas, please.' },
   },
 };
 

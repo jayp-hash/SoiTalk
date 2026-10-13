@@ -155,6 +155,10 @@ export default function Start({ sceneId }) {
   const parts = replyParts(scene, item, reg);
   const ask = scene.staff.ask(item);
   const spiceParts = fu ? followParts(scene, spiceIdx, reg) : null;
+  // Some answers don't go with some items (no "not sweet" Thai iced tea): fall back to the first
+  useEffect(() => {
+    if (fu && (fu.answers[spiceIdx].notFor || []).includes(item.th)) setSpiceIdx(0);
+  }, [item.th]); // eslint-disable-line react-hooks/exhaustive-deps
   const pickSpice = (i) => { setSpiceIdx(i); player.play('spice', [{ text: joinTh(followParts(scene, i, reg)), voice }]); };
   const swapIndex = 'slot';
 
@@ -323,7 +327,7 @@ export default function Start({ sceneId }) {
     if (!readStore(FIRST_KEY, null)) writeStore(FIRST_KEY, { scene: scene.id, made, day: dayKey() });
     writeStore(SCENES_KEY, { ...readStore(SCENES_KEY, {}), [scene.id]: dayKey() });
     const mine = missionParts(scene, reg, spiceIdx, item);
-    const mineEn = scene.missionFull ? `A ${fu.answers[spiceIdx].adj} ${item.en}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
+    const mineEn = scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
     writeStore(MISSION_KEY, { scene: scene.id, th: joinTh(mine), rom: joinRom(mine), en: mineEn, text: scene.mission, day: dayKey(), done: false });
     go('done');
   };
@@ -515,8 +519,9 @@ export default function Start({ sceneId }) {
                 <div className="st-choices" role="radiogroup" aria-label="How spicy?">
                   {fu.answers.map((x, i) => {
                     const ps = followParts(scene, i, reg);
+                    const off = (x.notFor || []).includes(item.th);
                     return (
-                      <button key={x.key} type="button" role="radio" aria-checked={spiceIdx === i} className={spiceIdx === i ? 'on' : ''} onClick={() => pickSpice(i)}>
+                      <button key={x.key} type="button" role="radio" aria-checked={spiceIdx === i} disabled={off} title={off ? `Not usually ordered with ${item.en}` : undefined} className={spiceIdx === i ? 'on' : ''} onClick={() => pickSpice(i)}>
                         <span className="th" lang="th">{joinTh(ps)}</span><span className="rom">{joinRom(ps)}</span><span className="en">{x.en}</span>
                       </button>
                     );
@@ -634,7 +639,7 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
   ];
   const mission = missionParts(scene, reg, spiceIdx, item);
   const [all, setAll] = useState(false);
-  const missionEn = scene.missionFull ? `A ${fu.answers[spiceIdx].adj} ${item.en}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
+  const missionEn = scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
   const [inApp, setInApp] = useState(false);
   useEffect(() => { setInApp(inAppBrowser()); soundDone(); }, []);
   const google = async () => {

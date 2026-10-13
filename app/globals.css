@@ -1826,3 +1826,5 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .st-bubble .th:lang(th) { overflow-wrap: anywhere; }
 .st-bubble.is-them .st-line .th { font-size: clamp(20px, 6.2vw, 26px); }
 .dn-use .dn-use-line { font-size: clamp(24px, 7.4vw, 32px); }
+.st-choices button:disabled { opacity: .45; cursor: not-allowed; }
+.dn-use .dn-use-line { font-size: clamp(22px, 6.6vw, 30px); }
