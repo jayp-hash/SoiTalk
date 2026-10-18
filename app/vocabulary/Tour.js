@@ -49,7 +49,10 @@ export default function Tour({ steps, onClose, setSide }) {
     if (step.side) setSide(step.side);
     const t = setTimeout(() => {
       if (measure()) setShown(true);
-      else setI((n) => (n < steps.length - 1 ? n + 1 : n)); // nothing to show: skip ahead
+      // Nothing to show (e.g. a card with no sentence): skip ahead, and close the
+      // tour if it was the last step, so the page never stays dimmed and frozen
+      else if (i < steps.length - 1) setI(i + 1);
+      else onClose();
     }, step.side ? 560 : 80);
     return () => clearTimeout(t);
   }, [i]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -1,4 +1,5 @@
 'use client';
+import { audioVersion } from '../lib/audioVersion';
 import { soundRight, soundWrong } from '../lib/sfx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
@@ -22,7 +23,6 @@ const usePatterns = () => useMemo(() => inRegister(PATTERNS, getRegister(), part
 //   Listen - hear a sentence, pick what it means (one word differs between options)
 // Build and Listen rounds (5 sentences) are tracked over time like words (lib/memory.js).
 
-const AUDIO_VERSION = 2;
 const ROUND = 5;
 const PREVIEW_KEY = 'tsc-pattern-preview';
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
@@ -37,7 +37,7 @@ function useAudio() {
       ref.current?.pause();
       const voice = readStore('tsc-help', {}).voice || 'female';
       const slow = rate < 1; // slow clip from the voice itself, nudged a touch slower
-      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${AUDIO_VERSION}`);
+      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${audioVersion(text, slow)}`);
       a.playbackRate = slow ? SLOW_NUDGE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
       ref.current = a; setPlaying(true);
       a.onended = a.onerror = () => { if (token.current === my) setPlaying(false); };
@@ -265,7 +265,7 @@ function Spin({ p, level, lex, can }) {
       </div>
       <div className="pt-actions">
         <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
-        <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+        <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
         <button type="button" className="auth-btn primary pt-spin" onClick={spin} disabled={spinning}>Spin</button>
       </div>
       <button type="button" className={`pt-en${showEn ? ' is-on' : ''}`} onClick={() => setShowEn(true)}
@@ -394,7 +394,7 @@ function Listen({ p, level, lex, can, onRound }) {
       <p className="pt-prompt">What does it mean?</p>
       <div className="pt-actions">
         <button type="button" className={`ck-play${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
-        <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+        <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
       </div>
       <p className="ck-tap">Tap to hear it again · turtle = slow</p>
       {picked != null && <div className="pt-reveal"><Parts parts={item.s.parts} lex={lex} big /></div>}
@@ -543,7 +543,7 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
               </div>
               <div className="pt-actions">
                 <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
-                <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+                <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
               <p className="pt-sentence-en">{s.en}</p>
               <p className={`st-toast${toast ? ' is-on' : ''}`} role="status">{toast || ' '}</p>
@@ -556,7 +556,7 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
             <>
               <div className="ck-audio">
                 <button type="button" className={`ck-play${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
-                <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(' '), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+                <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
               {picked != null && (
                 <div className="st-tiles is-reveal" lang="th">

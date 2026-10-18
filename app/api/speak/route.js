@@ -23,6 +23,7 @@ import { SAY_IT } from '../../lib/sayit';
 import { allPatternSentences } from '../../lib/patterns';
 import { allSceneLines } from '../../lib/scenes';
 import { neutralForms } from '../../lib/register';
+import { isSentence } from '../../lib/audioVersion';
 import { supabasePublic } from '../../lib/supabase-public';
 
 const AMY_VOICE_ID = 'OZxMHsGaBmV5pjMIDIn0'; // female voice
@@ -114,7 +115,8 @@ export async function GET(request) {
           similarity_boost: 0.75,
           style: 0,
           use_speaker_boost: true,
-          speed: slow ? 0.7 : 0.85, // 0.7 is ElevenLabs' slowest
+          // Sentences a touch slower than single words; 0.7 is ElevenLabs' slowest
+          speed: slow ? 0.7 : isSentence(text) ? 0.8 : 0.85,
         },
       }),
     });

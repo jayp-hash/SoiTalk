@@ -1,4 +1,5 @@
 'use client';
+import { audioVersion } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore, dayKey } from '../lib/progress';
 import { getRegister, setRegister, registerChosen } from '../lib/register';
@@ -19,7 +20,6 @@ import { SCENES, DEFAULT_SCENE, replyParts, followParts, missionParts, joinTh, j
 //      save progress.
 // ---------------------------------------------------------------------
 
-const AUDIO_VERSION = 2; // keep in step with Deck.js
 const STEPS = ['scene', 'parts', 'swap', 'listen', 'check', 'done'];
 const FIRST_KEY = 'tsc-first-session';   // { scene, made, day }
 export const SCENES_KEY = 'tsc-scenes';  // { <scene id>: day finished }
@@ -40,7 +40,7 @@ function usePlayer() {
     for (const c of clips) {
       if (token.current !== my) return;
       try {
-        const a = new Audio(`/api/speak?text=${encodeURIComponent(c.text)}&voice=${c.voice}${c.slow ? '&slow=1' : ''}&v=${AUDIO_VERSION}`);
+        const a = new Audio(`/api/speak?text=${encodeURIComponent(c.text)}&voice=${c.voice}${c.slow ? '&slow=1' : ''}&v=${audioVersion(c.text, c.slow)}`);
         a.preservesPitch = true; a.webkitPreservesPitch = true;
         cur.current = a;
         await new Promise((res) => { a.onended = res; a.onerror = res; a.play().catch(res); });
@@ -59,7 +59,8 @@ const SlowIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const SwapIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" /><path d="M4 3v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" /><path d="M20 21v-5h-5" /></svg>;
 
 // Slow: the words one by one (spaces between them) in the voice's slow mode
-const spaced = (parts) => parts.map((p) => p.th).join(' ');
+// Slow clips are the whole line at the voice's slowest speed (spaces between words made it stutter)
+const spaced = (parts) => parts.map((p) => p.th).join('');
 function SlowBtn({ id, clips, player }) {
   const on = player.playing === id;
   return (

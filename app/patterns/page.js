@@ -1,4 +1,4 @@
-import Patterns from './Patterns';
+import Patterns from './Simple';
 import { loadWords } from '../lib/words';
 import { ProgressProvider } from '../lib/progress';
 

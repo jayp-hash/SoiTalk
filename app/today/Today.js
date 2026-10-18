@@ -1,8 +1,9 @@
 'use client';
+import { audioVersion } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Deck from '../vocabulary/Deck';
 import { useProgressStore, coverage, countKnown, countLearning, endOfToday, dayKey, GOAL_OPTIONS } from '../lib/progress';
-import CheckSession from './Check';
+import CheckSession, { shortMeaning } from './Check';
 import { TodayPattern, pickTodayPattern } from '../patterns/Patterns';
 import { SCENES } from '../lib/scenes';
 import { useUser } from '../lib/useUser';
@@ -66,7 +67,7 @@ const THAI_DAY = [
   { en: 'Sat', full: 'Saturday', th: 'ส', rom: 'sǎo', colour: 'purple', color: '#8E5CC9' },
 ];
 
-// A day fills with its colour when the day's goal (the words) is done;
+// A day fills in soi blue when the day's goal (the words) is done;
 // a star means you also said that day's line out loud (the bonus).
 function Week({ days, said = {} }) {
   // Tap a day to see how its Thai name is said (kept hidden for spacing)
@@ -81,7 +82,7 @@ function Week({ days, said = {} }) {
     const done = !!days[dayKey(t)]?.done;
     const star = said[dayKey(t)] != null;
     cells.push(
-      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': d.color }}>
+      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': 'var(--soi, #1D4FA0)' }}>
         <button type="button" className="day" onClick={() => show(back)}
           aria-label={`${d.full}, ${d.rom}${back === 0 ? ', today' : ''}${done ? ', goal done' : ''}${star ? ', said it out loud' : ''}`}>
           {peek === back && <span className="day-peek" role="tooltip">{d.rom} · {d.full}</span>}
@@ -244,7 +245,7 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
   const play = () => {
     try {
       const voice = readStore('tsc-help', {}).voice || 'female';
-      const a = new Audio(`/api/speak?text=${encodeURIComponent(shown.thai)}&voice=${voice}&v=2`);
+      const a = new Audio(`/api/speak?text=${encodeURIComponent(shown.thai)}&voice=${voice}&v=${audioVersion(shown.thai)}`);
       setPlaying(true);
       a.onended = a.onerror = () => setPlaying(false);
       a.play().catch(() => setPlaying(false));
@@ -343,7 +344,9 @@ export default function Today({ words, milestones }) {
   };
   const afterChecks = (result) => {
     setScore(result);
-    if (queue.length) { setMode('session'); window.scrollTo(0, 0); } else afterWords();
+    // A short summary between the review and the new words
+    if (queue.length && result?.total) { setMode('checksummary'); window.scrollTo(0, 0); }
+    else if (queue.length) { setMode('session'); window.scrollTo(0, 0); } else afterWords();
   };
   // Words done: today's pattern practice (if one is open), then the day is done
   // (picked in an effect below, once the last word's progress has been saved)
@@ -390,14 +393,35 @@ export default function Today({ words, milestones }) {
     );
   }
 
+  if (mode === 'checksummary' && score) {
+    const missed = [...new Map((score.missed || []).map((w) => [w.thai, w])).values()];
+    const all = score.right === score.total;
+    return (
+      <div className="today-wrap">
+        <section className="rv-sum" aria-live="polite">
+          <p className="rv-eyebrow">Review done</p>
+          <p className="rv-score"><b>{score.right}</b> of {score.total} right</p>
+          <p className="rv-line">{all ? 'Every word stuck. Nice.' : 'These come back sooner, so they stick.'}</p>
+          {missed.length > 0 && (
+            <ul className="rv-list" aria-label="Words to practise">
+              {missed.map((w) => (
+                <li key={w.thai}><span lang="th">{w.thai}</span><i>{w.romanization}</i><b>{shortMeaning(w.english)}</b></li>
+              ))}
+            </ul>
+          )}
+          <button type="button" className="rv-go" onClick={() => { setMode('session'); window.scrollTo(0, 0); }}>
+            Start today's {new Set(queue.map((w) => w.thai)).size} new word{new Set(queue.map((w) => w.thai)).size === 1 ? '' : 's'}
+          </button>
+        </section>
+      </div>
+    );
+  }
+
   if (mode === 'session') {
     return (
       <>
-        <div className="fc-page-title">
-          <h1>Today</h1>
-          <button type="button" className="today-quit" onClick={() => setMode('home')}>End session</button>
-        </div>
-        <Deck words={queue} session lex={lex} onRated={onRated} onDone={afterWords} />
+        <h1 className="sr-only">Today</h1>
+        <Deck words={queue} session lex={lex} onRated={onRated} onDone={afterWords} onQuit={() => setMode('home')} />
       </>
     );
   }
@@ -446,7 +470,7 @@ export default function Today({ words, milestones }) {
         <div className="today-card today-done">
           <p className="today-eyebrow">Session complete</p>
           <h1 className="today-title">Done for today</h1>
-          <p className="today-goal-done"><i style={{ background: day.color }} />Today's goal is done. {day.full} lights up {day.colour} on your week.</p>
+          <p className="today-goal-done"><i style={{ background: 'var(--soi, #1D4FA0)' }} />Today's goal is done. {day.full} is filled in on your week.</p>
           {!early && <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />}
           <div className="today-stats">
             {score?.right > 0 && <div><b>{score.right}</b><span>word{score.right === 1 ? '' : 's'} remembered</span></div>}
@@ -477,7 +501,7 @@ export default function Today({ words, milestones }) {
 
           {sceneToday ? (
             <section className="today-step today-scene" aria-label="Today's scene">
-              <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today</p>
+              <p className="today-step-label"><i className="today-daydot" style={{ background: 'var(--soi, #1D4FA0)' }} />Today</p>
               <div className="today-step-body">
                 <div>
                   <strong>{sceneToday.promise}</strong>
@@ -488,10 +512,10 @@ export default function Today({ words, milestones }) {
             </section>
           ) : (
           <section className="today-step" aria-label="Learn">
-            <p className="today-step-label"><i className="today-daydot" style={{ background: day.color }} />Today's goal</p>
+            <p className="today-step-label"><i className="today-daydot" style={{ background: 'var(--soi, #1D4FA0)' }} />Today's goal</p>
             {nothingLeft ? (
               <div className="today-step-body">
-                <div><strong>Goal done ✓</strong><span>{day.full} lights up {day.colour} on your week. See you tomorrow.</span></div>
+                <div><strong>Goal done ✓</strong><span>{day.full} is filled in on your week. See you tomorrow.</span></div>
                 {plan.fresh.length > 0 && (
                   <button type="button" className="today-more-link" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Want more? Learn {EXTRA_NEW} extra words</button>
                 )}
@@ -508,7 +532,7 @@ export default function Today({ words, milestones }) {
                   </strong>
                   <span>
                     {brandNew && plan.newCards[0] ? <>Starting with <span lang="th">{plan.newCards[0].thai}</span> ({plan.newCards[0].romanization}). </> : null}
-                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (goalPattern ? 60 : 0)) / 60))} minutes. Finish and {day.full} lights up {day.colour}.
+                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (goalPattern ? 60 : 0)) / 60))} minutes. Finish and {day.full} fills in on your week.
                   </span>
                 </div>
                 <button type="button" className="auth-btn primary today-start"

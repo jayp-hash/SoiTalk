@@ -88,6 +88,12 @@ function guessType(thai) {
     ? 'Question' : 'Statement';
 }
 
+// Meaning fixes (Jay, Oct 2026). The first meaning is what the listen check
+// shows, so it should be the one learners meet first in the scenes.
+const ENGLISH_FIX = {
+  'เอา': 'to want; to take',
+};
+
 // ---------- main ----------
 async function upsertInBatches(table, rows, select) {
   const out = [];
@@ -111,7 +117,7 @@ async function main() {
     .map((r) => ({
       thai: r['Thai'],
       romanization: rom(col(r, 'FINAL Romanization')),
-      english: col(r, 'FINAL English'),
+      english: ENGLISH_FIX[r['Thai']] || col(r, 'FINAL English'),
       frequency_rank: col(r, 'Avg Rank') ? Number(col(r, 'Avg Rank')) : null,
       sources_count: Number(col(r, 'Sources Count')) || 0,
       notes: col(r, 'Notes') || null,

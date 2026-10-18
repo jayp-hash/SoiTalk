@@ -1,4 +1,5 @@
 'use client';
+import { audioVersion } from '../lib/audioVersion';
 import { soundRight, soundWrong } from '../lib/sfx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { readStore } from '../lib/progress';
@@ -17,7 +18,6 @@ import { renderSentence, getRegister } from '../lib/register';
 // "Show the word" reveals the Thai and romanization; a right answer after
 // that still counts, but less.
 
-const AUDIO_VERSION = 2; // keep in step with Deck.js
 const OPTIONS = 5;
 
 export const shortMeaning = (en = '') => en.split(';')[0].replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
@@ -93,17 +93,19 @@ const SLOW_NUDGE = 0.9;
 function useAudio() {
   const audio = useRef(null);
   const token = useRef(0);
-  const [playing, setPlaying] = useState(false);
-  const play = (text, rate = 1) => {
+  const [playing, setPlaying] = useState(false); // false | 'normal' | 'slow'
+  const stop = () => { ++token.current; audio.current?.pause(); setPlaying(false); };
+  const play = (text, rate = 1, toggle = false) => {
+    const slow = rate < 1; // slow clip from the voice itself, nudged a touch slower
+    if (toggle && playing === (slow ? 'slow' : 'normal')) { stop(); return; } // pressing again = stop, like the word cards
     const my = ++token.current;
     try {
       audio.current?.pause();
       const voice = readStore('tsc-help', {}).voice || 'female';
-      const slow = rate < 1; // slow clip from the voice itself, nudged a touch slower
-      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${AUDIO_VERSION}`);
-      a.playbackRate = slow ? SLOW_NUDGE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
+      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${audioVersion(text, slow)}`);
+      a.defaultPlaybackRate = slow ? SLOW_NUDGE : 1; a.playbackRate = slow ? SLOW_NUDGE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
       audio.current = a;
-      setPlaying(true);
+      setPlaying(slow ? 'slow' : 'normal');
       a.onended = a.onerror = () => { if (token.current === my) setPlaying(false); };
       a.play().catch(() => { if (token.current === my) setPlaying(false); });
     } catch { setPlaying(false); }
@@ -112,17 +114,30 @@ function useAudio() {
   return { play, playing };
 }
 
+const StopIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>;
 const PlayIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>;
 const SlowIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15c0-3.9 3.1-7 7-7s7 3.1 7 7" /><path d="M2 15h19c1 0 1.5-.8 1.2-1.6L21 11" /><path d="M7 15l-1 3M15 15l1 3" /></svg>;
 
 // queue: words due for a check. onAnswer(word, grade) records it. onDone({ right, total }).
 export default function CheckSession({ queue, allWords, progress, onAnswer, onDone, onQuit }) {
   // Build all items up front so options don't reshuffle while you answer
-  const [items, setItems] = useState(() => queue.map((w) => buildItem(w, progress[w.thai], allWords, progress)).filter(Boolean));
+  // Never play the same thing twice: ขอบคุณ and the ค่ะ check's sentence ขอบคุณค่ะ
+  // are the same audio apart from the polite ending, so only the first stays.
+  const [items, setItems] = useState(() => {
+    const seen = new Set();
+    const bare = (t) => t.replace(/\s+/g, '').replace(/(ครับ|ค่ะ|คะ|นะ)+$/, '');
+    return queue.map((w) => buildItem(w, progress[w.thai], allWords, progress)).filter((it) => {
+      if (!it) return false;
+      const k = bare(it.audio);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  });
   const [i, setI] = useState(0);
   const [picked, setPicked] = useState(null);
   const [hinted, setHinted] = useState(false);
-  const score = useRef({ right: 0, total: 0 });
+  const score = useRef({ right: 0, total: 0, missed: [] });
   const { play, playing } = useAudio();
   const item = items[i];
 
@@ -137,6 +152,7 @@ export default function CheckSession({ queue, allWords, progress, onAnswer, onDo
     if (!item.practice) {
       score.current.total += 1;
       if (right) score.current.right += 1;
+      else score.current.missed.push(item.word);
       onAnswer(item.word, right ? (hinted ? 'hard' : 'good') : 'again', { proof: item.kind === 'word' });
     }
     // A miss comes back once at the end, as practice (not counted again)
@@ -161,7 +177,7 @@ export default function CheckSession({ queue, allWords, progress, onAnswer, onDo
   if (!item) return null;
   const right = picked != null && picked === item.answer;
   const cat = item.word.category || {};
-  const base = queue.length; // misses come back as extra practice without changing the count
+  const base = items.filter((x) => !x.practice).length; // misses come back as extra practice without changing the count
   const done = Math.min(i, base);
 
   return (
@@ -177,8 +193,8 @@ export default function CheckSession({ queue, allWords, progress, onAnswer, onDo
           <p className="ck-eyebrow">{item.practice ? 'One more try' : 'Listen'}{cat.name ? ` · ${cat.name}` : ''}</p>
           <p className="ck-q">{item.kind === 'sentence' ? 'What does it mean?' : 'What does this word mean?'}</p>
           <div className="ck-row">
-            <button type="button" className={`ck-play${playing ? ' on' : ''}`} onClick={() => play(item.audio)} aria-label={playing ? 'Playing' : 'Play again'}><PlayIcon /></button>
-            <button type="button" className="ck-slow" onClick={() => play(item.audio, 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+            <button type="button" className={`ck-play${playing === 'normal' ? ' on' : ''}`} onClick={() => play(item.audio, 1, true)} aria-label={playing === 'normal' ? 'Stop' : 'Play again'}>{playing === 'normal' ? <StopIcon /> : <PlayIcon />}</button>
+            <button type="button" className={`ck-slow${playing === 'slow' ? ' on' : ''}`} onClick={() => play(item.audio, 0.65, true)} aria-label={playing === 'slow' ? 'Stop' : 'Play slowly'}><SlowIcon /></button>
             <div className="ck-reveal-slot">
               {(hinted || picked != null) ? (
                 <div className={`ck-reveal${item.kind === 'sentence' ? ' is-sentence' : ''}`}>

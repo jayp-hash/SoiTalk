@@ -1,4 +1,5 @@
 'use client';
+import { audioVersion } from '../lib/audioVersion';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import Tour, { tourSteps, TOUR_KEY, HINT_BACK_KEY } from './Tour';
 import { TOPIC_GROUPS } from '../lib/categories';
@@ -17,9 +18,8 @@ const DEFAULT_CATEGORY = { name: 'Vocabulary', color: '#4F5BD5', edge: '#353FA6'
 // visit, so replays are instant and don't spend ElevenLabs credit.
 const audioCache = new Map();
 
-// Bump this when the voice settings change. Clips are cached for a year by
+// Clip URLs carry a version (lib/audioVersion.js). Clips are cached for a year by
 // the browser and Vercel, so a new number makes everyone get the new voice.
-const AUDIO_VERSION = 2; // 2 = eleven_v4, stability 0.8, speed 0.85
 
 // Female or male voice, from the Aa settings
 let currentVoice = 'female';
@@ -28,7 +28,7 @@ async function loadAudio(text, slow = false) {
   const key = `${currentVoice}|${slow ? 'slow|' : ''}${text}`;
   if (audioCache.has(key)) return audioCache.get(key);
   // GET so the browser and Vercel's CDN can cache the clip (see api/speak)
-  const res = await fetch(`/api/speak?text=${encodeURIComponent(text)}&voice=${currentVoice}${slow ? '&slow=1' : ''}&v=${AUDIO_VERSION}`);
+  const res = await fetch(`/api/speak?text=${encodeURIComponent(text)}&voice=${currentVoice}${slow ? '&slow=1' : ''}&v=${audioVersion(text, slow)}`);
   if (!res.ok) throw new Error('speak request failed');
   const audio = new Audio(URL.createObjectURL(await res.blob()));
   // Keep the voice's pitch when slowed down (Safari and Firefox use prefixed names)
@@ -309,7 +309,7 @@ function hexToRgba(hex, alpha) {
 // session = the daily review: one list of cards, no sets or shuffle.
 //   onRated(word, knewIt) -> return true if the word was put back in the queue
 //   onDone() is called after rating the last card.
-export default function Deck({ words: allWords, session = false, onRated, onDone, topic: topicProp = null, onTopics, startSet = 0, lex = null }) {
+export default function Deck({ words: allWords, session = false, onRated, onDone, onQuit, topic: topicProp = null, onTopics, startSet = 0, lex = null }) {
   // Topic filter (browse mode): learn only one category, e.g. Food & drink.
   // On /vocabulary the topic comes from the topic page (onTopics goes back to it).
   const [topic, setTopic] = useState(topicProp);
@@ -363,7 +363,8 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
     if (!flipped || tourOpen || !tourDone || firstDay || readStore(HINT_BACK_KEY, false)) return;
     selfFlips.current += 1;
     if (selfFlips.current < 3) return; // wait until the 3rd flip, so the first minutes aren't all tips
-    const t = setTimeout(() => setTourOpen('back'), 650); // after the flip animation
+    // after the flip animation; only on a card that has a sentence to point at
+    const t = setTimeout(() => { if (document.querySelector('[data-tour="words"]')) setTourOpen('back'); }, 650);
     return () => clearTimeout(t);
   }, [flipped, tourOpen]);
   useEffect(() => {
@@ -423,7 +424,8 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
       const top = stageRef.current.getBoundingClientRect().top + window.scrollY;
       // On phones the back/next arrows sit in a row under the card
       const below = window.innerWidth <= 560 ? 72 : 20;
-      setCardHeight(Math.round(Math.max(360, Math.min(620, window.innerHeight - top - below))));
+      // Capped so the card sits up near the toolbar instead of stretching to the bottom
+      setCardHeight(Math.round(Math.max(360, Math.min(session ? 540 : 620, window.innerHeight - top - below))));
     }
     measure();
     window.addEventListener('resize', measure);
@@ -672,6 +674,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
           <span style={{ width: `${((cardIndex + 1) / cards.length) * 100}%` }} />
         </div>
         <span className="fc-count">{cardIndex + 1} / {cards.length}</span>
+        {session && onQuit && <button type="button" className="today-quit fc-quit" onClick={onQuit}>End</button>}
         {!session && <button
           type="button"
           className={`fc-shuffle${order ? ' is-on' : ''}`}
@@ -756,7 +759,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
                     className={`fc-turtle${player.playing === 'sentence-slow' ? ' is-playing' : ''}`}
                     aria-label={player.playing === 'sentence-slow' ? 'Stop' : 'Play sentence slowly'}
                     title="Play slowly"
-                    onClick={(e) => { e.stopPropagation(); player.play('sentence-slow', sentence.words?.length ? sentence.words.map((w) => w.th).join(' ') : sentence.thai, SLOW_RATE); }}
+                    onClick={(e) => { e.stopPropagation(); player.play('sentence-slow', sentence.words?.length ? sentence.words.map((w) => w.th).join('') : sentence.thai, SLOW_RATE); }}
                   >
                     <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 15c0-4 3.5-7 8-7s7 3 7 6v1H3z" /><path d="M18 13h2a2 2 0 0 0 0-4h-1" /><path d="M6 15v3M15 15v3" />

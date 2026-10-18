@@ -1,4 +1,5 @@
 'use client';
+import { audioVersion } from '../lib/audioVersion';
 import { useEffect, useRef, useState } from 'react';
 import { useUser } from '../lib/useUser';
 import SoiSign from './SoiSign';
@@ -7,28 +8,27 @@ import SoiSign from './SoiSign';
 // (live in Thailand / Thai partner / visiting); the choice is remembered
 // in this browser (later: saved to the profile and used to tailor the course).
 const PERSONA_KEY = 'tsc-persona';
-const AUDIO_VERSION = 2; // keep in step with Deck.js
 
 const PERSONAS = {
   live: {
-    chip: 'I live in Thailand',
+    chip: 'I live here, or soon will',
     h1: <>Thai for the street <span className="lp-th">you live on</span></>,
     lede: 'Order food, give the taxi directions and sort things out with the condo office. Learn the words people around you actually use, most useful first.',
   },
   partner: {
-    chip: 'My partner is Thai',
-    h1: <>Talk with their family, <span className="lp-th">not just smile and nod</span></>,
-    lede: 'Follow the conversation at dinner, say the right thing to their parents and surprise your partner. Start with the everyday Thai families really speak.',
+    chip: 'Someone close to me is Thai',
+    h1: <>Talk with them, <span className="lp-th">not just smile and nod</span></>,
+    lede: 'Follow the conversation at dinner, say the right thing to their family and surprise the people you care about. Start with the everyday Thai families really speak.',
   },
   visit: {
-    chip: "I'm visiting",
-    h1: <>Survival Thai <span className="lp-th">before you land</span></>,
-    lede: 'Greet people, ask where things are and pay at the market. The most useful words come first, so a few days of practice already helps.',
+    chip: 'I just love Thailand',
+    h1: <>Real Thai you'll use, <span className="lp-th">wherever you start</span></>,
+    lede: 'Planning a trip, learning from home, or into Thai food, dramas or Muay Thai? Start with the words Thais use every day, most useful first.',
   },
 };
 
 const MISSIONS = {
-  live: [['7-Eleven', 'ไม่เอาถุง', 'mâi ao thǔng', "Tell the cashier you don't need a bag."], ['Taxi', 'ไปสุขุมวิท', 'bpai sù-khǔm-wít', "Tell the driver where you're going."], ['Street food', 'ไม่เผ็ด', 'mâi phèt', 'Order your dish not spicy.']],
+  live: [['Corner shop', 'ไม่เอาถุง', 'mâi ao thǔng', "Tell the cashier you don't need a bag."], ['Taxi', 'ไปสุขุมวิท', 'bpai sù-khǔm-wít', "Tell the driver where you're going."], ['Street food', 'ไม่เผ็ด', 'mâi phèt', 'Order your dish not spicy.']],
   partner: [['Dinner', 'อร่อยมาก', 'à-ròi mâak', 'Tell their mum the food is delicious.'], ['Greeting', 'สวัสดี', 'sà-wàt-dii', 'Greet their parents with a wai.'], ['At home', 'กินข้าวหรือยัง', 'gin khâao rǔue yang', "Ask someone if they've eaten yet."]],
   visit: [['Market', 'เท่าไหร่', 'thâo-rài', 'Ask how much something costs.'], ['Restaurant', 'เช็คบิลด้วย', 'chék-bin dûaai', 'Ask for the bill.'], ['Hotel', 'ขอบคุณ', 'khàawp-khun', 'Thank the staff in Thai.']],
 };
@@ -41,7 +41,7 @@ function usePlay() {
   const play = (id, text) => {
     try {
       audio.current?.pause();
-      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=female&v=${AUDIO_VERSION}`);
+      const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=female&v=${audioVersion(text)}`);
       audio.current = a;
       setPlaying(id);
       a.onended = a.onerror = () => setPlaying((p) => (p === id ? null : p));
@@ -163,7 +163,6 @@ export default function Landing({ wordCount, demo, curve }) {
     try { const p = localStorage.getItem(PERSONA_KEY); if (p && PERSONAS[p]) setPersona(p); } catch {}
   }, []);
   const choose = (p) => { setPersona(p); try { localStorage.setItem(PERSONA_KEY, p); } catch {} };
-  const P = PERSONAS[persona];
   const count = wordCount.toLocaleString('en');
   const cta = user
     ? <a className="lp-btn" href="/today">Continue to Today</a>
@@ -185,8 +184,15 @@ export default function Landing({ wordCount, demo, curve }) {
               <button key={id} type="button" aria-pressed={persona === id} onClick={() => choose(id)}>{p.chip}</button>
             ))}
           </div>
-          <h1>{P.h1}</h1>
-          <p className="lp-lede">{P.lede}</p>
+          {/* All three pitches share one grid cell, so switching never moves the chips or the card */}
+          <div className="lp-copy">
+            {Object.entries(PERSONAS).map(([id, p]) => (
+              <div key={id} className={`lp-copy-i${persona === id ? ' on' : ''}`} aria-hidden={persona !== id}>
+                {persona === id ? <h1>{p.h1}</h1> : <p className="lp-h1">{p.h1}</p>}
+                <p className="lp-lede">{p.lede}</p>
+              </div>
+            ))}
+          </div>
           <div className="lp-cta">
             {cta}
             {!user && <span>No signup needed. Save your progress later with Google or email.</span>}
