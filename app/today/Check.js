@@ -1,5 +1,5 @@
 'use client';
-import { audioVersion } from '../lib/audioVersion';
+import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { soundRight, soundWrong } from '../lib/sfx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { readStore } from '../lib/progress';
@@ -89,7 +89,6 @@ function buildItem(word, entry, allWords, progress) {
   return { word, kind, audio: s.thai, answer, options, reveal: { th: s.thai, rom: s.romanization, en: answer, focus: word.thai } };
 }
 
-const SLOW_NUDGE = 0.9;
 function useAudio() {
   const audio = useRef(null);
   const token = useRef(0);
@@ -103,7 +102,7 @@ function useAudio() {
       audio.current?.pause();
       const voice = readStore('tsc-help', {}).voice || 'female';
       const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${audioVersion(text, slow)}`);
-      a.defaultPlaybackRate = slow ? SLOW_NUDGE : 1; a.playbackRate = slow ? SLOW_NUDGE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
+      a.defaultPlaybackRate = slow ? SLOW_RATE : 1; a.playbackRate = slow ? SLOW_RATE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
       audio.current = a;
       setPlaying(slow ? 'slow' : 'normal');
       a.onended = a.onerror = () => { if (token.current === my) setPlaying(false); };

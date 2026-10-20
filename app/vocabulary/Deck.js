@@ -1,5 +1,5 @@
 'use client';
-import { audioVersion } from '../lib/audioVersion';
+import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import Tour, { tourSteps, TOUR_KEY, HINT_BACK_KEY } from './Tour';
 import { TOPIC_GROUPS } from '../lib/categories';
@@ -8,7 +8,6 @@ import { PATTERNS, inRegister, exampleFor } from '../lib/patterns';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const SET_SIZE = 20;
-const SLOW_RATE = 0.9; // turtle button: a slow clip from the voice (see api/speak), played at 90%
 
 // Until words have categories (round 2), every card uses this band.
 const DEFAULT_CATEGORY = { name: 'Vocabulary', color: '#4F5BD5', edge: '#353FA6' };

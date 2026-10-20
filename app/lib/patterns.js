@@ -306,7 +306,7 @@ function ladderOrder({ thing, number, thing2, number2, extra }) {
 const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
 export const LADDERS = [
   {
-    id: 'like', title: 'Say what you like', short: 'What you like', key: { th: 'ชอบ', rom: 'châawp', en: 'to like' },
+    id: 'like', title: 'Likes and dislikes', short: 'Likes and dislikes', key: { th: 'ชอบ', rom: 'châawp', en: 'to like' },
     levels: [
       { n: 1, name: 'Level 1', rule: 'ชอบ (châawp) = like. Put an activity after it.', slots: ['who', 'doing'],
         random: () => ({ who: pickOne(WHO), doing: pickOne(DOING) }), make: ladderLike },
@@ -328,7 +328,7 @@ export const LADDERS = [
     ],
   },
   {
-    id: 'order', title: 'Order more than one', short: 'Ordering several', key: { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
+    id: 'order', title: 'Ordering food and drinks', short: 'Ordering', key: { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
     levels: [
       { n: 1, name: 'Level 1', rule: 'ขอ (khǎaw) + thing + number + counting word.', slots: ['thing', 'number'],
         random: () => ({ thing: pickOne(THING), number: pickOne(NUMBER) }), make: ladderOrder },

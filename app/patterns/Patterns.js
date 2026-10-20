@@ -1,5 +1,5 @@
 'use client';
-import { audioVersion } from '../lib/audioVersion';
+import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { soundRight, soundWrong } from '../lib/sfx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
@@ -27,7 +27,6 @@ const ROUND = 5;
 const PREVIEW_KEY = 'tsc-pattern-preview';
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 
-const SLOW_NUDGE = 0.9;
 function useAudio() {
   const ref = useRef(null); const token = useRef(0);
   const [playing, setPlaying] = useState(false);
@@ -38,7 +37,7 @@ function useAudio() {
       const voice = readStore('tsc-help', {}).voice || 'female';
       const slow = rate < 1; // slow clip from the voice itself, nudged a touch slower
       const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${audioVersion(text, slow)}`);
-      a.playbackRate = slow ? SLOW_NUDGE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
+      a.playbackRate = slow ? SLOW_RATE : 1; a.preservesPitch = true; a.webkitPreservesPitch = true;
       ref.current = a; setPlaying(true);
       a.onended = a.onerror = () => { if (token.current === my) setPlaying(false); };
       a.play().catch(() => { if (token.current === my) setPlaying(false); });

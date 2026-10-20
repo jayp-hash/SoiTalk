@@ -1,5 +1,5 @@
 'use client';
-import { audioVersion } from '../lib/audioVersion';
+import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore, dayKey } from '../lib/progress';
 import { getRegister, setRegister, registerChosen } from '../lib/register';
@@ -42,6 +42,7 @@ function usePlayer() {
       try {
         const a = new Audio(`/api/speak?text=${encodeURIComponent(c.text)}&voice=${c.voice}${c.slow ? '&slow=1' : ''}&v=${audioVersion(c.text, c.slow)}`);
         a.preservesPitch = true; a.webkitPreservesPitch = true;
+        if (c.slow) { a.defaultPlaybackRate = SLOW_RATE; a.playbackRate = SLOW_RATE; }
         cur.current = a;
         await new Promise((res) => { a.onended = res; a.onerror = res; a.play().catch(res); });
         await new Promise((res) => setTimeout(res, 250));

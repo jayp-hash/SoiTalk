@@ -2047,3 +2047,59 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
   .pm-lever { height: 56px; }
 }
 .pm-play { background: #0E2E63; }
+/* v6: fits a laptop screen without scrolling */
+@media (min-width: 801px) {
+  .pm-wrap { gap: 12px; }
+  .pm-head h1 { font-size: 28px; margin-bottom: 4px; }
+  .pm-head p { font-size: 15px; }
+  .pm-band { padding: 12px 22px; }
+  .pm-body { padding: 16px 22px 18px; gap: 12px; }
+  .pm-top { padding-bottom: 12px; }
+  .pm-play { width: 48px; height: 48px; }
+  .pm-key .th { font-size: 28px; }
+  .pm-key b { font-size: 15px; }
+  .pm-lever { height: 52px; font-size: 18px; }
+}
+@media (min-width: 801px) {
+  body:has(.pm-layout) .page { padding-bottom: 24px; }
+  .pm-sentence { row-gap: 6px; }
+  .pm-tile { padding: 4px 10px 5px; gap: 0; }
+  .pm-tile .th { font-size: 26px; line-height: 1.45; }
+  .pm-tile .rom { font-size: 12px; }
+}
+
+/* Desktop: the level menu lives in the sidebar, under the patterns */
+.pm-side-h2 { margin-top: 20px; }
+.pm-side-level { display: flex; align-items: center; gap: 10px; padding-left: 4px; }
+@media (min-width: 801px) { .pm-wrap > .pm-pickers { display: none; } }
+/* v7 (20 Oct): calm swap instead of the shaky reel, steady card height,
+   hover on the sound buttons */
+.pm-tile.is-slot, .pm-en { transition: opacity .18s ease, transform .18s ease; }
+.pm-sentence.is-out .pm-tile.is-slot { opacity: 0; transform: translateY(4px); }
+.pm-en.is-out { opacity: .25; }
+.pm-sentence.is-in .pm-tile.is-slot { animation: pm-in .28s ease both; }
+@keyframes pm-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.pm-sentence { min-height: var(--pm-rows, 132px); align-content: flex-start; }
+.pm-en { min-height: 2.8em; margin: 0; }
+@media (max-width: 800px) { .pm-sentence { --pm-rows: 126px; } }
+.pm-play, .pm-slow { transition: background .15s, transform .1s, box-shadow .15s, border-color .15s; }
+@media (hover: hover) {
+  .pm-play:not(:disabled):hover { background: #1D4FA0; box-shadow: 0 6px 16px rgba(14,46,99,.28); }
+  .pm-slow:not(:disabled):hover { background: #E8EFFA; border-color: #1D4FA0; }
+}
+.pm-play:active, .pm-slow:active { transform: scale(.94); }
+@media (prefers-reduced-motion: reduce) { .pm-sentence.is-in .pm-tile.is-slot { animation: none; } }
+/* Phones, Level 3: sentences can take 3 rows, so keep room for 3 (no jumping) */
+@media (max-width: 800px) {
+  .pm-card[data-level="3"] .pm-sentence { --pm-rows: 190px; }
+  .pm-card[data-level="3"] .pm-en { min-height: 4.2em; }
+}
+/* Keep the card height steady, but let the English sit right under the
+   words: the spare room goes at the bottom of the card, not in between */
+.pm-sentence, .pm-card[data-level] .pm-sentence { min-height: 0; }
+.pm-en, .pm-card[data-level] .pm-en { min-height: 0; }
+.pm-body { align-content: start; min-height: 318px; }
+@media (max-width: 800px) {
+  .pm-body { min-height: 332px; }
+  .pm-card[data-level="3"] .pm-body { min-height: 422px; }
+}

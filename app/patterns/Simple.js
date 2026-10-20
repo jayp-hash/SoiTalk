@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { audioVersion } from '../lib/audioVersion';
+import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { readStore } from '../lib/progress';
 import { laddersInRegister, sentenceThai } from '../lib/patterns';
 import { getRegister, particleFor } from '../lib/register';
@@ -8,7 +8,7 @@ import { getRegister, particleFor } from '../lib/register';
 // Sentence patterns (Jay, 20 Oct 2026): pick a pattern (sidebar on wide
 // screens, a menu on phones), pick a level (1 is the bare pattern, each level
 // adds a piece), and pull one big button for a new sentence. The changeable
-// words spin, land, and the sentence plays.
+// words fade out, the new sentence fades in, and it plays.
 
 const PlayIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>;
 const StopIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>;
@@ -29,6 +29,8 @@ function useAudio() {
       ref.current?.pause();
       const voice = readStore('tsc-help', {}).voice || 'female';
       const a = new Audio(`/api/speak?text=${encodeURIComponent(text)}&voice=${voice}${slow ? '&slow=1' : ''}&v=${audioVersion(text, slow)}`);
+      a.preservesPitch = true; a.webkitPreservesPitch = true;
+      if (slow) { a.defaultPlaybackRate = SLOW_RATE; a.playbackRate = SLOW_RATE; }
       ref.current = a; setPlaying(slow ? 'slow' : 'normal');
       a.onended = a.onerror = () => { if (token.current === my) setPlaying(false); };
       a.play().catch(() => { if (token.current === my) setPlaying(false); });
@@ -48,10 +50,11 @@ export default function SimplePatterns({ lex }) {
   const [help, setHelp] = useState(false);
 
   const [s, setS] = useState(null);      // the sentence on screen (picked in the browser)
-  const [spin, setSpin] = useState(null); // a passing sentence while the reel spins
+  const [spin, setSpin] = useState(false); // true while the changing words fade out
+  const [fresh, setFresh] = useState(0);   // bumps when a new sentence lands, to fade it in
   const timer = useRef(0);
-  useEffect(() => { setS(level.make(level.random())); setSpin(null); }, [pid, lvl]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => () => clearInterval(timer.current), []);
+  useEffect(() => { setS(level.make(level.random())); setSpin(false); }, [pid, lvl]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const choosePattern = (id) => { audio.stop(); setHelp(false); setPid(id); setLvl(1); };
   const pull = () => {
@@ -59,17 +62,17 @@ export default function SimplePatterns({ lex }) {
     audio.stop();
     let next = null;
     for (let i = 0; i < 20 && (!next || (s && sentenceThai(next) === sentenceThai(s))); i++) next = level.make(level.random());
-    const t0 = Date.now();
-    clearInterval(timer.current);
-    timer.current = setInterval(() => {
-      if (Date.now() - t0 > 650) {
-        clearInterval(timer.current); setSpin(null); setS(next);
-        audio.play(sentenceThai(next));
-      } else setSpin(level.make(level.random()));
-    }, 70);
+    // Calm swap (Jay, 20 Oct): the changing words fade out, the new sentence
+    // fades in. Nothing jumps around while it changes.
+    setSpin(true);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      setSpin(false); setS(next); setFresh((n) => n + 1);
+      audio.play(sentenceThai(next));
+    }, 220);
   };
 
-  const shown = spin || s;
+  const shown = s;
   return (
     <div className="pm-layout">
       <nav className="pm-side" aria-label="Sentence patterns">
@@ -79,6 +82,19 @@ export default function SimplePatterns({ lex }) {
             {x.title}
           </button>
         ))}
+        <p className="pm-side-h pm-side-h2">Level</p>
+        <div className="pm-side-level">
+          <label className="pm-pick">
+            <span className="sr-only">Level</span>
+            <select value={lvl} onChange={(e) => { audio.stop(); setHelp(false); setLvl(Number(e.target.value)); }}>
+              {p.levels.map((l) => <option key={l.n} value={l.n}>{l.name}</option>)}
+            </select>
+          </label>
+          <span className="pm-help">
+            <button type="button" className="pm-help-btn" aria-label="What this level adds" aria-expanded={help} onClick={() => setHelp((h) => !h)}>?</button>
+            <span className={`pm-help-tip${help ? ' on' : ''}`} role="tooltip">{level.rule}</span>
+          </span>
+        </div>
       </nav>
 
       <div className="pm-wrap">
@@ -108,16 +124,16 @@ export default function SimplePatterns({ lex }) {
 
         {/* Same card layout as the word cards: band on top, play + slow top left,
             the pattern's key word top right, word boxes, then the English */}
-        <section className="pm-card">
+        <section className="pm-card" data-level={lvl}>
           <div className="pm-band"><span>{p.short || p.title}</span></div>
           <div className="pm-body">
             <div className="pm-top">
               <div className="pm-sound">
-                <button type="button" className={`pm-play${audio.playing === 'normal' ? ' on' : ''}`} disabled={!s || !!spin}
+                <button type="button" className={`pm-play${audio.playing === 'normal' ? ' on' : ''}`} disabled={!s}
                   onClick={() => audio.play(sentenceThai(s), false, true)} aria-label={audio.playing === 'normal' ? 'Stop' : 'Play'}>
                   {audio.playing === 'normal' ? <StopIcon /> : <PlayIcon />}
                 </button>
-                <button type="button" className={`pm-slow${audio.playing === 'slow' ? ' on' : ''}`} disabled={!s || !!spin}
+                <button type="button" className={`pm-slow${audio.playing === 'slow' ? ' on' : ''}`} disabled={!s}
                   onClick={() => audio.play(sentenceThai(s), true, true)} aria-label={audio.playing === 'slow' ? 'Stop' : 'Play slowly'}>
                   <SlowIcon />
                 </button>
@@ -127,15 +143,15 @@ export default function SimplePatterns({ lex }) {
                 <b>{p.key.en}</b>
               </div>
             </div>
-            <div className={`pm-sentence${spin ? ' is-spinning' : ''}`} aria-live="polite">
+            <div key={fresh} className={`pm-sentence${spin ? ' is-out' : ''}${fresh ? ' is-in' : ''}`} aria-live="polite">
               {shown && shown.parts.map((x, i) => (
-                <span key={i} className={`pm-tile${isChangeable(x.slot) ? ' is-slot' : ''}${spin && isChangeable(x.slot) ? ' is-spin' : ''}`}>
+                <span key={i} className={`pm-tile${isChangeable(x.slot) ? ' is-slot' : ''}`}>
                   <span className="th" lang="th">{x.th}</span>
                   <span className="rom">{x.rom || lex[x.th]?.rom || '\u00a0'}</span>
                 </span>
               ))}
             </div>
-            <p className="pm-en">{spin || !s ? '\u00a0' : s.en}</p>
+            <p className={`pm-en${spin ? ' is-out' : ''}`}>{s ? s.en : '\u00a0'}</p>
           </div>
         </section>
 

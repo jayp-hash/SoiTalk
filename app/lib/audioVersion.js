@@ -3,5 +3,9 @@
 // turtle clip is the whole sentence at the voice's slowest speed, with no
 // spaces between words (spaces made it stutter). Single words keep version 2,
 // so their cached clips are reused and don't cost new audio.
+// Turtle speed. The voice service ignores slower speeds, so the browser
+// slows the clip down itself (pitch kept). Used by every turtle button.
+export const SLOW_RATE = 0.75;
+
 export const isSentence = (text = '') => text.replace(/\s/g, '').length > 8;
 export const audioVersion = (text = '', slow = false) => (slow || isSentence(text) ? 3 : 2);
