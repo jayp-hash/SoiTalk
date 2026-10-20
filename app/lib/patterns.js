@@ -199,6 +199,7 @@ export function allPatternSentences() {
     out.add(sentenceThai(orderSentence({ thing, ask: true, short: true })));
     for (const number of NUMBER) for (const also of [false, true]) out.add(sentenceThai(orderSentence({ thing, number, also })));
   }
+  for (const t of allLadderSentences()) out.add(t);
   cache = out;
   return out;
 }
@@ -240,4 +241,139 @@ export function exampleFor(patterns, thai, can, lex, tries = 60) {
     }
   }
   return null;
+}
+
+
+// ---------------------------------------------------------------------
+// Sentence ladders (Jay, 20 Oct 2026): the Patterns page. One sentence
+// pattern, three levels that add pieces: level 1 is the bare pattern,
+// level 2 adds where and/or when, level 3 adds one more piece (a time of
+// day or the weather, or a reason). The lever picks a random sentence for
+// the level. Level 2-3 extras are Claude drafts: Thai Teacher to check.
+// ---------------------------------------------------------------------
+
+// Extra pieces for level 3 of "like": a time / weather, or a reason (เพราะ)
+const LIKE_EXTRA = [
+  { parts: [{ th: 'ตอนเช้า', rom: 'dtaawn-cháo' }], en: 'in the morning', kind: 'time' },
+  { parts: [{ th: 'ตอนเย็น', rom: 'dtaawn-yen' }], en: 'in the evening', kind: 'time' },
+  { parts: [{ th: 'ตอนฝนตก', rom: 'dtaawn fǒn dtòk' }], en: 'when it rains', kind: 'time' },
+  { parts: [{ th: 'เพราะ', rom: 'phráw' }, { th: 'สนุก', rom: 'sà-nùk' }], en: "because it's fun", kind: 'why' },
+  { parts: [{ th: 'เพราะ', rom: 'phráw' }, { th: 'สบาย', rom: 'sà-baai' }], en: "because it's relaxing", kind: 'why' },
+];
+
+function ladderLike({ who, neg, doing, place, when, extra }) {
+  const parts = [
+    { slot: 'who', th: who.th },
+    ...(neg ? [{ slot: 'neg', th: 'ไม่' }] : []),
+    { slot: 'fixed', th: 'ชอบ' },
+    ...(doing.words || [doing.th]).map((th) => ({ slot: 'doing', th })),
+    ...(place ? [{ slot: 'fixed', th: 'ที่' }, { slot: 'place', th: place.th }] : []),
+    ...(when ? [{ slot: 'when', th: when.th }] : []),
+    ...(extra ? extra.parts.map((x) => ({ slot: 'extra', ...x })) : []),
+  ];
+  const verb = neg ? (who.third ? "doesn't like" : "don't like") : (who.third ? 'likes' : 'like');
+  const en = `${who.en} ${verb} ${doing.en}${place ? ` ${place.en}` : ''}${when ? ` ${when.en}` : ''}${extra ? ` ${extra.en}` : ''}.`;
+  return { parts, en };
+}
+
+// Order: level 2 adds a second thing with กับ (and); level 3 adds a request
+const ONE = { th: 'หนึ่ง', en: 'one', rom: 'nùeng' };
+const ORDER_EXTRA = {
+  food: [{ th: 'ไม่เผ็ด', rom: 'mâi phèt', en: 'not spicy' }],
+  'น้ำเปล่า': [{ th: 'ไม่ใส่น้ำแข็ง', rom: 'mâi sài náam-khǎeng', en: 'no ice' }],
+  'เบียร์': [{ th: 'ไม่ใส่น้ำแข็ง', rom: 'mâi sài náam-khǎeng', en: 'no ice' }],
+  'กาแฟ': [{ th: 'หวานน้อย', rom: 'wǎan nói', en: 'less sweet' }],
+  'ชาเย็น': [{ th: 'หวานน้อย', rom: 'wǎan nói', en: 'less sweet' }],
+};
+const extrasFor = (thing) => ORDER_EXTRA[thing.th] || (thing.kind === 'food' ? ORDER_EXTRA.food : []);
+const singular = { bottles: 'bottle', glasses: 'glass', plates: 'plate', bowls: 'bowl' };
+function amt(n, thing) {
+  const c = COUNTER.find((x) => x.th === thing.counter);
+  if (n.en !== 'one') return amount(n.en, thing, c);
+  return thing.many ? `one ${thing.en}` : `one ${singular[c.plural]} of ${thing.en}`;
+}
+function ladderOrder({ thing, number, thing2, number2, extra }) {
+  const parts = [
+    { slot: 'fixed', th: 'ขอ' }, { slot: 'thing', th: thing.th }, { slot: 'number', th: number.th, ...(number.rom ? { rom: number.rom } : {}) }, { slot: 'fixed', th: thing.counter },
+    ...(extra ? [{ slot: 'extra', th: extra.th, rom: extra.rom }] : []),
+    ...(thing2 ? [{ slot: 'fixed', th: 'กับ', rom: 'gàp' }, { slot: 'thing', th: thing2.th }, { slot: 'number', th: number2.th, ...(number2.rom ? { rom: number2.rom } : {}) }, { slot: 'fixed', th: thing2.counter }] : []),
+  ];
+  let en = amt(number, thing) + (extra ? `, ${extra.en}${thing2 ? ',' : ''}` : '') + (thing2 ? ` and ${amt(number2, thing2)}` : '');
+  en = `${en.charAt(0).toUpperCase()}${en.slice(1)}, please.`;
+  return { parts, en };
+}
+
+const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+export const LADDERS = [
+  {
+    id: 'like', title: 'Say what you like', short: 'What you like', key: { th: 'ชอบ', rom: 'châawp', en: 'to like' },
+    levels: [
+      { n: 1, name: 'Level 1', rule: 'ชอบ (châawp) = like. Put an activity after it.', slots: ['who', 'doing'],
+        random: () => ({ who: pickOne(WHO), doing: pickOne(DOING) }), make: ladderLike },
+      { n: 2, name: 'Level 2', rule: 'Add where (ที่ thîi + a place), when (a day), or both, at the end.', slots: ['who', 'neg', 'doing', 'place', 'when'],
+        random: () => {
+          const doing = pickOne(DOING.filter((d) => d.places.length));
+          const both = Math.random() < 0.4, wantPlace = both || Math.random() < 0.5;
+          const pl = pickOne(doing.places); const place = wantPlace ? PLACE.find((x) => x.th === pl) : null;
+          return { who: pickOne(WHO), neg: Math.random() < 0.25, doing, place, when: !wantPlace || both ? pickOne(WHEN) : null };
+        }, make: ladderLike },
+      { n: 3, name: 'Level 3', rule: 'Add one more piece: a time or the weather (ตอน dtaawn), or why (เพราะ phráw).', slots: ['who', 'neg', 'doing', 'place', 'when', 'extra'],
+        random: () => {
+          const doing = pickOne(DOING.filter((d) => d.places.length));
+          const neg = Math.random() < 0.2;
+          const extra = pickOne(LIKE_EXTRA.filter((e) => !(neg && e.kind === 'why')));
+          const pl = pickOne(doing.places);
+          return { who: pickOne(WHO), neg, doing, place: PLACE.find((x) => x.th === pl), when: Math.random() < 0.5 ? pickOne(WHEN) : null, extra };
+        }, make: ladderLike },
+    ],
+  },
+  {
+    id: 'order', title: 'Order more than one', short: 'Ordering several', key: { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
+    levels: [
+      { n: 1, name: 'Level 1', rule: 'ขอ (khǎaw) + thing + number + counting word.', slots: ['thing', 'number'],
+        random: () => ({ thing: pickOne(THING), number: pickOne(NUMBER) }), make: ladderOrder },
+      { n: 2, name: 'Level 2', rule: 'Order two things: join them with กับ (gàp) = and.', slots: ['thing', 'number'],
+        random: () => {
+          const thing = pickOne(THING); const thing2 = pickOne(THING.filter((t) => t.th !== thing.th));
+          return { thing, number: pickOne(NUMBER), thing2, number2: pickOne([ONE, ...NUMBER]) };
+        }, make: ladderOrder },
+      { n: 3, name: 'Level 3', rule: 'Say how you want it, straight after the counting word.', slots: ['thing', 'number', 'extra'],
+        random: () => {
+          const thing = pickOne(THING.filter((t) => extrasFor(t).length)); const thing2 = pickOne(THING.filter((t) => t.th !== thing.th));
+          return { thing, number: pickOne(NUMBER), extra: pickOne(extrasFor(thing)), thing2: Math.random() < 0.5 ? thing2 : null, number2: pickOne([ONE, ...NUMBER]) };
+        }, make: ladderOrder },
+    ],
+  },
+];
+
+// In the learner's register (ผม for men, and the polite ending last)
+export function laddersInRegister(reg, particleFor) {
+  return LADDERS.map((p) => ({ ...p, levels: p.levels.map((l) => ({ ...l, make: (v) => {
+    const s = l.make(v);
+    const parts = s.parts.map((x) => (reg === 'male' && x.th === 'ฉัน' ? { ...x, th: 'ผม' } : x));
+    const e = particleFor(reg, false);
+    return { ...s, parts: [...parts, { slot: 'ending', th: e.th, rom: e.rom }] };
+  } })) }));
+}
+
+// Every ladder sentence, for /api/speak's list of allowed text (no ending, ฉัน form)
+function allLadderSentences() {
+  const out = new Set();
+  const placesOf = (d) => PLACE.filter((x) => d.places.includes(x.th));
+  for (const who of WHO) for (const neg of [false, true]) for (const doing of DOING) {
+    out.add(sentenceThai(ladderLike({ who, neg, doing })));
+    for (const when of WHEN) out.add(sentenceThai(ladderLike({ who, neg, doing, when })));
+    for (const place of placesOf(doing)) for (const when of [null, ...WHEN]) {
+      out.add(sentenceThai(ladderLike({ who, neg, doing, place, when })));
+      for (const extra of LIKE_EXTRA) out.add(sentenceThai(ladderLike({ who, neg, doing, place, when, extra })));
+    }
+  }
+  for (const thing of THING) for (const number of NUMBER) {
+    const extras = [null, ...extrasFor(thing)];
+    for (const extra of extras) {
+      out.add(sentenceThai(ladderOrder({ thing, number, extra })));
+      for (const thing2 of THING) if (thing2.th !== thing.th) for (const number2 of [ONE, ...NUMBER]) out.add(sentenceThai(ladderOrder({ thing, number, extra, thing2, number2 })));
+    }
+  }
+  return out;
 }

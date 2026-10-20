@@ -3,7 +3,7 @@ import { loadWords } from '../lib/words';
 import { ProgressProvider } from '../lib/progress';
 
 export const revalidate = 3600;
-export const metadata = { title: 'Patterns · Soi Talk' };
+export const metadata = { title: 'Sentence patterns · Soi Talk' };
 
 // Sentence patterns: build real sentences from words you've already met
 export default async function PatternsPage() {
