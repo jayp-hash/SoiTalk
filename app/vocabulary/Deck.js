@@ -199,6 +199,7 @@ const TIPS = {
   'ครับ': 'Men end polite sentences with ครับ, women with ค่ะ (คะ in questions). The example sentences use the one you chose in Aa.',
   'ผม': 'ผม is "I" for men. Women usually say ฉัน.',
   'ฉัน': 'ฉัน is "I". Women use it most, men usually say ผม.',
+  'เขา': 'เขา (khǎo) means he or she. Thais rarely say เธอ (thoe) for "she" in conversation.',
 };
 
 const Check = () => <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;

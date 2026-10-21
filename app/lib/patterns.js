@@ -27,7 +27,10 @@ const WHO = [
   { th: 'พวกเขา', en: 'They', third: false },
   { th: 'เพื่อน', en: 'My friend', third: true },
   { th: 'แม่', en: 'Mom', third: true },
+  { th: 'พ่อ', en: 'Dad', third: true, rom: 'phâaw' },
 ];
+// The lever picks "I" (ผม / ฉัน) more often: it's what learners say most (Jay, 21 Oct)
+const WHO_PICK = [WHO[0], WHO[0], WHO[0], ...WHO.slice(1)];
 // Verbs that sound unfinished on their own get their natural object (ดูหนัง, ฟังเพลง).
 // places: where the activity sensibly happens with ที่ (เที่ยว takes no ที่, so none).
 const DOING = [
@@ -52,7 +55,7 @@ const WHEN = [{ th: 'วันเสาร์', en: 'on Saturday' }, { th: 'ว�
 
 function likeSentence({ who, neg, doing, place, when }) {
   const parts = [
-    { slot: 'who', th: who.th },
+    { slot: 'who', th: who.th, ...(who.rom ? { rom: who.rom } : {}) },
     ...(neg ? [{ slot: 'fixed', th: 'ไม่' }] : []),
     { slot: 'fixed', th: 'ชอบ' },
     ...(doing.words || [doing.th]).map((th) => ({ slot: 'doing', th })),
@@ -200,6 +203,7 @@ export function allPatternSentences() {
     for (const number of NUMBER) for (const also of [false, true]) out.add(sentenceThai(orderSentence({ thing, number, also })));
   }
   for (const t of allLadderSentences()) out.add(t);
+  for (const t of allPracticeSentences()) out.add(t);
   cache = out;
   return out;
 }
@@ -263,7 +267,7 @@ const LIKE_EXTRA = [
 
 function ladderLike({ who, neg, doing, place, when, extra }) {
   const parts = [
-    { slot: 'who', th: who.th },
+    { slot: 'who', th: who.th, ...(who.rom ? { rom: who.rom } : {}) },
     ...(neg ? [{ slot: 'neg', th: 'ไม่' }] : []),
     { slot: 'fixed', th: 'ชอบ' },
     ...(doing.words || [doing.th]).map((th) => ({ slot: 'doing', th })),
@@ -308,14 +312,14 @@ export const LADDERS = [
   {
     id: 'like', title: 'Likes and dislikes', short: 'Likes and dislikes', key: { th: 'ชอบ', rom: 'châawp', en: 'to like' },
     levels: [
-      { n: 1, name: 'Level 1', rule: 'ชอบ (châawp) = like. Put an activity after it.', slots: ['who', 'doing'],
-        random: () => ({ who: pickOne(WHO), doing: pickOne(DOING) }), make: ladderLike },
+      { n: 1, name: 'Level 1', rule: 'ชอบ (châawp) = like, ไม่ชอบ (mâi châawp) = don\'t like. Put an activity after it.', slots: ['who', 'neg', 'doing'],
+        random: () => ({ who: pickOne(WHO_PICK), neg: Math.random() < 0.3, doing: pickOne(DOING) }), make: ladderLike },
       { n: 2, name: 'Level 2', rule: 'Add where (ที่ thîi + a place), when (a day), or both, at the end.', slots: ['who', 'neg', 'doing', 'place', 'when'],
         random: () => {
           const doing = pickOne(DOING.filter((d) => d.places.length));
           const both = Math.random() < 0.4, wantPlace = both || Math.random() < 0.5;
           const pl = pickOne(doing.places); const place = wantPlace ? PLACE.find((x) => x.th === pl) : null;
-          return { who: pickOne(WHO), neg: Math.random() < 0.25, doing, place, when: !wantPlace || both ? pickOne(WHEN) : null };
+          return { who: pickOne(WHO_PICK), neg: Math.random() < 0.25, doing, place, when: !wantPlace || both ? pickOne(WHEN) : null };
         }, make: ladderLike },
       { n: 3, name: 'Level 3', rule: 'Add one more piece: a time or the weather (ตอน dtaawn), or why (เพราะ phráw).', slots: ['who', 'neg', 'doing', 'place', 'when', 'extra'],
         random: () => {
@@ -323,7 +327,7 @@ export const LADDERS = [
           const neg = Math.random() < 0.2;
           const extra = pickOne(LIKE_EXTRA.filter((e) => !(neg && e.kind === 'why')));
           const pl = pickOne(doing.places);
-          return { who: pickOne(WHO), neg, doing, place: PLACE.find((x) => x.th === pl), when: Math.random() < 0.5 ? pickOne(WHEN) : null, extra };
+          return { who: pickOne(WHO_PICK), neg, doing, place: PLACE.find((x) => x.th === pl), when: Math.random() < 0.5 ? pickOne(WHEN) : null, extra };
         }, make: ladderLike },
     ],
   },
@@ -375,5 +379,102 @@ function allLadderSentences() {
       for (const thing2 of THING) if (thing2.th !== thing.th) for (const number2 of [ONE, ...NUMBER]) out.add(sentenceThai(ladderOrder({ thing, number, extra, thing2, number2 })));
     }
   }
+  return out;
+}
+
+// ---------------------------------------------------------------------
+// Practice (Jay, 21 Oct 2026): "hear them, answer back". Someone asks
+// (staff voice), you build your reply from tiles. Each level hides more of
+// the given words: L1 the changing words, L2 everything but the key word,
+// L3 every word. Lines checked by the Thai Teacher review (21 Oct).
+// ---------------------------------------------------------------------
+const W = (th, rom) => ({ th, rom });
+const ASK_ORDER = [
+  { parts: [W('รับอะไรดี', 'ráp a-rai dii')], en: 'What can I get you?', group: 'what' },
+  { parts: [W('เอาอะไร', 'ao a-rai')], en: 'What would you like?', group: 'what' },
+];
+// The follow-up question for an order, and the reply words, by the extra it asks about
+const FOLLOW_UP = {
+  'หวานน้อย': { parts: [W('หวานปกติไหม', 'wǎan bpòk-gà-dtì mǎi')], en: 'Normal sweetness?', group: 'sweet',
+    reply: [W('หวาน', 'wǎan'), W('น้อย', 'nói')], replyEn: 'Less sweet, please.' },
+  'ไม่ใส่น้ำแข็ง': { parts: [W('ใส่น้ำแข็งไหม', 'sài náam-khǎeng mǎi')], en: 'With ice?', group: 'ice',
+    reply: [W('ไม่', 'mâi'), W('ใส่', 'sài'), W('น้ำแข็ง', 'náam-khǎeng')], replyEn: 'No ice, please.' },
+  'ไม่เผ็ด': { parts: [W('เอาเผ็ดไหม', 'ao phèt mǎi')], en: 'Do you want it spicy?', group: 'spicy',
+    reply: [W('ไม่', 'mâi'), W('เผ็ด', 'phèt')], replyEn: 'Not spicy, please.' },
+};
+// English meanings to choose from in "What did they ask?" (one per group)
+const ASK_MEANINGS = [
+  { en: 'What can I get you?', group: 'what' }, { en: 'How many?', group: 'many' }, { en: 'Anything else?', group: 'else' },
+  { en: 'Normal sweetness?', group: 'sweet' }, { en: 'With ice?', group: 'ice' }, { en: 'Do you want it spicy?', group: 'spicy' },
+  { en: 'For here or to go?', group: 'togo' }, { en: 'What do you like doing?', group: 'likewhat' }, { en: 'Where do you live?', group: 'where' },
+  { en: 'Do you like it?', group: 'likeit' },
+];
+// Who the friend asks about: you, your mom, your dad, your friend (Teacher: คุณแม่ when asking about yours)
+const PRACTICE_WHO = [
+  { who: WHO[0], ask: [W('ว่างๆ', 'wâang-wâang')], askEn: 'What do you like doing in your free time?', yesNoEn: 'Do you like' },
+  { who: WHO.find((w) => w.th === 'แม่'), ask: [W('คุณแม่', 'khun mâae')], askEn: 'What does your mom like doing?', yesNoEn: 'Does your mom like' },
+  { who: WHO.find((w) => w.th === 'พ่อ'), ask: [W('คุณพ่อ', 'khun phâaw')], askEn: 'What does your dad like doing?', yesNoEn: 'Does your dad like' },
+  { who: WHO.find((w) => w.th === 'เพื่อน'), ask: [W('เพื่อนคุณ', 'phûeaan khun')], askEn: 'What does your friend like doing?', yesNoEn: 'Does your friend like' },
+];
+const doingWords = (d) => (d.words || [d.th]).map((th) => ({ th }));
+function likeAsk(p, v) {
+  if (v.neg) {
+    // Yes/no question for a "don't like" reply: (คุณแม่) ชอบ + activity + ไหม
+    const lead = p.who === WHO[0] ? [] : p.ask;
+    return { parts: [...lead, W('ชอบ', 'châawp'), ...doingWords(v.doing), W('ไหม', 'mǎi')], en: `${p.yesNoEn} ${v.doing.en}?`, group: 'likeit' };
+  }
+  return { parts: [...p.ask, W('ชอบ', 'châawp'), W('ทำ', 'tham'), W('อะไร', 'a-rai')], en: p.askEn, group: 'likewhat' };
+}
+const pickOneP = (a) => a[Math.floor(Math.random() * a.length)];
+// One exchange: { ask: {parts, en, group}, values for the level's make(), follow-up flag }
+export function practiceExchanges(patternId, level) {
+  const out = [];
+  if (patternId === 'like') {
+    for (let i = 0; i < 3; i++) {
+      const p = pickOneP(PRACTICE_WHO);
+      const v = { ...level.random(), who: p.who };
+      out.push({ v, ask: likeAsk(p, v) });
+    }
+  } else {
+    const ask = () => pickOneP(ASK_ORDER);
+    if (level.n === 3) {
+      // An order, then the follow-up about how you want it, then another order
+      const v1 = level.random(); const f = FOLLOW_UP[v1.extra.th];
+      out.push({ v: { ...v1, extra: null, thing2: null }, ask: ask() });
+      out.push({ follow: f, ask: { parts: f.parts, en: f.en, group: f.group } });
+      const v3 = level.random();
+      out.push({ v: { ...v3, extra: null }, ask: ask() });
+    } else for (let i = 0; i < 3; i++) out.push({ v: level.random(), ask: ask() });
+  }
+  return out;
+}
+// Three English meanings for "What did they ask?": the answer + two from other groups
+const MEANING_GROUPS = { like: ['likewhat', 'likeit', 'where', 'else'], order: ['what', 'many', 'else', 'sweet', 'ice', 'spicy', 'togo'] };
+export function askMeanings(ask, patternId) {
+  const allowed = MEANING_GROUPS[patternId] || ASK_MEANINGS.map((m) => m.group);
+  const others = ASK_MEANINGS.filter((m) => m.group !== ask.group && allowed.includes(m.group)).sort(() => Math.random() - 0.5).slice(0, 2).map((m) => m.en);
+  return [ask.en, ...others].sort(() => Math.random() - 0.5);
+}
+// Wrong tiles: same slot, sounds or looks alike, and ruled out by the English you're shown
+const ALIKE = {
+  'ทำอาหาร': 'ทำงาน', 'ทำงาน': 'ทำอาหาร', 'เดิน': 'เรียน', 'เรียน': 'เดิน', 'นอน': 'วิ่ง', 'วิ่ง': 'นอน', 'ดู': 'ฟัง', 'ฟัง': 'ดู',
+  'หนัง': 'เพลง', 'เพลง': 'หนัง', 'กิน': 'ดื่ม', 'ดื่ม': 'กิน', 'เที่ยว': 'เรียน', 'เล่น': 'เดิน', 'กาแฟ': 'ชาเย็น', 'ชาเย็น': 'กาแฟ',
+  'สอง': 'สาม', 'สาม': 'สี่', 'สี่': 'สาม', 'หนึ่ง': 'สอง', 'วันเสาร์': 'วันอาทิตย์', 'วันอาทิตย์': 'วันเสาร์',
+  'เบียร์': 'น้ำเปล่า', 'น้ำเปล่า': 'เบียร์', 'ข้าวผัด': 'ผัดไทย', 'ผัดไทย': 'ข้าวผัด', 'ก๋วยเตี๋ยว': 'ส้มตำ', 'ส้มตำ': 'ก๋วยเตี๋ยว',
+  'ขวด': 'จาน', 'แก้ว': 'จาน', 'จาน': 'แก้ว', 'ชาม': 'แก้ว', // a clearly wrong counter (Teacher: never แก้ว vs ขวด)
+  'แม่': 'พ่อ', 'พ่อ': 'แม่', 'เพื่อน': 'แม่', 'น้อย': 'มาก', 'หวาน': 'ปกติ', 'เผ็ด': 'หวาน', 'น้ำแข็ง': 'น้ำเปล่า',
+  'ตอนเช้า': 'ตอนเย็น', 'ตอนเย็น': 'ตอนเช้า', 'สนุก': 'สบาย', 'สบาย': 'สนุก',
+  'บ้าน': 'ร้าน', 'ร้าน': 'บ้าน', 'ตลาด': 'ห้าง', 'ห้าง': 'ตลาด', 'สวน': 'ทะเล', 'ทะเล': 'สวน', 'โรงเรียน': 'คอนโด', 'คอนโด': 'บ้าน', 'ร้านอาหาร': 'ร้าน',
+};
+const ALIKE_ROM = { 'ทำงาน': 'tham-ngaan', 'มาก': 'mâak', 'ปกติ': 'bpòk-gà-dtì', 'จาน': 'jaan', 'แก้ว': 'gâaeo', 'ฟัง': 'fang', 'ดู': 'duu', 'เพลง': 'phleeng', 'หนัง': 'nǎng' };
+export const alikeFor = (th) => (ALIKE[th] ? { th: ALIKE[th], rom: ALIKE_ROM[ALIKE[th]] } : null);
+
+// Every practice line, for /api/speak's list of allowed text (endings are stripped there)
+export function allPracticeSentences() {
+  const out = new Set();
+  const j = (parts) => parts.map((x) => x.th).join('');
+  for (const a of ASK_ORDER) out.add(j(a.parts));
+  for (const f of Object.values(FOLLOW_UP)) { out.add(j(f.parts)); out.add(j(f.reply)); }
+  for (const p of PRACTICE_WHO) for (const doing of DOING) for (const neg of [false, true]) out.add(j(likeAsk(p, { neg, doing }).parts));
   return out;
 }

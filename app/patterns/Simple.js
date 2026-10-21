@@ -1,5 +1,6 @@
 'use client';
 import BlurEn from '../components/BlurEn';
+import Practice from './Practice';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { readStore, writeStore } from '../lib/progress';
@@ -49,9 +50,22 @@ export default function SimplePatterns({ lex }) {
   const level = p.levels.find((l) => l.n === lvl) || p.levels[0];
   const audio = useAudio();
   const [help, setHelp] = useState(false);
+  const [mode, setMode] = useState('learn'); // learn | practice (Jay, 21 Oct)
+  const modeSwitch = (cls) => (
+    <div className={`pm-mode ${cls}`} role="group" aria-label="Mode">
+      {[['learn', 'Learn'], ['practice', 'Practice']].map(([id, label]) => (
+        <button key={id} type="button" aria-pressed={mode === id} className={mode === id ? 'on' : ''}
+          onClick={() => { audio.stop(); setHelp(false); setMode(id); }}>{label}</button>
+      ))}
+    </div>
+  );
   // First visit only: a hint on the button. Gone after the first new sentence, or when closed.
   const [hint, setHint] = useState(false);
   useEffect(() => { setHint(!readStore('tsc-hint-patterns', false)); }, []);
+  // One-time tip the first time เขา appears (Jay, 21 Oct: เขา = he or she)
+  const [khaoSeen, setKhaoSeen] = useState(true);
+  useEffect(() => { setKhaoSeen(!!readStore('tsc-hint-khao', false)); }, []);
+  const closeKhao = () => { setKhaoSeen(true); writeStore('tsc-hint-khao', true); };
   const hintSeen = () => { setHint(false); writeStore('tsc-hint-patterns', true); };
 
   const [s, setS] = useState(null);      // the sentence on screen (picked in the browser)
@@ -82,7 +96,9 @@ export default function SimplePatterns({ lex }) {
   return (
     <div className="pm-layout">
       <nav className="pm-side" aria-label="Sentence patterns">
-        <p className="pm-side-h">Sentence patterns</p>
+        <p className="pm-side-h">Mode</p>
+        {modeSwitch('is-side')}
+        <p className="pm-side-h pm-side-h2">Sentence patterns</p>
         {PATS.map((x) => (
           <button key={x.id} type="button" className={`pm-side-i${x.id === pid ? ' on' : ''}`} aria-current={x.id === pid} onClick={() => choosePattern(x.id)}>
             {x.title}
@@ -108,6 +124,7 @@ export default function SimplePatterns({ lex }) {
           <h1>Sentence patterns</h1>
         </header>
 
+        {modeSwitch('is-top')}
         <div className="pm-pickers">
           <label className="pm-pick pm-pick-pattern">
             <span className="sr-only">Sentence pattern</span>
@@ -127,6 +144,9 @@ export default function SimplePatterns({ lex }) {
           </span>
         </div>
 
+        {mode === 'practice' ? (
+          <Practice key={`${pid}-${lvl}`} p={p} level={level} lex={lex} onLearn={() => setMode('learn')} />
+        ) : (<>
         {/* Same card layout as the word cards: band on top, play + slow top left,
             the pattern's key word top right, word boxes, then the English */}
         <section className="pm-card" data-level={lvl}>
@@ -158,6 +178,12 @@ export default function SimplePatterns({ lex }) {
             </div>
             <BlurEn className={`pm-en${spin ? ' is-out' : ''}`} text={s ? s.en : '\u00a0'} />
           </div>
+          {!khaoSeen && !spin && s?.parts.some((x) => x.th === 'เขา') && (
+            <div className="pm-tip" role="note">
+              <span><b lang="th">เขา</b> (khǎo) means he <i>or</i> she. Thais rarely say เธอ (thoe) for "she" in conversation.</span>
+              <button type="button" aria-label="Got it, hide this tip" onClick={closeKhao}>×</button>
+            </div>
+          )}
         </section>
 
         <div className="pm-lever-wrap">
@@ -171,6 +197,7 @@ export default function SimplePatterns({ lex }) {
           </div>
         )}
         </div>
+        </>)}
       </div>
     </div>
   );
