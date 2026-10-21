@@ -1,4 +1,5 @@
 'use client';
+import BlurEn from '../components/BlurEn';
 import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { soundRight, soundWrong } from '../lib/sfx';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -143,7 +144,7 @@ function PatternList({ pats, lex, can, progress, preview, setPreview, onOpen }) 
               <span className="pt-card-title">{p.title}</span>
               <span className="pt-frame">{p.frame}</span>
               <span className="pt-card-ex"><Parts parts={example.parts} lex={lex} /></span>
-              <span className="pt-card-en">{example.en}</span>
+              <BlurEn as="span" className="pt-card-en" text={example.en} />
               <span className="pt-levels" aria-label="Levels">
                 {p.levels.map((l) => {
                   const e = levelEntry(progress, p, l);
@@ -544,7 +545,7 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
                 <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
                 <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
-              <p className="pt-sentence-en">{s.en}</p>
+              <BlurEn className="pt-sentence-en" text={s.en} />
               <p className={`st-toast${toast ? ' is-on' : ''}`} role="status">{toast || ' '}</p>
               <button type="button" className="auth-btn primary pt-check" disabled={madeN < TODAY_MAKE} onClick={next}>
                 {madeN < TODAY_MAKE ? `Make ${TODAY_MAKE - madeN} more` : 'Next: test your ear'}

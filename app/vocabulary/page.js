@@ -1,5 +1,5 @@
 import Vocab from './Vocab';
-import { loadWords } from '../lib/words';
+import { loadWords, coverageCurve } from '../lib/words';
 import { ProgressProvider } from '../lib/progress';
 
 // Re-check the database at most once an hour. So after you re-run the
@@ -17,7 +17,7 @@ export default async function VocabularyPage() {
   return (
     <main className="page">
       <ProgressProvider>
-        <Vocab words={words} />
+        <Vocab words={words} allPct={coverageCurve(words, [words.length])[words.length]} />
       </ProgressProvider>
     </main>
   );

@@ -129,6 +129,44 @@ function Meter({ value, from, milestones = {}, knownCount = 0, learningCount = 0
   );
 }
 
+// After the lesson (Jay, 21 Oct): a pop-up with today's progress. The street
+// meter lives here now, not at the start, where it distracted from the lesson.
+function ProgressPopup({ total, allPct, known, before, milestones, knownCount, learningCount, newToday, early, moreCount, onMore, onClose }) {
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onClose]);
+  const rest = Math.max(0, total - knownCount - learningCount);
+  const seg = (n) => `${(n / total) * 100}%`;
+  return (
+    <div className="pp-scrim" role="presentation" onClick={onClose}>
+      <section className="pp" role="dialog" aria-modal="true" aria-labelledby="pp-title" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="pp-x" aria-label="Close" onClick={onClose}>×</button>
+        <p className="pp-eyebrow">Lesson complete</p>
+        <h2 id="pp-title" className="pp-title">{newToday > 0 ? `+${newToday} new word${newToday === 1 ? '' : 's'} today` : 'Review done'}</h2>
+        <p className="pp-why">These {total.toLocaleString('en')} words make up about <b>{allPct}%</b> of everyday spoken Thai. Here's how far along you are.</p>
+        <div className="pp-bar" role="img" aria-label={`${knownCount} known, ${learningCount} in progress, ${rest} to go`}>
+          <i className="k" style={{ width: seg(knownCount) }} /><i className="l" style={{ width: seg(learningCount), minWidth: learningCount ? 4 : 0 }} />
+        </div>
+        <ul className="pp-legend">
+          <li><i className="k" /><b>{knownCount}</b> known</li>
+          <li><i className="l" /><b>{learningCount}</b> in progress</li>
+          <li><i /><b>{rest.toLocaleString('en')}</b> to go</li>
+        </ul>
+        <div className="pp-meter">
+          <SoiSign width={150} th="ซอย" en="Your street" number={pct(known)} tab={false} title={`Street meter: ${pct(known)} of everyday Thai`} />
+          <p><b>Your street meter</b>You'd understand about {pct(known)} of everyday Thai today. It climbs as words stick.</p>
+        </div>
+        <div className="pp-actions">
+          <button type="button" className="auth-btn primary" onClick={onClose}>See you tomorrow</button>
+          {moreCount > 0 && <button type="button" className="today-more-link" onClick={onMore}>Or learn {moreCount} more words now</button>}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 // First Start: who's speaking? (a dialog, asked once) Picks the voice and the forms (ผม/ครับ or ฉัน/ค่ะ) everywhere.
 function RegisterChooser({ onChoose, onClose }) {
   useEffect(() => {
@@ -363,7 +401,8 @@ export default function Today({ words, milestones }) {
     return true;
   };
 
-  const onDone = () => { finishToday(); setMode('done'); window.scrollTo(0, 0); };
+  const [popup, setPopup] = useState(false);
+  const onDone = () => { finishToday(); setMode('done'); setPopup(true); window.scrollTo(0, 0); };
   useEffect(() => {
     if (mode !== 'picking') return;
     const pick = pickTodayPattern(progress);
@@ -438,7 +477,6 @@ export default function Today({ words, milestones }) {
   const signedOut = ready && !user;
   // First days: no meter, milestones or goal picker yet (nothing to show, and too much to read)
   const early = Object.keys(days).length < 3;
-  const firstDaysLine = <p className="today-note"><b>{learningCount} words</b> in progress. They count toward your street meter once they stick.</p>;
 
   // Day 2+: the next scene, if the first session was on an earlier day and it isn't done yet
   const firstSession = readStore('tsc-first-session', null);
@@ -468,6 +506,14 @@ export default function Today({ words, milestones }) {
     <div className="today-wrap">
       {mode === 'done' ? (
         <div className="today-card today-done">
+          {popup && (
+            <ProgressPopup total={words.length} allPct={milestones?.[words.length] ?? 75} known={known} before={before} milestones={milestones}
+              knownCount={knownCount} learningCount={learningCount} early={early}
+              newToday={reviewedInSession.current > 0 ? new Set(queue.map((w) => w.thai)).size : 0}
+              moreCount={plan.fresh.length > 0 ? EXTRA_NEW : 0}
+              onMore={() => { setPopup(false); start([], plan.fresh.slice(0, EXTRA_NEW)); }}
+              onClose={() => setPopup(false)} />
+          )}
           <p className="today-eyebrow">Session complete</p>
           <h1 className="today-title">Done for today</h1>
           <p className="today-goal-done"><i style={{ background: 'var(--soi, #1D4FA0)' }} />Today's goal is done. {day.full} is filled in on your week.</p>
@@ -479,7 +525,7 @@ export default function Today({ words, milestones }) {
             <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
           </div>
           <Week days={days} said={said} />
-          {early ? firstDaysLine : <Meter value={known} from={before} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />}
+          <button type="button" className="today-more-link" onClick={() => setPopup(true)}>See your progress</button>
           <div className="today-actions">
             {plan.fresh.length > 0 && (
               <button type="button" className="today-more-link" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Want more? Learn {EXTRA_NEW} extra words</button>
@@ -549,7 +595,6 @@ export default function Today({ words, milestones }) {
           <section className="today-progress" aria-label="Your progress">
             <p className="today-section-label">Your week</p>
             <Week days={days} said={said} />
-            {early ? firstDaysLine : <Meter value={known} milestones={milestones} knownCount={knownCount} learningCount={learningCount} />}
           </section>
 
           {!early && <div className="today-goal">

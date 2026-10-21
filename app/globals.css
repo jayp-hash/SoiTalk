@@ -2103,3 +2103,134 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
   .pm-body { min-height: 332px; }
   .pm-card[data-level="3"] .pm-body { min-height: 422px; }
 }
+/* Words page v2 (21 Oct): every topic is the same card, with a colour band
+   on top like the word cards */
+.tp-tile.has-band { padding: 0; gap: 0; grid-template-rows: auto 1fr; overflow: hidden; min-height: 0; }
+.tp-band { display: flex; align-items: center; gap: 8px; background: var(--tc); color: #fff; padding: 9px 12px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.14); text-align: left; }
+.tp-band-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: rgba(255,255,255,.2); flex: none; }
+.tp-band-icon svg { width: 15px; height: 15px; }
+.tp-band-name { flex: 1; min-width: 0; font: 800 12px/1.2 var(--font-body), sans-serif; letter-spacing: .07em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-band-n { font: 800 12px/1 var(--font-body), sans-serif; background: rgba(255,255,255,.22); border-radius: 99px; padding: 3px 8px; font-variant-numeric: tabular-nums; }
+.tp-tile-body { display: grid; grid-template-rows: 1fr auto; gap: 12px; padding: 12px 16px 14px; text-align: left; }
+.tp-tile.has-band .tp-hero .th { font-size: 34px; }
+.tp-tile.has-band.is-wide .tp-hero .th { font-size: 40px; }
+.tp-tile.has-band:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(14,46,99,.14); border-color: var(--tc); }
+.tp-tile.has-band:hover .tp-band { filter: brightness(1.06); }
+.tp-tile.has-band:focus-visible { outline: 3px solid var(--tc); outline-offset: 2px; }
+.tp-tile.has-band .tp-bar i { background: var(--tc); }
+.tp-start-why { display: block; margin-top: 6px; font: 600 13px/1.35 var(--font-body), sans-serif; color: #5B6472; }
+@media (max-width: 640px) {
+  .tp-tile.has-band .tp-hero .th, .tp-tile.has-band.is-wide .tp-hero .th { font-size: 28px; }
+  .tp-tile-body { padding: 10px 12px 12px; gap: 8px; }
+}
+/* End-of-lesson progress pop-up (21 Oct) */
+.pp-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(14,22,40,.45); display: grid; place-items: center; padding: 16px; animation: pp-fade .2s ease; }
+.pp { position: relative; width: min(460px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 24px; padding: 26px 24px 22px; display: grid; gap: 14px; box-shadow: 0 24px 60px rgba(14,22,40,.25); animation: pp-up .28s cubic-bezier(.2,.9,.3,1.2); }
+.pp-x { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: 0; background: #F1F3F7; color: #4f5868; font: 400 22px/1 sans-serif; cursor: pointer; transition: background .15s; }
+.pp-x:hover { background: #E3E7EE; }
+.pp-eyebrow { margin: 0; font: 800 12px/1 var(--font-body), sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #1E8A4C; }
+.pp-title { margin: 0; font: 800 26px/1.15 var(--font-display), sans-serif; color: #1f2533; }
+.pp-why { margin: 0; color: #4f5868; font-size: 15px; line-height: 1.45; }
+.pp-why b { color: #0E2E63; }
+.pp-bar { display: flex; height: 12px; border-radius: 99px; background: #EEF1F6; overflow: hidden; }
+.pp-bar i.k { background: #1E8A4C; } .pp-bar i.l { background: #F2C200; }
+.pp-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: #4f5868; }
+.pp-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.pp-legend i { width: 10px; height: 10px; border-radius: 3px; background: #DCE1EA; } .pp-legend i.k { background: #1E8A4C; } .pp-legend i.l { background: #F2C200; }
+.pp-legend b { color: #1f2533; font-variant-numeric: tabular-nums; }
+.pp .today-meter { margin-top: 2px; }
+.pp-actions { display: grid; gap: 8px; justify-items: center; margin-top: 4px; }
+.pp-actions .auth-btn { width: 100%; justify-content: center; }
+@keyframes pp-fade { from { opacity: 0; } }
+@keyframes pp-up { from { opacity: 0; transform: translateY(16px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .pp-scrim, .pp { animation: none; } }
+/* Blurred English, everywhere (components/BlurEn.js) */
+.blur-en { all: unset; display: inline; cursor: pointer; border-radius: 6px; }
+.blur-en > span { filter: blur(5px); user-select: none; transition: filter .2s; }
+.blur-en:hover > span { filter: blur(3px); }
+.blur-en:focus-visible { outline: 3px solid var(--soi); outline-offset: 2px; }
+/* Patterns: no instruction line; a one-time hint on the button instead (21 Oct) */
+.pm-head { text-align: left; justify-self: stretch; }
+.pm-head h1 { margin: 0; }
+@media (min-width: 801px) { .pm-head { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+.pm-lever-wrap { position: relative; width: 100%; }
+.pm-hint { position: absolute; left: 50%; bottom: calc(100% + 12px); transform: translateX(-50%); width: min(340px, 92%); z-index: 3;
+  display: flex; align-items: flex-start; gap: 10px; text-align: left; background: #F2C200; color: #1f2533; border-radius: 14px; padding: 12px 10px 12px 14px;
+  font: 600 14px/1.4 var(--font-body), sans-serif; box-shadow: 0 10px 24px rgba(14,22,40,.18); animation: pm-hint-in .35s cubic-bezier(.2,.9,.3,1.3) both .3s; }
+.pm-hint::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; background: #F2C200; transform: translateX(-50%) rotate(45deg); border-radius: 2px; }
+.pm-hint b { font-weight: 800; }
+.pm-hint button { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(0,0,0,.08); color: #1f2533; font: 400 18px/1 sans-serif; cursor: pointer; }
+.pm-hint button:hover { background: rgba(0,0,0,.16); }
+.pm-lever.is-hinted { box-shadow: 0 0 0 4px rgba(242,194,0,.55), 0 4px 12px rgba(31,37,51,.22); }
+@keyframes pm-hint-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+@media (prefers-reduced-motion: reduce) { .pm-hint { animation: none; } }
+/* Hover states (21 Oct audit): everything you can click reacts to the mouse */
+@media (hover: hover) {
+  .lp-face { transition: transform .2s ease, box-shadow .2s ease, border-color .2s; }
+  .lp-card:hover .lp-face { border-color: color-mix(in srgb, var(--cat) 35%, #e1e5ec); box-shadow: 0 10px 28px rgba(14,46,99,.16); }
+  .lp-card:hover .lp-in { transform: translateY(-3px); }
+  .lp-card.is-flipped:hover .lp-in { transform: rotateY(180deg) translateY(-3px); }
+  .lp-play { transition: transform .12s, filter .15s, box-shadow .15s; }
+  .lp-play:hover { filter: brightness(1.1); box-shadow: 0 6px 16px rgba(14,46,99,.24), 0 0 0 6px color-mix(in srgb, var(--cat) 16%, transparent); }
+  .lp-box { transition: background .15s, transform .12s; }
+  .lp-box:hover { background: color-mix(in srgb, var(--cat) 12%, #fff); transform: translateY(-1px); }
+}
+@media (hover: hover) {
+  .site-header nav a { transition: color .15s; }
+  .site-header nav a:not(.active):not(.auth-btn):hover { color: var(--soi); }
+  .site-header .brand { transition: transform .15s, filter .15s; }
+  .site-header .brand:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .lp-who button { transition: background .15s, border-color .15s; }
+  .lp-who button:hover { border-color: var(--soi); background: #F4F7FC; }
+  .lp-who button[aria-pressed="true"]:hover { background: #DCE7F7; }
+  .lp-curve-row.is-on:hover { background: #DCE7F7; }
+  .lp-foot a:hover, .today-note a:hover { color: var(--soi); text-decoration-thickness: 2px; }
+  .today-week .day { border-radius: 10px; transition: background .15s; }
+  .today-week .day:hover { background: #EEF2F8; }
+  .fc-face { transition: box-shadow .2s ease, border-color .2s; }
+  .fc-card:hover .fc-face { box-shadow: 0 6px 0 var(--fc-edge), 0 22px 44px rgba(31,37,51,.16); }
+  .pm-side-i { transition: background .15s, color .15s; }
+  .pm-side-i:hover { background: #F1F4F9; color: #1f2533; }
+  .pm-side-i.on:hover { background: #DCE7F7; }
+  .pm-pick select { transition: border-color .15s; }
+  .pm-pick select:hover { border-color: #AEB8C8; }
+  .st-reg button { transition: border-color .15s, background .15s; }
+  .st-reg button:not(.on):hover { border-color: var(--soi); background: #F4F7FC; }
+  .st-reg button.on:hover { filter: brightness(1.08); }
+  .site-header .auth-btn:hover, .site-header nav a.auth-btn:hover { filter: brightness(1.06); }
+}
+@media (hover: hover) { .acct-signin:hover, .acct-btn:hover { filter: brightness(1.05); box-shadow: 0 0 0 3px rgba(29,79,160,.16); } }
+@media (hover: hover) {
+  .fc-card:hover .fc-face { box-shadow: 0 14px 34px rgba(14,46,99,.16) !important; }
+  .today-note a:hover, .auth-link:hover { color: var(--soi-ink, #0E2E63); text-decoration-thickness: 2px; }
+}
+.tp-tile.has-band { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.tp-band, .tp-tile-body { min-width: 0; }
+.tp-tile-body .tp-tile-progress { grid-template-columns: minmax(0, 1fr) auto; }
+.tp-start-why { color: rgba(255,255,255,.88); }
+@media (min-width: 761px) {
+  .tp-tiles.is-blocks { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .tp-tiles.is-blocks > * { grid-column: span 2; }
+  .tp-tiles.is-blocks > :nth-child(n+4) { grid-column: span 3; }
+}
+@media (max-width: 760px) { .tp-tiles.is-blocks > :last-child:nth-child(odd) { grid-column: span 2; } }
+/* Reserve only what each level needs (measured), so Level 1 isn't half empty */
+.pm-card[data-level="1"] .pm-body { min-height: 219px; }
+.pm-card[data-level="2"] .pm-body, .pm-card[data-level="3"] .pm-body { min-height: 312px; }
+@media (max-width: 800px) {
+  .pm-card[data-level="1"] .pm-body { min-height: 264px; }
+  .pm-card[data-level="2"] .pm-body { min-height: 330px; }
+  .pm-card[data-level="3"] .pm-body { min-height: 422px; }
+}
+.pp-meter { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 16px; background: #F6F8FB; }
+.pp-meter .soi-sign { flex: none; width: 128px; height: auto; }
+.pp-meter p { margin: 0; font-size: 14px; line-height: 1.4; color: #4f5868; }
+.pp-meter p b { display: block; color: #1f2533; font-size: 15px; margin-bottom: 2px; }
+.pp-actions .today-more-link { text-align: center; }
+@media (max-width: 420px) { .pp-meter { flex-direction: column; align-items: flex-start; } }
+/* hint sits under the button, pointing up, so it never covers the sentence */
+.pm-hint { position: relative; left: auto; bottom: auto; transform: none; margin: 14px auto 0; width: min(380px, 100%); animation-name: pm-hint-in2; }
+.pm-hint::after { top: -7px; bottom: auto; }
+@keyframes pm-hint-in2 { from { opacity: 0; transform: translateY(-6px); } }
+.tp-band-name { white-space: normal; letter-spacing: .05em; line-height: 1.25; }
+.tp-band { min-height: 44px; }

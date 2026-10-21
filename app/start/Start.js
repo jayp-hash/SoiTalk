@@ -1,4 +1,5 @@
 'use client';
+import BlurEn from '../components/BlurEn';
 import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore, dayKey } from '../lib/progress';
@@ -349,7 +350,7 @@ export default function Start({ sceneId }) {
               <span className="st-who">{prev.staff.who} asks</span>
               <div className="st-line">
                 <PlayBtn id="rask" clips={[{ text: prev.staff.ask(prevItem).th, voice: 'female' }]} player={player} label="Play the question" />
-                <div><p className="th" lang="th">{prev.staff.ask(prevItem).th}</p><p className="rom">{prev.staff.ask(prevItem).rom}</p><p className="en">{prev.staff.ask(prevItem).en}</p></div>
+                <div><p className="th" lang="th">{prev.staff.ask(prevItem).th}</p><p className="rom">{prev.staff.ask(prevItem).rom}</p><BlurEn className="en" text={prev.staff.ask(prevItem).en} /></div>
               </div>
             </div>
             <p className="st-sub">Build your answer: <b>{prev.replyEn(prevItem)}</b></p>
@@ -414,14 +415,14 @@ export default function Start({ sceneId }) {
               <span className="st-who">{scene.staff.who} asks</span>
               <div className="st-line">
                 <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" />
-                <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><p className="en">{ask.en}</p></div>
+                <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><BlurEn className="en" text={ask.en} /></div>
               </div>
             </div>
             <div className="st-bubble is-you">
               <span className="st-who">You say</span>
               <div className="st-line">
                 <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play your answer" />
-                <div><p className="th" lang="th">{joinTh(parts)}</p><p className="rom">{joinRom(parts)}</p><p className="en">{scene.replyEn(item)}</p></div>
+                <div><p className="th" lang="th">{joinTh(parts)}</p><p className="rom">{joinRom(parts)}</p><BlurEn className="en" text={scene.replyEn(item)} /></div>
               </div>
             </div>
             {fu && (
@@ -430,14 +431,14 @@ export default function Start({ sceneId }) {
                   <span className="st-who">{scene.staff.who} asks</span>
                   <div className="st-line">
                     <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: 'female' }]} player={player} label="Play the question" />
-                    <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><p className="en">{fu.staff.en}</p></div>
+                    <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><BlurEn className="en" text={fu.staff.en} /></div>
                   </div>
                 </div>
                 <div className="st-bubble is-you">
                   <span className="st-who">You say</span>
                   <div className="st-line">
                     <PlayBtn id="spice" clips={[{ text: joinTh(spiceParts), voice }]} player={player} label="Play your answer" />
-                    <div><p className="th" lang="th">{joinTh(spiceParts)}</p><p className="rom">{joinRom(spiceParts)}</p><p className="en">{fu.answers[spiceIdx].en}</p></div>
+                    <div><p className="th" lang="th">{joinTh(spiceParts)}</p><p className="rom">{joinRom(spiceParts)}</p><BlurEn className="en" text={fu.answers[spiceIdx].en} /></div>
                   </div>
                 </div>
               </>
@@ -498,7 +499,7 @@ export default function Start({ sceneId }) {
                 <div className="st-bubble is-them is-small">
                   <div className="st-line">
                     <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" />
-                    <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><p className="en">{ask.en}</p></div>
+                    <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><BlurEn className="en" text={ask.en} /></div>
                   </div>
                 </div>
                 <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1} flash={flash} />
@@ -514,7 +515,7 @@ export default function Start({ sceneId }) {
                 <div className="st-bubble is-them is-small">
                   <div className="st-line">
                     <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: 'female' }]} player={player} label="Play the question" />
-                    <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><p className="en">{fu.staff.en}</p></div>
+                    <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><BlurEn className="en" text={fu.staff.en} /></div>
                   </div>
                 </div>
                 <p className="st-choose">You say:</p>

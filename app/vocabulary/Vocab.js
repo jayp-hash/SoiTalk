@@ -17,7 +17,7 @@ function readUrl() {
   return { topic: q.get('topic') || undefined, set: Number(q.get('set')) || 0 };
 }
 
-export default function Vocab({ words }) {
+export default function Vocab({ words, allPct }) {
   const [view, setView] = useState(null); // { topic, set }; topic undefined = topic page
   useEffect(() => {
     setView(readUrl());
@@ -32,7 +32,7 @@ export default function Vocab({ words }) {
     window.scrollTo(0, 0);
   };
   if (!view) return null;
-  if (view.topic === undefined) return <TopicPage words={words} onOpen={open} />;
+  if (view.topic === undefined) return <TopicPage words={words} allPct={allPct} onOpen={open} />;
   return (
     <>
       <h1 className="sr-only">Flashcards: {view.topic === ALL ? 'all words' : view.topic}</h1>
@@ -43,7 +43,33 @@ export default function Vocab({ words }) {
 
 const shortMeaning = (en = '') => en.split(';')[0].replace(/[()]/g, '').trim();
 
-function TopicPage({ words, onOpen }) {
+// One card style for every topic (Jay, 21 Oct): a colour band on top like the
+// word cards, then the topic's first word, then your progress.
+function TopicCard({ t, wide, isMet, isKnown, onOpen }) {
+  const done = t.words.filter(isMet).length;
+  const known = t.words.filter(isKnown).length;
+  return (
+    <button type="button" className={`tp-tile has-band${wide ? ' is-wide' : ''}`} style={{ '--tc': t.color }} onClick={() => onOpen(t.name)}>
+      <span className="tp-band">
+        <span className="tp-band-icon"><TopicIcon name={t.name} size={18} /></span>
+        <span className="tp-band-name">{t.name}</span>
+      </span>
+      <span className="tp-tile-body">
+        <span className="tp-hero">
+          <span className="th" lang="th">{t.hero.thai}</span>
+          <span className="rom">{t.hero.romanization}</span>
+          <span className="en">{shortMeaning(t.hero.english)}</span>
+        </span>
+        <span className="tp-tile-progress">
+          <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(done / t.words.length) * 100}%` }} /></span>
+          <span>{known >= t.words.length ? '✓ All known' : done > 0 ? `${done} of ${t.words.length} met` : `${t.words.length} words`}</span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function TopicPage({ words, allPct, onOpen }) {
   const { progress } = useProgressStore();
   // 'Met' = in your memory (from Today); 'known' = checked over time (lib/memory.js)
   const isMet = (w) => !!progress[w.thai];
@@ -88,6 +114,7 @@ function TopicPage({ words, onOpen }) {
               : <>A few new words a day, most useful first. First up: <span lang="th">สวัสดี</span> (sà-wàt-dii), hello.</>}
           </span>
           {started && <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(learnedAll / words.length) * 100}%` }} /></span>}
+          {allPct ? <span className="tp-start-why">All {words.length.toLocaleString('en')} words cover about {allPct}% of everyday spoken Thai.</span> : null}
         </span>
         <span className="tp-start-go" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -97,48 +124,15 @@ function TopicPage({ words, onOpen }) {
       <section className="tp-section" aria-labelledby="tp-start-here">
         <h2 id="tp-start-here">Everyday topics</h2>
         <div className="tp-tiles">
-          {startHere.map((t, i) => {
-            const done = t.words.filter(isMet).length;
-            const known = t.words.filter(isKnown).length;
-            return (
-              <button key={t.name} type="button" className={`tp-tile${i === 0 ? ' is-wide' : ''}`} style={{ '--tc': t.color }} onClick={() => onOpen(t.name)}>
-                <span className="tp-tile-top">
-                  <span className="tp-icon"><TopicIcon name={t.name} /></span>
-                  <span className="tp-tile-name">{t.name}<small>{t.words.length} words</small></span>
-                </span>
-                <span className="tp-hero">
-                  <span className="th" lang="th">{t.hero.thai}</span>
-                  <span className="rom">{t.hero.romanization}</span>
-                  <span className="en">{shortMeaning(t.hero.english)}</span>
-                </span>
-                {done > 0 && known < t.words.length && (
-                  <span className="tp-tile-progress">
-                    <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(done / t.words.length) * 100}%` }} /></span>
-                    <span>{done} met{known ? ` · ${known} known` : ''}</span>
-                  </span>
-                )}
-                {known >= t.words.length && <span className="tp-done">✓ All known</span>}
-              </button>
-            );
-          })}
+          {startHere.map((t, i) => <TopicCard key={t.name} t={t} wide={i === 0} isMet={isMet} isKnown={isKnown} onOpen={onOpen} />)}
         </div>
       </section>
 
       <section className="tp-section" aria-labelledby="tp-blocks">
         <h2 id="tp-blocks">Building blocks</h2>
         <p className="tp-section-sub">Verbs, describing words and the small words that hold sentences together.</p>
-        <div className="tp-chips">
-          {blocks.map((t) => {
-            const done = t.words.filter(isMet).length;
-            const known = t.words.filter(isKnown).length;
-            return (
-              <button key={t.name} type="button" className="tp-chip" style={{ '--tc': t.color }} onClick={() => onOpen(t.name)}>
-                <span className="tp-icon sm"><TopicIcon name={t.name} size={18} /></span>
-                <span className="tp-chip-name">{t.name}</span>
-                <span className="tp-chip-n">{known >= t.words.length ? '✓ All known' : done > 0 ? `${done} of ${t.words.length} met` : `${t.words.length} words`}</span>
-              </button>
-            );
-          })}
+        <div className="tp-tiles is-blocks">
+          {blocks.map((t) => <TopicCard key={t.name} t={t} isMet={isMet} isKnown={isKnown} onOpen={onOpen} />)}
         </div>
       </section>
 

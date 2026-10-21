@@ -1,7 +1,8 @@
 'use client';
+import BlurEn from '../components/BlurEn';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
-import { readStore } from '../lib/progress';
+import { readStore, writeStore } from '../lib/progress';
 import { laddersInRegister, sentenceThai } from '../lib/patterns';
 import { getRegister, particleFor } from '../lib/register';
 
@@ -48,6 +49,10 @@ export default function SimplePatterns({ lex }) {
   const level = p.levels.find((l) => l.n === lvl) || p.levels[0];
   const audio = useAudio();
   const [help, setHelp] = useState(false);
+  // First visit only: a hint on the button. Gone after the first new sentence, or when closed.
+  const [hint, setHint] = useState(false);
+  useEffect(() => { setHint(!readStore('tsc-hint-patterns', false)); }, []);
+  const hintSeen = () => { setHint(false); writeStore('tsc-hint-patterns', true); };
 
   const [s, setS] = useState(null);      // the sentence on screen (picked in the browser)
   const [spin, setSpin] = useState(false); // true while the changing words fade out
@@ -59,6 +64,7 @@ export default function SimplePatterns({ lex }) {
   const choosePattern = (id) => { audio.stop(); setHelp(false); setPid(id); setLvl(1); };
   const pull = () => {
     if (spin) return;
+    if (hint) hintSeen();
     audio.stop();
     let next = null;
     for (let i = 0; i < 20 && (!next || (s && sentenceThai(next) === sentenceThai(s))); i++) next = level.make(level.random());
@@ -100,7 +106,6 @@ export default function SimplePatterns({ lex }) {
       <div className="pm-wrap">
         <header className="pm-head">
           <h1>Sentence patterns</h1>
-          <p>One sentence shape. Tap New sentence to practise it with different words.</p>
         </header>
 
         <div className="pm-pickers">
@@ -151,13 +156,21 @@ export default function SimplePatterns({ lex }) {
                 </span>
               ))}
             </div>
-            <p className={`pm-en${spin ? ' is-out' : ''}`}>{s ? s.en : '\u00a0'}</p>
+            <BlurEn className={`pm-en${spin ? ' is-out' : ''}`} text={s ? s.en : '\u00a0'} />
           </div>
         </section>
 
-        <button type="button" className={`pm-lever${spin ? ' is-pulling' : ''}`} onClick={pull} disabled={!s}>
+        <div className="pm-lever-wrap">
+        <button type="button" className={`pm-lever${hint ? ' is-hinted' : ''}${spin ? ' is-pulling' : ''}`} onClick={pull} disabled={!s}>
           <AgainIcon /> New sentence
         </button>
+        {hint && (
+          <div className="pm-hint" role="note">
+            <span><b>Tap New sentence</b> for new words in the same shape. Play it, then say it out loud.</span>
+            <button type="button" aria-label="Got it, hide this tip" onClick={hintSeen}>×</button>
+          </div>
+        )}
+        </div>
       </div>
     </div>
   );
