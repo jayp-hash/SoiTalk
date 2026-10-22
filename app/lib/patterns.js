@@ -70,8 +70,9 @@ function likeSentence({ who, neg, doing, place, when }) {
 // ---- Pattern 2: ordering with counting words ---------------------------
 // kind: drink / food, so a "wrong counting word" tile is really wrong (เบียร์สองแก้ว is fine Thai,
 // เบียร์สองจาน isn't). many: English for N of them when it isn't "N <counter>s of <thing>".
+// Order = the order new words are offered in. Beer is last and never offered as a
+// practice word (alcohol: some learners don't drink; Jay, 22 Oct).
 const THING = [
-  { th: 'เบียร์', en: 'beer', counter: 'ขวด', kind: 'drink' },
   { th: 'น้ำเปล่า', en: 'water', counter: 'ขวด', kind: 'drink' },
   { th: 'กาแฟ', en: 'coffee', counter: 'แก้ว', kind: 'drink', many: 'coffees' },
   { th: 'ชาเย็น', en: 'Thai iced tea', counter: 'แก้ว', kind: 'drink', many: 'Thai iced teas' },
@@ -79,6 +80,7 @@ const THING = [
   { th: 'ผัดไทย', en: 'pad Thai', counter: 'จาน', kind: 'food' },
   { th: 'ก๋วยเตี๋ยว', en: 'noodles', counter: 'ชาม', kind: 'food' },
   { th: 'ส้มตำ', en: 'papaya salad', counter: 'จาน', kind: 'food' },
+  { th: 'เบียร์', en: 'beer', counter: 'ขวด', kind: 'drink', alcohol: true },
 ];
 const COUNTER = [
   { th: 'ขวด', plural: 'bottles', kind: 'drink' },
@@ -86,7 +88,7 @@ const COUNTER = [
   { th: 'จาน', plural: 'plates', kind: 'food' },
   { th: 'ชาม', plural: 'bowls', kind: 'food' },
 ];
-const NUMBER = [{ th: 'สอง', en: 'two' }, { th: 'สาม', en: 'three' }, { th: 'สี่', en: 'four' }];
+const NUMBER = [{ th: 'สอง', en: 'two' }, { th: 'สาม', en: 'three' }, { th: 'สี่', en: 'four' }, { th: 'ห้า', en: 'five' }];
 export const wrongCountersFor = (thing) => COUNTER.filter((c) => c.kind !== thing.kind).map((c) => c.th);
 const counterOf = (thing) => COUNTER.find((c) => c.th === thing.counter);
 
@@ -152,6 +154,20 @@ export function slotOptions(p, slot, can = () => true) {
   if (slot === 'neg') return [{ th: '', en: 'like', neg: false }, { th: 'ไม่', en: "don't like", neg: true }];
   if (slot === 'short') return [];
   return (p.options[slot] || []).filter((o) => (o.words || [o.th]).every(can) && (!o.counter || can(o.counter)));
+}
+
+// Learning principle (Jay, 22 Oct): a shuffler always has at least MIN_OPTIONS
+// choices per slot. Words you've met come first; if that's fewer than the
+// minimum, useful new words are added (in list order) and marked isNew, so the
+// practice teaches them. Alcohol is never added: some learners don't drink.
+export const MIN_OPTIONS = 4;
+export function shuffleOptions(p, slot, can = () => true, min = MIN_OPTIONS) {
+  if (isFlag(slot)) return slotOptions(p, slot, can);
+  const all = (p.options[slot] || []).filter((o) => !o.alcohol);
+  const knows = (o) => (o.words || [o.th]).every(can) && (!o.counter || can(o.counter));
+  const known = all.filter(knows);
+  const fresh = all.filter((o) => !knows(o)).slice(0, Math.max(0, min - known.length));
+  return [...known, ...fresh.map((o) => ({ ...o, isNew: true }))];
 }
 
 // Every word a level needs before it can be played
@@ -308,6 +324,7 @@ function ladderOrder({ thing, number, thing2, number2, extra }) {
 }
 
 const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+const SOFT = THING.filter((t) => !t.alcohol); // the lever never picks alcohol on its own
 export const LADDERS = [
   {
     id: 'like', title: 'Likes and dislikes', short: 'Likes and dislikes', key: { th: 'ชอบ', rom: 'châawp', en: 'to like' },
@@ -335,15 +352,15 @@ export const LADDERS = [
     id: 'order', title: 'Ordering food and drinks', short: 'Ordering', key: { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
     levels: [
       { n: 1, name: 'Level 1', rule: 'ขอ (khǎaw) + thing + number + counting word.', slots: ['thing', 'number'],
-        random: () => ({ thing: pickOne(THING), number: pickOne(NUMBER) }), make: ladderOrder },
+        random: () => ({ thing: pickOne(SOFT), number: pickOne(NUMBER) }), make: ladderOrder },
       { n: 2, name: 'Level 2', rule: 'Order two things: join them with กับ (gàp) = and.', slots: ['thing', 'number'],
         random: () => {
-          const thing = pickOne(THING); const thing2 = pickOne(THING.filter((t) => t.th !== thing.th));
+          const thing = pickOne(SOFT); const thing2 = pickOne(SOFT.filter((t) => t.th !== thing.th));
           return { thing, number: pickOne(NUMBER), thing2, number2: pickOne([ONE, ...NUMBER]) };
         }, make: ladderOrder },
       { n: 3, name: 'Level 3', rule: 'Say how you want it, straight after the counting word.', slots: ['thing', 'number', 'extra'],
         random: () => {
-          const thing = pickOne(THING.filter((t) => extrasFor(t).length)); const thing2 = pickOne(THING.filter((t) => t.th !== thing.th));
+          const thing = pickOne(SOFT.filter((t) => extrasFor(t).length)); const thing2 = pickOne(SOFT.filter((t) => t.th !== thing.th));
           return { thing, number: pickOne(NUMBER), extra: pickOne(extrasFor(thing)), thing2: Math.random() < 0.5 ? thing2 : null, number2: pickOne([ONE, ...NUMBER]) };
         }, make: ladderOrder },
     ],
@@ -460,7 +477,7 @@ const ALIKE = {
   'ทำอาหาร': 'ทำงาน', 'ทำงาน': 'ทำอาหาร', 'เดิน': 'เรียน', 'เรียน': 'เดิน', 'นอน': 'วิ่ง', 'วิ่ง': 'นอน', 'ดู': 'ฟัง', 'ฟัง': 'ดู',
   'หนัง': 'เพลง', 'เพลง': 'หนัง', 'กิน': 'ดื่ม', 'ดื่ม': 'กิน', 'เที่ยว': 'เรียน', 'เล่น': 'เดิน', 'กาแฟ': 'ชาเย็น', 'ชาเย็น': 'กาแฟ',
   'สอง': 'สาม', 'สาม': 'สี่', 'สี่': 'สาม', 'หนึ่ง': 'สอง', 'วันเสาร์': 'วันอาทิตย์', 'วันอาทิตย์': 'วันเสาร์',
-  'เบียร์': 'น้ำเปล่า', 'น้ำเปล่า': 'เบียร์', 'ข้าวผัด': 'ผัดไทย', 'ผัดไทย': 'ข้าวผัด', 'ก๋วยเตี๋ยว': 'ส้มตำ', 'ส้มตำ': 'ก๋วยเตี๋ยว',
+  'เบียร์': 'น้ำเปล่า', 'น้ำเปล่า': 'น้ำแข็ง', 'ข้าวผัด': 'ผัดไทย', 'ผัดไทย': 'ข้าวผัด', 'ก๋วยเตี๋ยว': 'ส้มตำ', 'ส้มตำ': 'ก๋วยเตี๋ยว',
   'ขวด': 'จาน', 'แก้ว': 'จาน', 'จาน': 'แก้ว', 'ชาม': 'แก้ว', // a clearly wrong counter (Teacher: never แก้ว vs ขวด)
   'แม่': 'พ่อ', 'พ่อ': 'แม่', 'เพื่อน': 'แม่', 'น้อย': 'มาก', 'หวาน': 'ปกติ', 'เผ็ด': 'หวาน', 'น้ำแข็ง': 'น้ำเปล่า',
   'ตอนเช้า': 'ตอนเย็น', 'ตอนเย็น': 'ตอนเช้า', 'สนุก': 'สบาย', 'สบาย': 'สนุก',

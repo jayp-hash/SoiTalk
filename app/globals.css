@@ -2600,3 +2600,48 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .auth-code-links .auth-link { font-size: 14px; }
 .auth-link:hover { color: var(--soi-ink); }
 @media (max-width: 480px) { .auth-card { padding: 24px 18px; } }
+
+/* ---- Today's pattern block (22 Oct): one Shuffle button, fits a laptop screen, nothing jumps ---- */
+.tpat { gap: 10px; padding-bottom: 16px; }
+.tpat .ck-body { gap: 12px; padding: 18px 20px 18px; }
+.tpat .pt-actions { gap: 10px; }
+.pt-shuffle { height: 52px; display: inline-flex; align-items: center; gap: 8px; padding: 0 20px 0 16px; border-radius: 99px; border: 0; background: var(--soi); color: #fff; font: 800 15px/1 var(--font-body), sans-serif; cursor: pointer; box-shadow: 0 4px 12px rgba(14,46,99,.22); transition: transform .15s; }
+.pt-shuffle svg { width: 20px; height: 20px; }
+@media (hover: hover) { .pt-shuffle:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(14,46,99,.28); } }
+.pt-shuffle:active { transform: scale(.97); }
+.pt-shuffle:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
+.tpat .st-toast { min-height: 20px; margin: -6px 0 -4px; }
+.tpat .pt-sentence-en { margin: 0; }
+/* Listen: the answer's words keep their space before you pick, so nothing moves */
+.tpat .st-tiles.is-reveal.is-waiting { visibility: hidden; }
+.tpat .ck-result.is-waiting { visibility: hidden; }
+.tpat .ck-result { min-height: 52px; }
+@media (min-width: 640px) {
+  .tpat .ck-options { grid-template-columns: 1fr 1fr; }
+  .tpat .ck-result { display: flex; justify-content: space-between; align-items: center; }
+  .tpat .ck-result .auth-btn { width: auto; min-width: 160px; }
+}
+.page:has(.tpat) { padding-bottom: 12px; }
+.tpat { padding-bottom: 0; }
+.tpat .ck-body { gap: 10px; padding-top: 16px; padding-bottom: 16px; }
+.tpat .ck-play svg { width: 40%; height: 40%; }
+.pt-reveal.is-waiting { visibility: hidden; } /* keeps its space so the options don't move */
+/* Patterns page: pickers fit a small phone; the level tip opens toward the screen in the side menu (audit, 22 Oct) */
+@media (max-width: 420px) {
+  .pm-pickers { gap: 8px; }
+  .pm-pickers .pm-pick { flex: 0 1 auto; min-width: 0; }
+  .pm-pickers .pm-pick select { width: 100%; padding: 10px 32px 10px 12px; font-size: 14px; background-position: right 10px center; text-overflow: ellipsis; }
+  .pm-pickers .pm-help { flex: none; }
+}
+.pm-side-level .pm-help-tip { left: -8px; right: auto; }
+/* Today's pattern: one row of tiles, always (long words get more room, text shrinks to fit) */
+.tpat .st-tiles { flex-wrap: nowrap; gap: 6px; width: 100%; margin: 0; }
+.tpat .st-tile, .tpat .st-tile.is-long, .tpat .st-tile.is-xlong { flex: 1 1 auto !important; min-width: 0; max-width: 170px; padding: 12px 6px 8px; }
+.tpat .st-tile .th { white-space: nowrap; }
+@media (max-width: 480px) {
+  .tpat .st-tile .th { font-size: clamp(18px, 5.6vw, 24px); }
+  .tpat .st-tile.is-long .th { font-size: clamp(16px, 4.8vw, 22px); }
+  .tpat .st-tile .rom, .tpat .st-tile .en { font-size: 11px; }
+}
+.tpat .ck-body { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 380px) { .tpat .ck-body { padding-left: 12px; padding-right: 12px; } .tpat .st-tiles { gap: 4px; } .tpat .st-tile, .tpat .st-tile.is-long, .tpat .st-tile.is-xlong { padding-left: 3px; padding-right: 3px; } }

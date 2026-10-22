@@ -5,6 +5,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { readStore } from '../lib/progress';
 import { renderSentence, getRegister } from '../lib/register';
 
+// Put keyboard focus on a button without scrolling the page (autoFocus scrolls, which made the screen jump)
+const focusQuiet = (el) => { if (el && !el.dataset.fq) { el.dataset.fq = '1'; el.focus({ preventScroll: true }); } };
+
 // Listen-and-choose checks: the only thing that makes a word stronger in
 // memory (see lib/memory.js). You hear the word (or its sample sentence)
 // and pick the meaning from 5 options.
@@ -222,7 +225,7 @@ export default function CheckSession({ queue, allWords, progress, onAnswer, onDo
               <p aria-live="polite">{right
                 ? (hinted ? 'Right. Next time try it by ear: it comes back tomorrow.' : 'Right.')
                 : <>It means <b>{item.answer}</b>. You'll get one more try at the end, and it comes back sooner.</>}</p>
-              <button type="button" className="auth-btn primary" onClick={next} autoFocus>Continue</button>
+              <button type="button" className="auth-btn primary" onClick={next} ref={focusQuiet}>Continue</button>
             </div>
           )}
         </div>

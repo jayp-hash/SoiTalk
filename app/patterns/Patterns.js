@@ -6,10 +6,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useProgressStore, readStore, writeStore } from '../lib/progress';
 import { stageOf } from '../lib/memory';
 import {
-  PATTERNS, SLOT_COLOURS, memoryKey, slotOptions, levelWords, randomValues, isValid, sentenceThai, isFlag, wrongCountersFor, inRegister,
+  PATTERNS, SLOT_COLOURS, memoryKey, slotOptions, shuffleOptions, levelWords, randomValues, isValid, sentenceThai, isFlag, wrongCountersFor, inRegister,
 } from '../lib/patterns';
 import { dayKey, endOfToday } from '../lib/progress';
 import { getRegister, particleFor } from '../lib/register';
+
+// Put keyboard focus on a button without scrolling the page (autoFocus scrolls, which made the screen jump)
+const focusQuiet = (el) => { if (el && !el.dataset.fq) { el.dataset.fq = '1'; el.focus({ preventScroll: true }); } };
 
 // Has the learner met this word? Men meet ผม for "I", which fills the ฉัน slot (shown as ผม).
 const met = (progress, th) => !!progress[th] || (th === 'ฉัน' && !!progress['ผม']);
@@ -345,7 +348,7 @@ function Build({ p, level, lex, can, onRound }) {
       {result ? (
         <div className={`ck-result is-${result}`}>
           <p aria-live="polite">{result === 'right' ? 'Right.' : <><b>Not quite.</b> The sentence is: <Parts parts={item.s.parts} lex={lex} /></>}</p>
-          <button type="button" className="auth-btn primary" onClick={next} autoFocus>Continue</button>
+          <button type="button" className="auth-btn primary" onClick={next} ref={focusQuiet}>Continue</button>
         </div>
       ) : (
         <button type="button" className="auth-btn primary pt-check" onClick={check} disabled={placed.length === 0}>Check</button>
@@ -397,7 +400,7 @@ function Listen({ p, level, lex, can, onRound }) {
         <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
       </div>
       <p className="ck-tap">Tap to hear it again · turtle = slow</p>
-      {picked != null && <div className="pt-reveal"><Parts parts={item.s.parts} lex={lex} big /></div>}
+      <div className={`pt-reveal${picked == null ? ' is-waiting' : ''}`} aria-hidden={picked == null}><Parts parts={item.s.parts} lex={lex} big /></div>
       <div className="ck-options">
         {item.options.map((o, k) => {
           const state = picked == null ? '' : o === item.s.en ? ' is-right' : o === picked ? ' is-wrong' : ' is-dim';
@@ -411,7 +414,7 @@ function Listen({ p, level, lex, can, onRound }) {
       {picked != null && (
         <div className={`ck-result is-${right ? 'right' : 'wrong'}`}>
           <p aria-live="polite">{right ? 'Right.' : <>It was: <b>{item.s.en}</b></>}</p>
-          <button type="button" className="auth-btn primary" onClick={next} autoFocus>Continue</button>
+          <button type="button" className="auth-btn primary" onClick={next} ref={focusQuiet}>Continue</button>
         </div>
       )}
     </section>
@@ -459,32 +462,51 @@ export function pickTodayPattern(progress) {
 
 export function TodayPattern({ pick, lex, onDone, onQuit }) {
   const { progress, check } = useProgressStore();
-  const can = (th) => met(progress, th);
   const { p, level, isNew } = pick;
   const total = (isNew ? 1 : 0) + TODAY_LISTEN;
+  // The words this practice uses: what you know, topped up to MIN_OPTIONS per slot
+  // with useful new words (lib/patterns.js shuffleOptions). Fixed once per session.
+  const pool = useMemo(() => Object.fromEntries(level.slots.filter((sl) => !isFlag(sl))
+    .map((sl) => [sl, shuffleOptions(p, sl, (th) => met(progress, th))])), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const inPool = useMemo(() => new Set(Object.values(pool).flat().flatMap((o) => [...(o.words || [o.th]), ...(o.counter ? [o.counter] : [])])), [pool]);
+  const can = (th) => inPool.has(th) || level.fixed.includes(th) || (th === 'ฉัน' && inPool.has('ผม'));
+  // Start on words you know; new ones arrive when you shuffle
+  const start = () => {
+    const v = {};
+    for (const sl of level.slots) {
+      if (isFlag(sl)) { v[sl] = false; continue; }
+      const known = pool[sl].filter((o) => !o.isNew);
+      const list = known.length ? known : pool[sl];
+      v[sl] = list[Math.floor(Math.random() * list.length)];
+    }
+    return isValid(p, v) ? v : randomValues(p, level, can);
+  };
   const [step, setStep] = useState(0);
-  const [spin, setSpin] = useState(() => randomValues(p, level, can));
-  const [showEn, setShowEn] = useState(false);
+  const [spin, setSpin] = useState(start);
   const [item, setItem] = useState(null);
   const [picked, setPicked] = useState(null);
+  const [seen, setSeen] = useState({}); // tiles whose meaning you've opened
   const right = useRef(0);
+  const cont = useRef(null);
   const { play, playing } = useAudio();
   const spinning = isNew && step === 0;
   const made = useRef(new Set());
   const [madeN, setMadeN] = useState(1);
   const [toast, setToast] = useState('');
-  // Which pieces can be swapped: slots of this level with 2+ options you know
-  const swappable = (slot) => level.slots.includes(slot) && !isFlag(slot) && slotOptions(p, slot, can).length >= 2;
-  const swapSlot = (slot) => {
-    const opts = slotOptions(p, slot, can);
-    const at = opts.findIndex((o) => o.th === spin[slot]?.th);
-    for (let k = 1; k <= opts.length; k++) {
-      const v = { ...spin, [slot]: opts[(at + k) % opts.length] };
+  const reels = level.slots.filter((sl) => !isFlag(sl) && (pool[sl] || []).length >= 2);
+
+  // One shuffle button: changes one or both words (never the same sentence twice in a row)
+  const shuffleOnce = () => {
+    for (let t = 0; t < 60; t++) {
+      let change = reels.filter(() => Math.random() < 0.5);
+      if (!change.length) change = [reels[Math.floor(Math.random() * reels.length)]];
+      const v = { ...spin };
+      for (const sl of change) { const opts = pool[sl].filter((o) => o.th !== spin[sl]?.th); v[sl] = opts[Math.floor(Math.random() * opts.length)]; }
       if (!isValid(p, v)) continue;
+      const key = sentenceThai(level.make(v));
+      if (made.current.has(key) && t < 40) continue; // prefer a sentence you haven't made yet
       setSpin(v);
-      const ns = level.make(v);
-      play(sentenceThai(ns));
-      const key = sentenceThai(ns);
+      play(key);
       if (!made.current.has(key)) {
         made.current.add(key); setMadeN(made.current.size);
         setToast(made.current.size === 2 ? 'You just made a new sentence.' : 'Another one.');
@@ -499,6 +521,8 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
     if (spinning) { if (s) { play(sentenceThai(s)); made.current = new Set([sentenceThai(s)]); setMadeN(1); } }
     else { const it = makeListen(p, level, can); setItem(it); setPicked(null); if (it) play(sentenceThai(it.s)); }
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Keyboard users land on Continue, without the page moving
+  useEffect(() => { if (picked != null) cont.current?.focus({ preventScroll: true }); }, [picked]);
 
   const next = () => {
     const n = step + 1;
@@ -511,9 +535,11 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
     setStep(n);
   };
   const choose = (o) => { if (picked != null) return; setPicked(o); if (o === item.s.en) { right.current += 1; soundRight(); } else soundWrong(); };
+  const meaning = (x) => (x.slot === 'ending' ? 'polite' : (lex[x.th]?.en || '').split(/[;,(]/)[0].replace(/^to /, ''));
+  const tileClass = (x) => `st-tile${x.th.length > 5 ? ' is-long' : ''}${x.th.length > 8 ? ' is-xlong' : ''}${x.slot === 'ending' ? ' is-ending' : ''}`;
 
   return (
-    <div className="ck">
+    <div className="ck tpat">
       <div className="ck-top">
         <div className="ck-progress" aria-hidden="true"><span style={{ width: `${(step / total) * 100}%` }} /></div>
         <span className="ck-count">{step + 1} / {total}</span>
@@ -524,51 +550,48 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
           <span>{spinning ? `New: ${p.title}` : 'Test your ear'}</span>
         </div>
         <div className="ck-body">
-          <p className="ck-q">{spinning ? 'Tap a word with ↻ to swap it' : 'What does it mean?'}</p>
           {spinning && s && (
             <>
-              <div className="st-tiles" lang="th">
-                {s.parts.map((x, k) => {
-                  const sw = swappable(x.slot);
-                  return (
-                    <button key={`${k}-${x.th}`} type="button" className={`st-tile${sw ? ' is-swap' : ''}${x.slot === 'ending' ? ' is-ending' : ''}`}
-                      onClick={() => (sw ? swapSlot(x.slot) : play(x.th))} aria-label={sw ? `${x.th}. Tap to swap` : `${x.th}. Tap to hear`}>
-                      {sw && <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>}
-                      <span className="th">{x.th}</span>
-                      <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
-                      <span className="en">{x.slot === 'ending' ? 'polite' : (lex[x.th]?.en || '').split(/[;,(]/)[0].replace(/^to /, '')}</span>
-                    </button>
-                  );
-                })}
+              <div className={`st-tiles${s.parts.length > 5 ? ' is-many' : ''}`} lang="th">
+                {s.parts.map((x, k) => (
+                  <button key={`${k}-${x.th}`} type="button" className={tileClass(x)}
+                    onClick={() => { setSeen((m) => ({ ...m, [x.th]: true })); play(x.th); }} aria-label={`${x.th}, ${meaning(x)}. Tap to hear`}>
+                    <span className="th">{x.th}</span>
+                    <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
+                    <span className={`en${seen[x.th] ? '' : ' is-hid'}`} aria-hidden={!seen[x.th]}>{meaning(x)}</span>
+                  </button>
+                ))}
               </div>
               <div className="pt-actions">
                 <button type="button" className={`pt-play${playing ? ' on' : ''}`} onClick={() => play(sentenceThai(s))} aria-label="Play the sentence"><PlayIcon /></button>
                 <button type="button" className="pt-play" onClick={() => play(s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
+                {reels.length > 0 && (
+                  <button type="button" className="pt-shuffle" onClick={shuffleOnce}><SwapIcon /><span>Shuffle</span></button>
+                )}
               </div>
               <BlurEn className="pt-sentence-en" text={s.en} />
               <p className={`st-toast${toast ? ' is-on' : ''}`} role="status">{toast || ' '}</p>
               <button type="button" className="auth-btn primary pt-check" disabled={madeN < TODAY_MAKE} onClick={next}>
-                {madeN < TODAY_MAKE ? `Make ${TODAY_MAKE - madeN} more` : 'Next: test your ear'}
+                {madeN < TODAY_MAKE ? `Shuffle ${TODAY_MAKE - madeN} more ${TODAY_MAKE - madeN === 1 ? 'time' : 'times'}` : 'Next: test your ear'}
               </button>
             </>
           )}
           {!spinning && item && (
             <>
               <div className="ck-audio">
-                <button type="button" className={`ck-play${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
+                <button type="button" className={`ck-play sm${playing ? ' on' : ''}`} style={{ '--cat': 'var(--soi)' }} onClick={() => play(sentenceThai(item.s))} aria-label="Play again"><PlayIcon /></button>
                 <button type="button" className="ck-slow" onClick={() => play(item.s.parts.map((x) => x.th).join(''), 0.65)} aria-label="Play slowly"><SlowIcon /></button>
               </div>
-              {picked != null && (
-                <div className="st-tiles is-reveal" lang="th">
-                  {item.s.parts.map((x, k) => (
-                    <span key={k} className="st-tile is-static">
-                      <span className="th">{x.th}</span>
-                      <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
-                      <span className="en">{x.slot === 'ending' ? 'polite' : (lex[x.th]?.en || '').split(/[;,(]/)[0].replace(/^to /, '')}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
+              {/* The words appear after you answer. Their space is kept from the start, so nothing moves. */}
+              <div className={`st-tiles is-reveal${item.s.parts.length > 5 ? ' is-many' : ''}${picked == null ? ' is-waiting' : ''}`} lang="th" aria-hidden={picked == null}>
+                {item.s.parts.map((x, k) => (
+                  <span key={k} className={`${tileClass(x)} is-static`}>
+                    <span className="th">{x.th}</span>
+                    <span className="rom">{lex[x.th]?.rom || x.rom || ''}</span>
+                    <span className="en">{meaning(x)}</span>
+                  </span>
+                ))}
+              </div>
               <div className="ck-options">
                 {item.options.map((o, k) => {
                   const state = picked == null ? '' : o === item.s.en ? ' is-right' : o === picked ? ' is-wrong' : ' is-dim';
@@ -579,12 +602,10 @@ export function TodayPattern({ pick, lex, onDone, onQuit }) {
                   );
                 })}
               </div>
-              {picked != null && (
-                <div className={`ck-result is-${picked === item.s.en ? 'right' : 'wrong'}`}>
-                  <p aria-live="polite">{picked === item.s.en ? 'Right.' : <>It was: <b>{item.s.en}</b></>}</p>
-                  <button type="button" className="auth-btn primary" onClick={next} autoFocus>Continue</button>
-                </div>
-              )}
+              <div className={`ck-result${picked == null ? ' is-waiting' : ` is-${picked === item.s.en ? 'right' : 'wrong'}`}`}>
+                <p aria-live="polite">{picked == null ? ' ' : picked === item.s.en ? 'Right.' : <>It was: <b>{item.s.en}</b></>}</p>
+                <button type="button" ref={cont} className="auth-btn primary" onClick={next} disabled={picked == null} tabIndex={picked == null ? -1 : 0}>Continue</button>
+              </div>
             </>
           )}
         </div>

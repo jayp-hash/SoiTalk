@@ -145,7 +145,7 @@ function ProgressPopup({ total, allPct, known, before, milestones, knownCount, l
     <div className="pp-scrim" role="presentation" onClick={onClose}>
       <section className="pp" role="dialog" aria-modal="true" aria-labelledby="pp-title" onClick={(e) => e.stopPropagation()}>
         <button type="button" className="pp-x" aria-label="Close" onClick={onClose}>×</button>
-        <p className="pp-eyebrow">Lesson complete</p>
+        <p className="pp-eyebrow">Practice done</p>
         <h2 id="pp-title" className="pp-title">{newToday > 0 ? `+${newToday} new word${newToday === 1 ? '' : 's'} today` : 'Review done'}</h2>
         <p className="pp-why">These {total.toLocaleString('en')} words make up about <b>{allPct}%</b> of everyday spoken Thai. Here's how far along you are.</p>
         <div className="pp-bar" role="img" aria-label={`${knownCount} known, ${learningCount} in progress, ${rest} to go`}>
@@ -437,7 +437,7 @@ export default function Today({ words, milestones }) {
   };
 
   const [popup, setPopup] = useState(false);
-  const onDone = () => { track('today_complete', { new_words: new Set(queue.map((w) => w.thai)).size, checked: plan.due.length }); finishToday(); setMode('done'); setPopup(true); window.scrollTo(0, 0); };
+  const onDone = () => { track('today_complete', { new_words: new Set(queue.map((w) => w.thai)).size, checked: plan.due.length }); finishToday(); setMode('home'); setPopup(true); window.scrollTo(0, 0); };
   useEffect(() => {
     if (mode !== 'picking') return;
     const pick = pickTodayPattern(progress);
@@ -555,35 +555,15 @@ export default function Today({ words, milestones }) {
 
   return (
     <div className="today-wrap">
-      {mode === 'done' ? (
-        <div className="today-card today-done">
-          {popup && (
-            <ProgressPopup total={words.length} allPct={milestones?.[words.length] ?? 75} known={known} before={before} milestones={milestones}
-              knownCount={knownCount} learningCount={learningCount} early={early}
-              newToday={reviewedInSession.current > 0 ? new Set(queue.map((w) => w.thai)).size : 0}
-              moreCount={plan.fresh.length > 0 ? EXTRA_NEW : 0}
-              onMore={() => { setPopup(false); writeStore('tsc-patterns-open', true); track('learn_more_clicked', { where: 'popup' }); start([], plan.fresh.slice(0, EXTRA_NEW)); }}
-              onClose={() => setPopup(false)} />
-          )}
-          <p className="today-eyebrow">Session complete</p>
-          <h1 className="today-title">Done for today</h1>
-          <p className="today-goal-done"><i style={{ background: 'var(--soi, #1D4FA0)' }} />Today's goal is done. {day.full} is filled in on your week.</p>
-          <div className="today-stats">
-            {score?.right > 0 && <div><b>{score.right}</b><span>word{score.right === 1 ? '' : 's'} remembered</span></div>}
-            {patternScore?.right > 0 && <div><b>{patternScore.right}</b><span>sentence{patternScore.right === 1 ? '' : 's'} understood</span></div>}
-            {reviewedInSession.current > 0 && <div><b>{new Set(queue.map((w) => w.thai)).size}</b><span>new words met</span></div>}
-            <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
-          </div>
-          <Week days={days} said={said} />
-          <button type="button" className="today-more-link" onClick={() => setPopup(true)}>See your progress</button>
-          <div className="today-actions">
-            {plan.fresh.length > 0 && (
-              <button type="button" className="today-more-link" onClick={() => { writeStore('tsc-patterns-open', true); track('learn_more_clicked', { where: 'today' }); start([], plan.fresh.slice(0, EXTRA_NEW)); }}>Want more? Learn {EXTRA_NEW} extra words</button>
-            )}
-            <a className="auth-btn google" href="/vocabulary">Browse all words</a>
-          </div>
-        </div>
-      ) : (
+      {popup && (
+        <ProgressPopup total={words.length} allPct={milestones?.[words.length] ?? 75} known={known} before={before} milestones={milestones}
+          knownCount={knownCount} learningCount={learningCount} early={early}
+          newToday={reviewedInSession.current > 0 ? new Set(queue.map((w) => w.thai)).size : 0}
+          moreCount={plan.fresh.length > 0 ? EXTRA_NEW : 0}
+          onMore={() => { setPopup(false); writeStore('tsc-patterns-open', true); track('learn_more_clicked', { where: 'popup' }); start([], plan.fresh.slice(0, EXTRA_NEW)); }}
+          onClose={() => setPopup(false)} />
+      )}
+      {(
         <div className="today-card">
           <div className="today-head">
             <h1 className="today-title">Today</h1>
