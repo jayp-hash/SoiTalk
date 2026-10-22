@@ -57,7 +57,7 @@ export default function SignIn() {
     <main className="page auth">
       <div className="auth-card">
         <h1 className="auth-title">Save your progress</h1>
-        <p className="auth-sub">Sign in so your words and progress follow you to any device, and nothing is lost if you open Soi Talk in a different browser.</p>
+        <p className="auth-sub">Keep your words and progress on every device.</p>
 
         <button type="button" className="auth-btn google" onClick={google}>
           <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
@@ -72,9 +72,13 @@ export default function SignIn() {
         <div className="auth-or"><span>or</span></div>
 
         {status === 'sent' ? (
-          <div className="auth-sent">
-            <b>Check your email.</b> We sent a sign-in link to {email}. Open it on this device, in this browser.
-            <button type="button" className="auth-link" onClick={() => setStatus('idle')}>Use a different email</button>
+          <div className="auth-sent" role="status">
+            <svg className="auth-sent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+            <div>
+              <p className="auth-sent-title">Check your inbox</p>
+              <p className="auth-sent-text">Link sent to <b>{email}</b>. Open it in this browser.</p>
+              <button type="button" className="auth-link" onClick={() => setStatus('idle')}>Use a different email</button>
+            </div>
           </div>
         ) : (
           <form onSubmit={sendLink} className="auth-form">
