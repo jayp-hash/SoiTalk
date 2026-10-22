@@ -19,6 +19,7 @@ export const SCENES = {
   '7eleven': {
     id: '7eleven',
     place: 'At 7-Eleven',
+    plate: { th: 'เซเว่น', rom: 'sé-wên', en: '7-Eleven' }, // district-plate tag (Thai above English, like a street sign)
     promise: 'Turn down a bag in Thai',
     minutes: 2,
     // The other person (always the female voice: most cashiers are women)
@@ -33,7 +34,6 @@ export const SCENES = {
     alsoHeard: { th: 'ไม่ต้อง', rom: 'mâi tâwng', en: 'no need' },
     replyEn: (it) => `No ${it.en}, thanks.`,
     slotLabel: 'the thing',
-    swapOn: 'ask', // tap the cashier's question to change what she offers
     items: [
       // Order = the order of swaps. Cashiers ask spoon and fork together
       // (ช้อนส้อม), so no fork on its own (Thai Teacher, 12 Oct).
@@ -54,6 +54,7 @@ export const SCENES = {
   restaurant: {
     id: 'restaurant',
     place: 'At a Thai restaurant',
+    plate: { th: 'ร้านอาหาร', rom: 'ráan aa-hǎan', en: 'Thai restaurant' },
     promise: 'Order Thai food your way',
     minutes: 3,
     staff: { who: 'The waitress', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'a-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
@@ -91,6 +92,7 @@ export const SCENES = {
   cafe: {
     id: 'cafe',
     place: 'At a coffee shop',
+    plate: { th: 'ร้านกาแฟ', rom: 'ráan gaa-faae', en: 'Coffee shop' },
     promise: 'Order coffee your way',
     minutes: 3,
     staff: { who: 'The barista', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'a-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },

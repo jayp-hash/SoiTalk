@@ -25,6 +25,7 @@ import { SCENES, DEFAULT_SCENE, replyParts, followParts, missionParts, joinTh, j
 const STEPS = ['scene', 'parts', 'swap', 'listen', 'check', 'done'];
 const FIRST_KEY = 'tsc-first-session';   // { scene, made, day }
 export const SCENES_KEY = 'tsc-scenes';  // { <scene id>: day finished }
+const HINTS_KEY = 'tsc-lesson-hints'; // { hear, swap }: one-time hints already used
 export const MISSION_KEY = 'tsc-mission'; // { scene, th, rom, en, text, day, done }
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 
@@ -79,6 +80,16 @@ function KLine({ words, on }) {
   );
 }
 
+// The place, as a green district plate: Thai (with romanization) above English
+function Plate({ sc, pre }) {
+  return (
+    <div className="st-plate-row">
+      {pre && <span className="st-step">{pre}</span>}
+      <p className="st-plate"><span className="th" lang="th">{sc.plate.th} <i>{sc.plate.rom}</i></span><span className="en">{sc.plate.en}</span></p>
+    </div>
+  );
+}
+
 // A line of Thai as word tiles with romanization and English under each
 function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash, hearHint }) {
   const first = parts.findIndex((p) => p.slot);
@@ -120,13 +131,15 @@ function Tag({ on, right, mine }) {
   return null;
 }
 
-function Bar({ step, steps }) {
-  const i = steps.indexOf(step);
+// Thailand's colours of the day (Sunday red ... Saturday purple), same as Today
+const DAY_COLOURS = ['#E5383B', '#F2C200', '#EC6AA8', '#2BA84A', '#F28C28', '#3A8DDE', '#8E5CC9'];
+function Bar({ step, steps, frac = 0 }) {
+  const i = steps.indexOf(step) + Math.min(Math.max(frac, 0), 0.95);
   return (
     <div className="st-top">
       <a className="st-close" href="/" aria-label="Leave">×</a>
       <div className="st-bar" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length - 1} aria-valuenow={i}>
-        <i style={{ width: `${Math.max(6, (i / (steps.length - 1)) * 100)}%` }} />
+        <i style={{ width: `${Math.max(6, (i / (steps.length - 1)) * 100)}%`, background: DAY_COLOURS[new Date().getDay()] }} />
       </div>
     </div>
   );
@@ -151,6 +164,13 @@ export default function Start({ sceneId }) {
   const [heard, setHeard] = useState(false);
   const [toast, setToast] = useState('');
   const [tapped, setTapped] = useState(false); // parts step: hide the hint after the first tap
+  // One-time hints stay gone once used, also when the lesson is replayed
+  const [hints, setHints] = useState({});
+  useEffect(() => { setHints(readStore(HINTS_KEY, {})); }, []);
+  const hintDone = (k) => { if (hints[k]) return; const h = { ...readStore(HINTS_KEY, {}), [k]: true }; writeStore(HINTS_KEY, h); setHints(h); };
+  // A replay of a lesson you've finished before (Done says "practised", not "made")
+  const [replay, setReplay] = useState(false);
+  useEffect(() => { setReplay(!!readStore(SCENES_KEY, {})[scene.id]); }, [scene.id]);
   const [flash, setFlash] = useState(false);
   const item = scene.items[itemIdx];
   const parts = replyParts(scene, item, reg);
@@ -163,7 +183,7 @@ export default function Start({ sceneId }) {
   const pickSpice = (i) => { setSpiceIdx(i); player.play('spice', [{ text: joinTh(followParts(scene, i, reg)), voice }]); };
   const swapIndex = 'slot';
 
-  const say = (p) => { setTapped(true); player.play(`w-${p.th}`, [{ text: p.th, voice }]); };
+  const say = (p) => { setTapped(true); hintDone('hear'); player.play(`w-${p.th}`, [{ text: p.th, voice }]); };
   const conversation = (it = item) => [
     { text: scene.staff.ask(it).th, voice: 'female' },
     { text: joinTh(replyParts(scene, it, reg)), voice },
@@ -173,7 +193,8 @@ export default function Start({ sceneId }) {
 
   const switchReg = (r) => {
     setReg(r); setRegister(r); setRegChosen(true);
-    player.play('reg', [{ text: scene.staff.ask(item).th, voice: 'female' }, { text: joinTh(replyParts(scene, item, r)), voice: r }]);
+    // Before the first listen: just change ค่ะ/ครับ, no sound. After: replay only your line.
+    if (heard) player.play('reply', [{ text: joinTh(replyParts(scene, item, r)), voice: r }]);
   };
   // Scene step: the line play buttons appear only after the whole conversation has played once.
   // While it plays, the speaking line's button shows as live. If they don't tap within a few
@@ -284,6 +305,7 @@ export default function Start({ sceneId }) {
 
   // ---- 3. swap -------------------------------------------------------
   const swap = () => {
+    hintDone('swap');
     const next = (itemIdx + 1) % scene.items.length;
     const it = scene.items[next];
     setItemIdx(next);
@@ -369,7 +391,10 @@ export default function Start({ sceneId }) {
   const cw = words[ci];
   const cOpts = useMemo(() => {
     if (!cw) return [];
-    const others = shuffle(words.filter((w) => w.th !== cw.th)).slice(0, 2);
+    // Two wrong answers: the other checked word, then words from today's items (never a name)
+    const pool = [...shuffle(words.filter((w) => w.th !== cw.th)), ...shuffle(scene.items.filter((it) => !it.name && it.th !== cw.th && !it.parts))];
+    const seen = new Set([cw.en]);
+    const others = pool.filter((w) => !seen.has(w.en) && seen.add(w.en)).slice(0, 2);
     return shuffle([cw, ...others]).map((w) => ({ key: w.th, en: w.en }));
   }, [cw, words]);
   useEffect(() => { if (step === 'check' && cw && !cPicked) player.play(`c-${ci}`, [{ text: cw.th, voice }]); // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -378,6 +403,13 @@ export default function Start({ sceneId }) {
   const cNext = () => {
     setCPicked(null);
     if (ci + 1 < words.length) { setCi(ci + 1); return; }
+    finish();
+  };
+  // Replaying a lesson: every word is already in your reviews, so there's
+  // nothing new to check. Skip straight to the end (this used to show a blank screen).
+  useEffect(() => { if (step === 'check' && words.length === 0) finish(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, words]);
+  function finish() {
     // Record: these words join the spaced reviews (first check tomorrow)
     for (const w of words) learn(w.th, !!results.current[w.th]);
     // Swap words were tested in listening; first check tomorrow (two-word drinks: each word)
@@ -392,18 +424,18 @@ export default function Start({ sceneId }) {
     const mineEn = scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
     writeStore(MISSION_KEY, { scene: scene.id, th: joinTh(mine), rom: joinRom(mine), en: mineEn, text: scene.mission, day: dayKey(), done: false });
     go('done');
-  };
+  }
 
   if (!loaded) return <div className="st-wrap" />;
 
   return (
     <div className="st-wrap">
-      <Bar step={step} steps={steps} />
+      <Bar step={step} steps={steps} frac={step === 'listen' ? qi / Math.max(queue.length, 1) : step === 'check' ? ci / Math.max(words.length, 1) : step === 'swap' ? (made.length - 1) / needSwaps : 0} />
       <div className="st-body">
 
         {step === 'recall' && prev && rStage === 0 && (
           <section className="st-card">
-            <p className="st-place">Yesterday · {prev.place}</p>
+            <Plate sc={prev} pre="Yesterday" />
             <h1 className="st-title">Remember this?</h1>
             <div className="st-bubble is-them">
               <span className="st-who">{prev.staff.who} asks</span>
@@ -444,7 +476,7 @@ export default function Start({ sceneId }) {
 
         {step === 'recall' && rw && (
           <section className="st-card">
-            <p className="st-place">Yesterday's words · {rStage} of {prevWords.length}</p>
+            <p className="st-step">Yesterday's words · {rStage} of {prevWords.length}</p>
             <h1 className="st-title">What does it mean?</h1>
             <div className="st-word">
               <span className="st-who">Yesterday's word</span>
@@ -464,10 +496,10 @@ export default function Start({ sceneId }) {
 
         {step === 'scene' && (
           <section className={`st-card${regChosen ? '' : ' is-wait'}`}>
-            <p className="st-place">{scene.place}</p>
+            <Plate sc={scene} />
             <h1 className="st-title">The conversation</h1>
             <div className={`st-reg is-top${regChosen ? '' : ' is-ask'}`} role="radiogroup" aria-label="I speak as">
-              <span>I'm speaking as:</span>
+              <span>I'm:</span>
               {[['female', 'Woman', 'ค่ะ', 'khâ'], ['male', 'Man', 'ครับ', 'khráp']].map(([r, label, end, endRom]) => (
                 <button key={r} type="button" role="radio" aria-checked={regChosen && reg === r} className={regChosen && reg === r ? 'on' : ''} onClick={() => switchReg(r)}>
                   {label} <span lang="th">{end}</span> <i className="st-reg-rom">{endRom}</i>
@@ -483,8 +515,8 @@ export default function Start({ sceneId }) {
                 <div>{ask.words ? <KLine words={ask.words} on={kOn(0, 'ask', ask.words)} /> : <><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p></>}<BlurEn className="en" text={ask.en} /></div>
               </div>
             </div>
-            <div className="st-bubble is-you">
-              <span className="st-who">You say</span>
+            <div className={`st-bubble is-you${heard ? ' is-turn' : ''}`}>
+              <span className="st-who">{heard ? 'Your turn · say it out loud' : 'You say'}</span>
               <div className="st-line">
                 <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play your answer" {...lineBtn(1)} />
                 <div><KLine words={parts} on={kOn(1, 'reply', parts)} /><BlurEn className="en" text={scene.replyEn(item)} /></div>
@@ -500,8 +532,8 @@ export default function Start({ sceneId }) {
                     <div>{fu.staff.words ? <KLine words={fu.staff.words} on={kOn(2, 'fask', fu.staff.words)} /> : <><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p></>}<BlurEn className="en" text={fu.staff.en} /></div>
                   </div>
                 </div>
-                <div className="st-bubble is-you">
-                  <span className="st-who">You say</span>
+                <div className={`st-bubble is-you${heard ? ' is-turn' : ''}`}>
+                  <span className="st-who">{heard ? 'Your turn · say it out loud' : 'You say'}</span>
                   <div className="st-line">
                     <PlayBtn id="spice" clips={[{ text: joinTh(spiceParts), voice }]} player={player} label="Play your answer" {...lineBtn(3)} />
                     <div><KLine words={spiceParts} on={kOn(3, 'spice', spiceParts)} /><BlurEn className="en" text={fu.answers[spiceIdx].en} /></div>
@@ -511,21 +543,21 @@ export default function Start({ sceneId }) {
             )}
             </div>
             <button type="button" className={`st-cta${nudge ? ' is-nudge' : ''}${player.playing === 'both' && !heard ? ' is-busy' : ''}`} disabled={!regChosen} onClick={() => {
-              if (heard) go('parts'); else if (player.playing !== 'both') hearAll();
-            }}>{!regChosen ? 'Choose woman or man above' : heard ? 'Next: how it works' : player.playing === 'both' ? 'Listening…' : 'Hear the conversation'}</button>
+              if (heard) { track('said_it_lesson', { scene: scene.id }); go('parts'); } else if (player.playing !== 'both') hearAll();
+            }}>{!regChosen ? 'Choose woman or man above' : heard ? 'I said it ✓' : player.playing === 'both' ? 'Listening…' : 'Hear the conversation'}</button>
           </section>
         )}
 
         {step === 'parts' && (
           <section className="st-card">
-            <p className="st-place">{scene.place}</p>
+            <Plate sc={scene} />
             <h1 className="st-title">{fu ? 'Word by word' : `${parts.length} little words`}</h1>
             <div className={`st-cols${fu ? ' has-2' : ''}`}>
               <div className="st-col">
                 {askCard('ask', ask)}
                 <div className="st-bubble is-you is-tiles">
                   <span className="st-who">You say</span>
-                  <Tiles parts={parts} onTap={say} hearHint={!tapped} />
+                  <Tiles parts={parts} onTap={say} hearHint={!tapped && !hints.hear} />
                   {whole('reply', 'slow', parts, scene.replyEn(item))}
                 </div>
               </div>
@@ -546,25 +578,16 @@ export default function Start({ sceneId }) {
 
         {step === 'swap' && (
           <section className="st-card">
-            <p className="st-place">{scene.place}</p>
+            <Plate sc={scene} />
             <h1 className="st-title">Now make your own</h1>
             <div className={`st-cols${fu ? ' has-2' : ''}`}>
               <div className="st-col">
-                {scene.swapOn === 'ask' ? (
-                  <button type="button" className={`st-bubble is-them is-small is-swap${flash ? ' is-flash' : ''}`} onClick={swap} aria-label={`${ask.th}, ${ask.en} Tap to change`}>
-                    <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>
-                    {made.length === 1 && <span className="st-hint is-below" role="status">Tap to change</span>}
-                    <span className="st-who">{scene.staff.who} asks</span>
-                    <span className="th" lang="th">{ask.th}</span>
-                    <span className="rom">{ask.rom}</span>
-                    <span className="en">{ask.en}</span>
-                  </button>
-                ) : askCard('ask', ask)}
+                {askCard('ask', ask)}
                 <div className="st-bubble is-you is-tiles">
-                  <span className="st-who">You say</span>
-                  {scene.swapOn === 'ask'
-                    ? <Tiles parts={parts} onTap={say} swapIndex={swapIndex} flash={flash} />
-                    : <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1} flash={flash} />}
+                  <span className="st-who">You say
+                    <span className="st-who-dots" role="img" aria-label={`${Math.min(made.length, needSwaps)} of ${needSwaps} sentences made`}>{Array.from({ length: needSwaps }, (_, k) => <i key={k} className={k < made.length ? 'on' : ''} />)}</span>
+                  </span>
+                  <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1 && !hints.swap} flash={flash} />
                   {whole('reply', 'slow', parts, scene.replyEn(item))}
                 </div>
               </div>
@@ -589,20 +612,15 @@ export default function Start({ sceneId }) {
               )}
             </div>
             <p className={`st-toast${toast ? ' is-on' : ''}`} role="status">{toast || ' '}</p>
-            {made.length < needSwaps ? (
-              <p className="st-gate" aria-live="polite">
-                <span className="dots" aria-hidden="true">{Array.from({ length: needSwaps }, (_, k) => <i key={k} className={k < made.length ? 'on' : ''} />)}</span>
-                {made.length} of {needSwaps} sentences made
-              </p>
-            ) : (
-              <button type="button" className="st-cta" onClick={() => go('listen')}>Next: test your ear</button>
-            )}
+            <div className="st-cta-slot">
+              {made.length >= needSwaps && <button type="button" className="st-cta" onClick={() => go('listen')}>Next: test your ear</button>}
+            </div>
           </section>
         )}
 
         {step === 'listen' && q && (
           <section className="st-card">
-            <p className="st-place">Test your ear · {Math.min(qi + 1, 3)} of 3{q.again ? ' · again' : ''}</p>
+            <p className="st-step">Test your ear · {q.again ? 'one more try' : `${Math.min(qi + 1, 3)} of 3`}</p>
             <h1 className="st-title">{q.title}</h1>
             <div className="st-listen">
               <PlayBtn id={`q-${qi}`} clips={q.clip} player={player} label="Play again" big />
@@ -632,7 +650,7 @@ export default function Start({ sceneId }) {
 
         {step === 'check' && cw && (
           <section className="st-card">
-            <p className="st-place">Quick check · {ci + 1} of {words.length}</p>
+            <p className="st-step">Quick check · {ci + 1} of {words.length}</p>
             <h1 className="st-title">What does it mean?</h1>
             <div className="st-word">
               <span className="st-who">Today's word</span>
@@ -651,7 +669,7 @@ export default function Start({ sceneId }) {
         )}
 
         {step === 'done' && (
-          <Done scene={scene} reg={reg} voice={voice} player={player} madeItems={madeItems} spiceIdx={spiceIdx} item={item} user={ready ? user : null} />
+          <Done scene={scene} reg={reg} voice={voice} player={player} madeItems={madeItems} spiceIdx={spiceIdx} item={item} user={ready ? user : null} replay={replay} />
         )}
       </div>
     </div>
@@ -691,7 +709,7 @@ function reminderIcs(scene) {
 }
 const CONFETTI = ['#ED1C24', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#F2C200', '#FFFFFF', '#241D4F', '#F2C200', '#ED1C24', '#FFFFFF', '#F2C200', '#241D4F', '#ED1C24', '#F2C200', '#FFFFFF'];
 
-function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
+function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, replay }) {
   const fu = scene.followUp;
   const lines = [
     ...madeItems.map((it) => ({ id: `s-${it.th}`, parts: replyParts(scene, it, reg), en: scene.replyEn(it) })),
@@ -711,12 +729,12 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
     <section className="dn">
       <div className="dn-hero">
         <div className="dn-confetti" aria-hidden="true">
-          {CONFETTI.map((c, i) => <i key={i} style={{ '--c': c, '--x': `${i % 2 ? 78 + ((i * 7) % 20) : 2 + ((i * 11) % 18)}%`, '--d': `${(i % 5) * 0.06}s`, '--r': `${(i * 53) % 360}deg` }} />)}
+          {CONFETTI.map((c, i) => <i key={i} style={{ '--c': i % 2 ? '#F2C200' : DAY_COLOURS[new Date().getDay()], '--x': `${i % 2 ? 78 + ((i * 7) % 20) : 2 + ((i * 11) % 18)}%`, '--d': `${(i % 5) * 0.06}s`, '--r': `${(i * 53) % 360}deg` }} />)}
         </div>
         <b className="dn-num">{lines.length}</b>
         <div className="dn-hero-text">
           <p className="dn-cheer"><span lang="th">เก่งมาก!</span> <i>gèng mâak · great job</i></p>
-          <p className="dn-count">new phrases you can say in Thai</p>
+          <p className="dn-count">{replay ? 'Thai sentences practised' : 'Thai sentences you made today'}</p>
         </div>
       </div>
 
@@ -760,9 +778,12 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
           <span className="dn-line-play" aria-hidden="true">{player.playing === 'teaser' ? <StopIcon /> : <PlayIcon />}</span>
           <span><span className="th" lang="th">{scene.teaser.th}{endingFor(reg).th}</span><span className="rom">{scene.teaser.rom} {endingFor(reg).rom} · {scene.teaser.en}</span></span>
         </button>
-        <a className="dn-remind" href={reminderIcs(scene)} download="soi-talk-tomorrow.ics">
-          <CalIcon /> Remind me tomorrow
-        </a>
+        {/* A calendar file does nothing inside Instagram/TikTok/LINE: there, saving by email is the one action */}
+        {!inApp && (
+          <a className="dn-remind" href={reminderIcs(scene)} download="soi-talk-tomorrow.ics">
+            <CalIcon /> Remind me tomorrow
+          </a>
+        )}
       </div>
 
       <div className="dn-save">

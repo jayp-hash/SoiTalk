@@ -2451,3 +2451,41 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 }
 .st-bubble.is-tiles .st-tile.is-small { flex: 0 1 auto; min-width: 56px; padding: 8px 10px; }
 .st-bubble.is-tiles .st-tile.is-small .th { font-size: 22px; }
+/* ---- Panel round, 22 Oct: plate, colours of the day, clearer swap, navy actions ---- */
+/* District plate: green street-sign plate, white inset border, Thai above English */
+.st-plate-row { display: flex; align-items: center; gap: 10px; align-self: flex-start; }
+.st-plate { margin: 0; display: inline-grid; gap: 1px; padding: 6px 12px 7px; border-radius: 5px; background: var(--district); color: #fff; box-shadow: inset 0 0 0 2px var(--district), inset 0 0 0 4px #fff; text-align: center; }
+.st-plate .th { font: 700 13px/1.2 var(--font-thai), sans-serif; color: #fff; }
+.st-plate .th i { font: italic 600 10.5px/1 var(--font-body), sans-serif; opacity: .9; }
+.st-plate .en { font: 700 12px/1.1 var(--font-sign, var(--font-body)), sans-serif; letter-spacing: .08em; text-transform: uppercase; color: #fff; }
+/* Step labels are plain navy text: green is for places */
+.st-step { margin: 0; align-self: flex-start; font: 800 12px/1 var(--font-body), sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--soi-ink); }
+/* Progress bar wears today's colour; a hairline keeps yellow visible */
+.st-bar i { box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
+/* Main buttons are navy (UI principle 9) */
+.st-cta { background: var(--soi-ink); }
+.st-cta:hover { background: #0A2149; }
+.st-cta.is-busy { background: #0A2149; }
+.st-cta.is-nudge { animation: st-nudge-navy 1.6s ease-in-out infinite; }
+@keyframes st-nudge-navy { 0%, 100% { box-shadow: 0 0 0 0 rgba(14,46,99,0); transform: none; } 50% { box-shadow: 0 0 0 6px rgba(14,46,99,.22); transform: scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { .st-cta.is-nudge { animation: none; box-shadow: 0 0 0 4px rgba(14,46,99,.22); } }
+/* Your turn: the YOU SAY card glows gold after the first listen */
+.st-bubble.is-turn { box-shadow: inset 0 0 0 2px #F2C200, 0 6px 18px rgba(242,183,5,.18); }
+.st-bubble.is-turn > .st-who { background: #F2C200; color: #1f2533; }
+/* Swap: badge on the word you change, navy with a white ring, big tap area */
+.st-swap-badge { width: 32px; height: 32px; top: -14px; right: -10px; background: var(--soi-ink); box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(0,0,0,.25); }
+.st-swap-badge svg { width: 18px; height: 18px; }
+.st-tile.is-swap { border-color: var(--soi-ink); }
+.st-swap-badge::after { content: ''; position: absolute; inset: -6px; }
+/* Progress dots live in the YOU SAY band */
+.st-who-dots { margin-left: auto; display: inline-flex; gap: 5px; }
+.st-who-dots i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.35); }
+.st-who-dots i.on { background: #F2C200; }
+.st-cta-slot { min-height: 60px; display: grid; align-content: start; }
+/* Done hero: the blue Bangkok street-name sign */
+.dn-hero { background: #1D4FA0; border-radius: 10px; box-shadow: inset 0 0 0 4px #1D4FA0, inset 0 0 0 7px #fff, 0 10px 30px rgba(14,46,99,.25); }
+.dn-count, .dn-num { font-family: var(--font-sign, var(--font-body)), sans-serif; }
+.dn-num { color: #F2C200; }
+/* The save box sits after "Tomorrow", never on top of it on small phones */
+.dn-save { position: static; margin: 4px 0 0; border-radius: 18px; box-shadow: 0 1px 0 #E3E0D8; }
+.st-word > .st-who { background: var(--soi-ink); }
