@@ -53,7 +53,7 @@ export default function SignIn() {
   const verify = async (e) => {
     e.preventDefault();
     const token = code.replace(/\D/g, '');
-    if (token.length < 6) return;
+    if (token.length !== 6) return;
     setChecking(true); setError('');
     const { error } = await supabaseBrowser().auth.verifyOtp({ email: email.trim(), token, type: 'email' });
     setChecking(false);
@@ -107,10 +107,10 @@ export default function SignIn() {
               <p className="auth-sent-title">Check your inbox</p>
               <p className="auth-sent-text">We sent a code to <b>{email}</b>. Type it here.</p>
               <form onSubmit={verify} className="auth-form auth-code-form">
-                <label htmlFor="signin-code">Code from the email</label>
-                <input id="signin-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={10}
-                  placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))} autoFocus />
-                <button type="submit" className="auth-btn primary" disabled={checking || code.length < 6}>
+                <label htmlFor="signin-code">6-digit code from the email</label>
+                <input id="signin-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+                  placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} autoFocus />
+                <button type="submit" className="auth-btn primary" disabled={checking || code.length !== 6}>
                   {checking ? 'Checking…' : 'Sign in'}
                 </button>
               </form>
