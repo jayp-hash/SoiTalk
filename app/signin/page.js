@@ -1,17 +1,26 @@
 'use client';
-import { track } from '../lib/analytics';
-import { useState } from 'react';
+import { track, inAppBrowser } from '../lib/analytics';
+import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '../lib/supabase-browser';
 import { useUser } from '../lib/useUser';
 
-// Sign in with Google, or get a one-time sign-in link by email.
-// Signing in is optional: it saves your progress so it follows you
-// between devices.
+// Sign in with Google, or by email with a 6-digit code (the email also has a link).
+// Signing in is optional: it saves your progress so it follows you between devices.
+//
+// Why a code (CTO review, 22 Oct): people from Instagram, TikTok and LINE are in
+// the app's own browser. The email opens in Mail or Safari, and a sign-in link
+// only works in the browser that asked for it. A code typed back into the same
+// screen works anywhere.
 export default function SignIn() {
   const { user, ready } = useUser();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [error, setError] = useState('');
+  const [code, setCode] = useState('');
+  const [checking, setChecking] = useState(false);
+  // Google blocks its sign-in inside Instagram, TikTok and LINE: show email only there
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => { setInApp(inAppBrowser() || false); }, []);
 
   // Where to go after signing in (e.g. /signin?next=/today from the first session)
   const back = () => {
@@ -32,13 +41,27 @@ export default function SignIn() {
   };
 
   const sendLink = async (e) => {
-    e.preventDefault();
+    e?.preventDefault?.();
     setStatus('sending'); setError(''); track('signin_click', { method: 'email' });
     const { error } = await supabaseBrowser().auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: back() },
     });
-    if (error) { setStatus('error'); setError(error.message); } else setStatus('sent');
+    if (error) { setStatus('error'); setError(error.message); } else { setStatus('sent'); setCode(''); }
+  };
+
+  const verify = async (e) => {
+    e.preventDefault();
+    const token = code.replace(/\D/g, '');
+    if (token.length < 6) return;
+    setChecking(true); setError('');
+    const { error } = await supabaseBrowser().auth.verifyOtp({ email: email.trim(), token, type: 'email' });
+    setChecking(false);
+    if (error) { setError("That code didn't work. Check it, or send a new one."); return; }
+    track('signin_done', { method: 'email_code' });
+    let next = '/today';
+    try { next = localStorage.getItem('tsc-after-signin') || '/today'; localStorage.removeItem('tsc-after-signin'); } catch {}
+    window.location.replace(next);
   };
 
   if (ready && user) {
@@ -59,25 +82,45 @@ export default function SignIn() {
         <h1 className="auth-title">Save your progress</h1>
         <p className="auth-sub">Keep your words and progress on every device.</p>
 
-        <button type="button" className="auth-btn google" onClick={google}>
-          <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
-            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
-            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
-            <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
-            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/>
-          </svg>
-          Continue with Google
-        </button>
+        {inApp ? (
+          <p className="auth-inapp">Google sign-in doesn't work inside {({ instagram: 'Instagram', facebook: 'Facebook', line: 'LINE', tiktok: 'TikTok' })[inApp] || 'this app'}. Use your email and we'll send you a code.</p>
+        ) : (
+          <>
+            <button type="button" className="auth-btn google" onClick={google}>
+              <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
+                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+                <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+                <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/>
+              </svg>
+              Continue with Google
+            </button>
 
-        <div className="auth-or"><span>or</span></div>
+            <div className="auth-or"><span>or</span></div>
+          </>
+        )}
 
         {status === 'sent' ? (
           <div className="auth-sent" role="status">
             <svg className="auth-sent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
             <div>
               <p className="auth-sent-title">Check your inbox</p>
-              <p className="auth-sent-text">Link sent to <b>{email}</b>. Open it in this browser.</p>
-              <button type="button" className="auth-link" onClick={() => setStatus('idle')}>Use a different email</button>
+              <p className="auth-sent-text">We sent a code to <b>{email}</b>. Type it here.</p>
+              <form onSubmit={verify} className="auth-form auth-code-form">
+                <label htmlFor="signin-code">Code from the email</label>
+                <input id="signin-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={10}
+                  placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))} autoFocus />
+                <button type="submit" className="auth-btn primary" disabled={checking || code.length < 6}>
+                  {checking ? 'Checking…' : 'Sign in'}
+                </button>
+              </form>
+              {error && <p className="auth-error">{error}</p>}
+              <p className="auth-sent-text auth-sent-alt">Or tap the button in the email, on this phone.</p>
+              <p className="auth-sent-links">
+                <button type="button" className="auth-link" onClick={sendLink}>Send a new code</button>
+                <span aria-hidden="true"> · </span>
+                <button type="button" className="auth-link" onClick={() => { setStatus('idle'); setError(''); }}>Use a different email</button>
+              </p>
             </div>
           </div>
         ) : (
@@ -86,7 +129,7 @@ export default function SignIn() {
             <input id="signin-email" type="email" required autoComplete="email" placeholder="you@example.com"
               value={email} onChange={(e) => setEmail(e.target.value)} />
             <button type="submit" className="auth-btn primary" disabled={status === 'sending'}>
-              {status === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
+              {status === 'sending' ? 'Sending…' : 'Email me a sign-in code'}
             </button>
           </form>
         )}

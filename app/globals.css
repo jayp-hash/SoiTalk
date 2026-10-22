@@ -2572,3 +2572,14 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .dn-link-btn { all: unset; cursor: pointer; color: var(--soi); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .dn-link-btn:hover { color: var(--soi-ink); }
 .dn-link-btn:focus-visible { outline: 3px solid var(--soi); outline-offset: 2px; border-radius: 4px; }
+/* Sign-in by code (works inside Instagram's browser) */
+.auth-code-form { margin-top: 10px; }
+.auth-code-form input { font: 800 24px/1.2 var(--font-body), sans-serif; letter-spacing: .3em; text-align: center; }
+.auth-sent-alt { margin-top: 10px; font-size: 13.5px; color: #6B7383; }
+.auth-sent-links { margin: 6px 0 0; font-size: 14px; }
+.auth-sent { grid-template-columns: auto minmax(0, 1fr); }
+.auth-sent > div { min-width: 0; }
+.auth-code-form input { width: 100%; box-sizing: border-box; min-width: 0; }
+.auth-card { box-sizing: border-box; }
+.auth-inapp { margin: 0; padding: 12px 14px; border-radius: 12px; background: #FFF6DB; border: 2px solid #F2C200; font-size: 14.5px; line-height: 1.45; color: #3D3320; }
+.auth-inapp { background: var(--soi-tint); border: 0; color: #2d3444; }
