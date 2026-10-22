@@ -101,27 +101,26 @@ export default function SignIn() {
         )}
 
         {status === 'sent' ? (
-          <div className="auth-sent" role="status">
-            <svg className="auth-sent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
-            <div>
-              <p className="auth-sent-title">Check your inbox</p>
-              <p className="auth-sent-text">We sent a code to <b>{email}</b>. Type it here.</p>
-              <form onSubmit={verify} className="auth-form auth-code-form">
-                <label htmlFor="signin-code">6-digit code from the email</label>
-                <input id="signin-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
-                  placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} autoFocus />
-                <button type="submit" className="auth-btn primary" disabled={checking || code.length !== 6}>
-                  {checking ? 'Checking…' : 'Sign in'}
-                </button>
-              </form>
-              {error && <p className="auth-error">{error}</p>}
-              <p className="auth-sent-text auth-sent-alt">Or tap the button in the email, on this phone.</p>
-              <p className="auth-sent-links">
-                <button type="button" className="auth-link" onClick={sendLink}>Send a new code</button>
-                <span aria-hidden="true"> · </span>
-                <button type="button" className="auth-link" onClick={() => { setStatus('idle'); setError(''); }}>Use a different email</button>
-              </p>
+          <div className="auth-code" role="status">
+            <div className="auth-code-head">
+              <svg className="auth-code-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg>
+              <p className="auth-code-title">Check your inbox</p>
             </div>
+            <p className="auth-code-text">We sent a 6-digit code to <b>{email}</b></p>
+            <form onSubmit={verify} className="auth-code-form">
+              <label htmlFor="signin-code" className="sr-only">6-digit code</label>
+              <input id="signin-code" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+                placeholder="000000" value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} autoFocus />
+              <button type="submit" className="auth-btn primary" disabled={checking || code.length !== 6}>
+                {checking ? 'Checking…' : 'Sign in'}
+              </button>
+            </form>
+            {error && <p className="auth-error">{error}</p>}
+            <p className="auth-code-alt">Or open the email on this phone and tap the button.</p>
+            <p className="auth-code-links">
+              <button type="button" className="auth-link" onClick={sendLink}>Send a new code</button>
+              <button type="button" className="auth-link" onClick={() => { setStatus('idle'); setError(''); }}>Change email</button>
+            </p>
           </div>
         ) : (
           <form onSubmit={sendLink} className="auth-form">
