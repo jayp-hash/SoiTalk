@@ -223,6 +223,38 @@ function Mission({ onSaid }) {
   );
 }
 
+// After today's lesson: one clear finish line (7-day panel, 22 Oct). Your line
+// to use today (from the lesson) with "I said it to someone", and tomorrow.
+function DoneToday({ day, next, onSaid }) {
+  const [m, setM] = useState(null);
+  useEffect(() => { setM(readStore('tsc-mission', null)); }, []);
+  const mine = m && m.day === todayKey() ? m : null;
+  const said = () => {
+    writeStore(MISSION_DAYS_KEY, { ...readStore(MISSION_DAYS_KEY, {}), [todayKey()]: mine.scene });
+    const n = { ...mine, done: true }; writeStore('tsc-mission', n); setM(n); onSaid?.();
+    track('said_it_real', { scene: mine.scene });
+  };
+  return (
+    <section className="today-donecard" aria-label="Done for today">
+      <h2>You're done for today ✓</h2>
+      <p className="today-donecard-sub">{day.full} is filled in on your week.</p>
+      {mine && (
+        <div className="today-line">
+          <span className="today-line-lbl">Your line to say today</span>
+          <span className="th" lang="th">{mine.th}</span>
+          {mine.rom && <span className="rom">{mine.rom}</span>}
+          <span className="en">{mine.en}</span>
+          {mine.text && <span className="when">When: {mine.text.charAt(0).toLowerCase()}{mine.text.slice(1)}</span>}
+          {mine.done
+            ? <span className="today-line-done">★ You said it. Nice.</span>
+            : <button type="button" className="today-line-btn" onClick={said}>I said it to someone ★</button>}
+        </div>
+      )}
+      <p className="today-tomorrow"><b>Tomorrow:</b> {next ? <>{next.promise}, about {next.minutes} minutes.</> : <>a review day. New lessons arrive every week.</>}</p>
+    </section>
+  );
+}
+
 // "Say it Today": one real-life line to use today, with an "I said it" tap.
 // The line is fixed for the whole calendar day and only uses words studied
 // before today. Taps are kept in this browser and, when signed in, in the
@@ -485,24 +517,23 @@ export default function Today({ words, milestones }) {
   const firstSession = readStore('tsc-first-session', null);
   const scenesDone = readStore('tsc-scenes', {});
   // One new scene a day, in order, after the first session
-  const SCENE_DAYS = ['restaurant', 'cafe', 'stall', 'market', 'stuck', 'where'];
+  const SCENE_DAYS = ['restaurant', 'cafe', 'stall', 'market', 'stuck', 'where', 'taxi', 'smalltalk', 'bargain'];
   const nextSceneId = firstSession && firstSession.day !== dayKey() && !Object.values(scenesDone).includes(dayKey())
     ? SCENE_DAYS.find((id) => !scenesDone[id]) || null : null;
   const sceneToday = nextSceneId && mode === 'home' ? SCENES[nextSceneId] : null;
   // What's next when today's scene is done (or all scenes are): a planned "next", never a dead end
   const nextUp = firstSession && !nextSceneId ? (SCENE_DAYS.find((id) => !scenesDone[id]) || null) : null;
-  const lastScene = Object.entries(scenesDone).sort((a, b) => (a[1] < b[1] ? 1 : -1))[0]?.[0] || '7eleven';
-  const nextCard = firstSession && !sceneToday ? (
-    <section className="today-next" aria-label="What's next">
-      <p className="today-step-label">Next scene</p>
-      {nextUp ? (
-        <p className="today-next-line"><strong>{SCENES[nextUp].promise}</strong><span>{SCENES[nextUp].place}. Opens tomorrow, about {SCENES[nextUp].minutes} minutes.</span></p>
-      ) : (
-        <p className="today-next-line"><strong>You've done every scene so far</strong><span>New scenes arrive every week. Until then, keep your Thai warm:</span></p>
-      )}
+  // The lesson is the day: once today's lesson is done, Today says so and stays done
+  const lessonDoneToday = !!firstSession && (firstSession.day === dayKey() || Object.values(scenesDone).includes(dayKey()));
+  const nextLesson = nextUp ? SCENES[nextUp] : null;
+  const practiceCount = new Set([...plan.due, ...plan.newCards].map((w) => w.thai)).size;
+  // Not on day 1: a brand-new learner simply finishes
+  const extras = lessonDoneToday && firstSession.day !== dayKey() ? (
+    <section className="today-extra" aria-label="Extra practice">
+      <p className="today-section-label">Extra practice <span>(optional)</span></p>
       <div className="today-next-actions">
-        <a className="today-next-btn" href="/patterns" onClick={() => writeStore('tsc-patterns-open', true)}>Practise a pattern</a>
-        <a className="today-next-btn" href={`/start/${lastScene === '7eleven' ? '' : lastScene}`.replace(/\/$/, '')}>Replay a scene</a>
+        {practiceCount > 0 && <button type="button" className="today-next-btn" onClick={() => (chosen ? beginToday() : setAskReg(true))}>Practise words <span>({practiceCount})</span></button>}
+        <a className="today-next-btn" href="/patterns" onClick={() => writeStore('tsc-patterns-open', true)}>Build sentences</a>
       </div>
     </section>
   ) : null;
@@ -537,7 +568,6 @@ export default function Today({ words, milestones }) {
           <p className="today-eyebrow">Session complete</p>
           <h1 className="today-title">Done for today</h1>
           <p className="today-goal-done"><i style={{ background: 'var(--soi, #1D4FA0)' }} />Today's goal is done. {day.full} is filled in on your week.</p>
-          {!early && <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />}
           <div className="today-stats">
             {score?.right > 0 && <div><b>{score.right}</b><span>word{score.right === 1 ? '' : 's'} remembered</span></div>}
             {patternScore?.right > 0 && <div><b>{patternScore.right}</b><span>sentence{patternScore.right === 1 ? '' : 's'} understood</span></div>}
@@ -545,7 +575,6 @@ export default function Today({ words, milestones }) {
             <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
           </div>
           <Week days={days} said={said} />
-          {nextCard}
           <button type="button" className="today-more-link" onClick={() => setPopup(true)}>See your progress</button>
           <div className="today-actions">
             {plan.fresh.length > 0 && (
@@ -563,12 +592,14 @@ export default function Today({ words, milestones }) {
             )}
           </div>
 
-          {/* Step 1: the one thing to do first */}
-          <Mission onSaid={refreshSaid} />
+          {/* Yesterday's line: did you get to say it? (only before today's lesson) */}
+          {!lessonDoneToday && <Mission onSaid={refreshSaid} />}
 
-          {sceneToday ? (
-            <section className="today-step today-scene" aria-label="Today's scene">
-              <p className="today-step-label"><i className="today-daydot" style={{ background: 'var(--soi, #1D4FA0)' }} />Today</p>
+          {lessonDoneToday ? (
+            <DoneToday day={day} next={nextLesson} onSaid={refreshSaid} />
+          ) : sceneToday ? (
+            <section className="today-step today-scene" aria-label="Today's lesson">
+              <p className="today-step-label"><i className="today-daydot" style={{ background: 'var(--soi, #1D4FA0)' }} />Today's lesson</p>
               <div className="today-step-body">
                 <div>
                   <strong>{sceneToday.promise}</strong>
@@ -599,7 +630,7 @@ export default function Today({ words, milestones }) {
                   </strong>
                   <span>
                     {brandNew && plan.newCards[0] ? <>Starting with <span lang="th">{plan.newCards[0].thai}</span> ({plan.newCards[0].romanization}). </> : null}
-                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (goalPattern ? 60 : 0)) / 60))} minutes. Finish and {day.full} fills in on your week.
+                    {plan.paused ? 'New words wait until you catch up. ' : ''}About {Math.max(1, Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (goalPattern ? 60 : 0)) / 60))} minute{Math.round((plan.due.length * 8 + plan.newCards.length * 25 + (goalPattern ? 60 : 0)) / 60) > 1 ? 's' : ''}. Finish and {day.full} fills in on your week.
                   </span>
                 </div>
                 <button type="button" className="auth-btn primary today-start"
@@ -608,7 +639,6 @@ export default function Today({ words, milestones }) {
             )}
           </section>
           )}
-          {nextCard}
           {askReg && (
             <RegisterChooser onClose={() => setAskReg(false)}
               onChoose={(r) => { setRegister(r); setReg(r); setChosen(true); setAskReg(false); setStartAfterChoice(true); }} />
@@ -619,21 +649,13 @@ export default function Today({ words, milestones }) {
             <Week days={days} said={said} />
           </section>
 
-          {!early && <div className="today-goal">
-            <span id="goal-label">Learning goal: new words a day</span>
-            <div className="fc-seg" role="radiogroup" aria-labelledby="goal-label">
-              {GOAL_OPTIONS.map((n) => (
-                <button key={n} type="button" role="radio" aria-checked={goal === n} className={goal === n ? 'is-on' : ''} onClick={() => setGoal(n)}>{n}</button>
-              ))}
-            </div>
-          </div>}
+          {extras}
+
 
           {signedOut && (
             <p className="today-note">Your progress is saved in this browser. <a href="/signin?next=/today">Sign in</a> to keep it on every device.</p>
           )}
 
-          {/* Bonus, last: take one line out into real life */}
-          {!early && <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />}
           <p className="today-feedback">Something wrong, or an idea? <Feedback label="Tell us" context={{ where: 'today' }} /></p>
         </div>
       )}

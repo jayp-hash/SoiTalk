@@ -290,6 +290,121 @@ export const SCENES = {
     missionOf: (item, idx, reg) => replyParts(SCENES.where, SCENES.where.items[0], reg),
     missionEnOf: () => 'Where is the bathroom?',
     mission: 'Next time you need the bathroom in a mall or a café.',
+    tomorrow: 'Get home by motorbike taxi',
+    teaser: { title: 'Tomorrow: get home by motorbike taxi', th: 'ไปซอยสิบเอ็ด', rom: 'bpai saawy sìp-èt', en: 'To Soi 11, please.' },
+  },
+  // Day 8: the motorbike taxi stand. Say where you're going (your soi), then where
+  // to stop. The driver is a man, so his lines end with ครับ and use the male voice.
+  taxi: {
+    id: 'taxi',
+    place: 'At the motorbike taxi stand',
+    plate: { th: 'วินมอเตอร์ไซค์', rom: 'win maaw-dtoe-sai', en: 'Motorbike taxi' },
+    promise: 'Get home by motorbike taxi',
+    minutes: 2,
+    staffVoice: 'male',
+    staff: { who: 'The driver', ask: () => ({ th: 'ไปไหนครับ', rom: 'bpai nǎi khráp', en: 'Where to?', words: [{ th: 'ไป', rom: 'bpai' }, { th: 'ไหน', rom: 'nǎi' }, { th: 'ครับ', rom: 'khráp' }] }) },
+    reply: [
+      { th: 'ไป', rom: 'bpai', en: 'go (to)' },
+      { slot: true },
+    ],
+    replyEn: (it) => `To ${it.en}, please.`,
+    slotLabel: 'the place',
+    items: [
+      { th: 'ซอยสิบเอ็ด', rom: 'saawy sìp-èt', en: 'Soi 11', a: 'Soi 11', parts: [{ th: 'ซอย', rom: 'saawy', en: 'soi (lane)' }, { th: 'สิบเอ็ด', rom: 'sìp-èt', en: 'eleven' }] },
+      { th: 'ซอยยี่สิบ', rom: 'saawy yîi-sìp', en: 'Soi 20', a: 'Soi 20', parts: [{ th: 'ซอย', rom: 'saawy', en: 'soi (lane)' }, { th: 'ยี่สิบ', rom: 'yîi-sìp', en: 'twenty' }] },
+      { th: 'ปากซอย', rom: 'bpàak saawy', en: 'the soi entrance', a: 'the soi entrance', parts: [{ th: 'ปาก', rom: 'bpàak', en: 'mouth (of)' }, { th: 'ซอย', rom: 'saawy', en: 'soi (lane)' }] },
+    ],
+    followUp: {
+      staff: { th: 'จอดตรงไหนครับ', rom: 'jàawt dtrong nǎi khráp', en: 'Where do I stop?', words: [{ th: 'จอด', rom: 'jàawt' }, { th: 'ตรง', rom: 'dtrong' }, { th: 'ไหน', rom: 'nǎi' }, { th: 'ครับ', rom: 'khráp' }] },
+      answers: [
+        { key: 'here', adj: 'stop here', parts: [{ th: 'จอด', rom: 'jàawt', en: 'stop' }, { th: 'ตรงนี้', rom: 'dtrong-níi', en: 'right here' }], en: 'Stop right here.' },
+        { key: 'ahead', adj: 'up ahead', parts: [{ th: 'จอด', rom: 'jàawt', en: 'stop' }, { th: 'ข้างหน้า', rom: 'khâang-nâa', en: 'up ahead' }], en: 'Stop up ahead.' },
+      ],
+      wrong: 'Turn left.', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'where',
+    // Say your own soi: the one you swapped to last
+    missionOf: (item, idx, reg) => replyParts(SCENES.taxi, item, reg),
+    missionEnOf: (item) => `To ${item.en}, please.`,
+    mission: 'On your next ride home, say your soi.',
+    tomorrow: 'Small talk with a neighbour',
+    teaser: { title: 'Tomorrow: small talk with a neighbour', th: 'มาจากแคนาดา', rom: 'maa jàak khaae-naa-daa', en: "I'm from Canada." },
+  },
+  // Day 9: small talk (merges "where are you from?" and "have you eaten yet?").
+  // กินข้าวหรือยัง is a greeting, like "how's it going?", not an invitation.
+  smalltalk: {
+    id: 'smalltalk',
+    place: 'In the condo lobby',
+    plate: { th: 'คอนโด', rom: 'khaawn-doo', en: 'Condo' },
+    promise: 'Small talk with a neighbour',
+    minutes: 2,
+    // มาจากไหน can mean "where have you just been?" in a lobby: ask the country (Thai Teacher)
+    staff: { who: 'Your neighbour', ask: () => ({ th: 'มาจากประเทศอะไรคะ', rom: 'maa jàak bprà-thêet à-rai khá', en: 'Which country are you from?', words: [{ th: 'มา', rom: 'maa' }, { th: 'จาก', rom: 'jàak' }, { th: 'ประเทศ', rom: 'bprà-thêet' }, { th: 'อะไร', rom: 'à-rai' }, { th: 'คะ', rom: 'khá' }] }) },
+    reply: [
+      { th: 'มา', rom: 'maa', en: 'come' },
+      { th: 'จาก', rom: 'jàak', en: 'from' },
+      { slot: true },
+    ],
+    replyEn: (it) => `I'm from ${it.en}.`,
+    slotLabel: 'the country',
+    items: [
+      { th: 'แคนาดา', rom: 'khaae-naa-daa', en: 'Canada', a: 'Canada', name: true },
+      { th: 'อเมริกา', rom: 'à-mee-rí-gaa', en: 'America', a: 'America', name: true },
+      { th: 'อังกฤษ', rom: 'ang-grìt', en: 'England', a: 'England', name: true },
+      { th: 'ออสเตรเลีย', rom: 'àawt-sà-dtree-liia', en: 'Australia', a: 'Australia', name: true },
+    ],
+    followUp: {
+      staff: { th: 'กินข้าวหรือยังคะ', rom: 'gin khâao rǔue yang khá', en: 'Have you eaten yet?', words: [{ th: 'กิน', rom: 'gin' }, { th: 'ข้าว', rom: 'khâao' }, { th: 'หรือ', rom: 'rǔue' }, { th: 'ยัง', rom: 'yang' }, { th: 'คะ', rom: 'khá' }] },
+      answers: [
+        { key: 'yes', adj: 'eaten', parts: [{ th: 'กิน', rom: 'gin', en: 'eat' }, { th: 'แล้ว', rom: 'láaeo', en: 'already' }], en: 'Yes, I have.' },
+        { key: 'notyet', adj: 'not yet', parts: [{ th: 'ยัง', rom: 'yang', en: 'not yet' }, { th: 'เลย', rom: 'loeei', en: '(at all)' }], en: 'Not yet.' },
+      ],
+      wrong: "I'm from Canada.", // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'taxi',
+    missionOf: (item, idx, reg) => replyParts(SCENES.smalltalk, item, reg),
+    missionEnOf: (item) => `I'm from ${item.en}.`,
+    mission: 'Next time someone asks where you are from. Taxi drivers always do.',
+    tomorrow: 'Bargain at the weekend market',
+    teaser: { title: 'Tomorrow: bargain at the weekend market', th: 'ร้อยยี่สิบได้ไหม', rom: 'ráawi yîi-sìp dâai mǎi', en: 'Can you do 120?', question: true },
+  },
+  // Day 10: market level 2, bargaining. Only where it's normal (weekend markets,
+  // clothes and souvenir stalls), never at 7-Eleven, malls or street food (Thai Teacher).
+  bargain: {
+    id: 'bargain',
+    place: 'At the weekend market',
+    plate: { th: 'ตลาดนัด', rom: 'dtà-làat-nát', en: 'Weekend market' },
+    promise: 'Bargain at the weekend market',
+    minutes: 3,
+    staff: { who: 'The vendor', ask: () => ({ th: 'ตัวนี้ร้อยห้าสิบค่ะ', rom: 'dtuaa níi ráawi hâa-sìp khâ', en: 'This one is 150.', verb: 'says', words: [{ th: 'ตัว', rom: 'dtuaa' }, { th: 'นี้', rom: 'níi' }, { th: 'ร้อย', rom: 'ráawi' }, { th: 'ห้าสิบ', rom: 'hâa-sìp' }, { th: 'ค่ะ', rom: 'khâ' }] }) },
+    question: true,
+    reply: [
+      { slot: true },
+      { th: 'ได้ไหม', rom: 'dâai mǎi', en: 'can you?' },
+    ],
+    replyEn: (it) => `Can you do ${it.en}?`,
+    slotLabel: 'your price',
+    items: [
+      // Every offer is below her 130, so her answer always makes sense (Thai Teacher)
+      { th: 'ร้อยยี่สิบ', rom: 'ráawi yîi-sìp', en: '120', a: '120', parts: [{ th: 'ร้อย', rom: 'ráawi', en: 'hundred' }, { th: 'ยี่สิบ', rom: 'yîi-sìp', en: 'twenty' }] },
+      { th: 'ร้อยสิบ', rom: 'ráawi sìp', en: '110', a: '110', parts: [{ th: 'ร้อย', rom: 'ráawi', en: 'hundred' }, { th: 'สิบ', rom: 'sìp', en: 'ten' }] },
+      { th: 'หนึ่งร้อย', rom: 'nùeng ráawi', en: '100', a: '100', parts: [{ th: 'หนึ่ง', rom: 'nùeng', en: 'one' }, { th: 'ร้อย', rom: 'ráawi', en: 'hundred' }] },
+    ],
+    followUp: {
+      staff: { th: 'ร้อยสามสิบก็แล้วกันค่ะ', rom: 'ráawi sǎam-sìp gâaw láaeo gan khâ', en: "Let's say 130.", verb: 'says', words: [{ th: 'ร้อย', rom: 'ráawi' }, { th: 'สามสิบ', rom: 'sǎam-sìp' }, { th: 'ก็', rom: 'gâaw' }, { th: 'แล้วกัน', rom: 'láaeo gan' }, { th: 'ค่ะ', rom: 'khâ' }] },
+      answers: [
+        { key: 'deal', adj: 'deal', parts: [{ th: 'ตกลง', rom: 'dtòk-long', en: 'deal / OK' }], en: 'Deal.' },
+        { key: 'no', adj: 'no thanks', parts: [{ th: 'ไม่เป็นไร', rom: 'mâi-bpen-rai', en: 'never mind' }], en: 'Never mind, thanks.' },
+      ],
+      wrong: 'How much is this one?', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'smalltalk',
+    missionOf: (item, idx, reg) => replyParts(SCENES.bargain, item, reg),
+    missionEnOf: (item) => `Can you do ${item.en}?`,
+    mission: 'At a weekend market or clothes stall, with a smile. Never at 7-Eleven, malls or street food.',
     tomorrow: 'New words and a sentence pattern',
     teaser: { title: 'Tomorrow: new words and a sentence pattern', th: 'ชอบกินส้มตำ', rom: 'châawp gin sôm-dtam', en: 'I like eating som tam.' },
   },

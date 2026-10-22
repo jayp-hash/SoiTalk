@@ -152,6 +152,7 @@ function Bar({ step, steps, frac = 0, report }) {
 
 export default function Start({ sceneId }) {
   const scene = SCENES[sceneId] || SCENES[DEFAULT_SCENE]; // (functions can't cross from the server, so look it up here)
+  const SV = scene.staffVoice || 'female'; // the other person's voice (the motorbike taxi driver is a man)
   const { learn, check, finishToday, loaded, progress } = useProgressStore();
   const { user, ready } = useUser();
   const player = usePlayer();
@@ -190,9 +191,9 @@ export default function Start({ sceneId }) {
 
   const say = (p) => { setTapped(true); hintDone('hear'); player.play(`w-${p.th}`, [{ text: p.th, voice }]); };
   const conversation = (it = item) => [
-    { text: scene.staff.ask(it).th, voice: 'female' },
+    { text: scene.staff.ask(it).th, voice: SV },
     { text: joinTh(replyParts(scene, it, reg)), voice },
-    ...(fu ? [{ text: fu.staff.th, voice: 'female' }, { text: joinTh(followParts(scene, spiceIdx, reg)), voice }] : []),
+    ...(fu ? [{ text: fu.staff.th, voice: SV }, { text: joinTh(followParts(scene, spiceIdx, reg)), voice }] : []),
   ];
   const go = (s) => { player.stop(); setStep(s); window.scrollTo(0, 0); track('scene_step', { scene: scene.id, step: s }); };
 
@@ -221,9 +222,9 @@ export default function Start({ sceneId }) {
   // The other person's line as a small card with its header band
   const askCard = (id, line) => (
     <div className="st-bubble is-them is-small">
-      <span className="st-who">{scene.staff.who} asks</span>
+      <span className="st-who">{scene.staff.who} {line.verb || 'asks'}</span>
       <div className="st-line">
-        <PlayBtn id={id} clips={[{ text: line.th, voice: 'female' }]} player={player} label="Play the question" />
+        <PlayBtn id={id} clips={[{ text: line.th, voice: SV }]} player={player} label="Play the question" />
         <div><p className="th" lang="th">{line.th}</p><p className="rom">{line.rom}</p><BlurEn className="en" text={line.en} /></div>
       </div>
     </div>
@@ -246,15 +247,15 @@ export default function Start({ sceneId }) {
     const clips = [];
     if (scene.recall) {
       const pv = SCENES[scene.recall]; const pi = pv.items[0];
-      clips.push({ text: pv.staff.ask(pi).th, voice: 'female' }, { text: joinTh(replyParts(pv, pi, v)), voice: v }, ...pv.items.map((it) => ({ text: it.th, voice: v })));
+      clips.push({ text: pv.staff.ask(pi).th, voice: pv.staffVoice || 'female' }, { text: joinTh(replyParts(pv, pi, v)), voice: v }, ...pv.items.map((it) => ({ text: it.th, voice: v })));
     }
     clips.push(...conversation(scene.items[0]));
     const fus = fu ? fu.answers.map((_, i) => followParts(scene, i, v)) : [];
     clips.push(...words(replyParts(scene, scene.items[0], v)), ...line(replyParts(scene, scene.items[0], v)));
     for (const ps of fus) clips.push(...words(ps), ...line(ps));
-    if (fu) clips.push({ text: fu.staff.th, voice: 'female' });
+    if (fu) clips.push({ text: fu.staff.th, voice: SV });
     for (const it of scene.items) {
-      clips.push({ text: scene.staff.ask(it).th, voice: 'female' }, ...line(replyParts(scene, it, v)), { text: scene.staff.ask(it).th, voice: 'female', slow: true }, ...words(it.parts || [it]));
+      clips.push({ text: scene.staff.ask(it).th, voice: SV }, ...line(replyParts(scene, it, v)), { text: scene.staff.ask(it).th, voice: SV, slow: true }, ...words(it.parts || [it]));
     }
     const mission = missionParts(scene, v, 0, scene.items[0]);
     clips.push({ text: joinTh(mission), voice: v }, { text: scene.teaser.th + endingFor(v, scene.teaser.question).th, voice: v });
@@ -315,7 +316,7 @@ export default function Start({ sceneId }) {
     const it = scene.items[next];
     setItemIdx(next);
     setFlash(true); setTimeout(() => setFlash(false), 450);
-    player.play('both', [{ text: scene.staff.ask(it).th, voice: 'female' }, { text: joinTh(replyParts(scene, it, reg)), voice }]);
+    player.play('both', [{ text: scene.staff.ask(it).th, voice: SV }, { text: joinTh(replyParts(scene, it, reg)), voice }]);
     setMade((m) => {
       if (m.includes(it.th)) return m;
       const n = [...m, it.th];
@@ -349,8 +350,8 @@ export default function Start({ sceneId }) {
       return {
         kind, key: it.th,
         title: asks ? `What is ${scene.staff.who.toLowerCase()} asking?` : scene.followUp ? 'What did you order?' : 'What did you say?',
-        clip: asks ? [{ text: scene.staff.ask(it).th, voice: 'female' }] : [{ text: joinTh(replyParts(scene, it, reg)), voice }],
-        slowClip: asks ? [{ text: scene.staff.ask(it).th, voice: 'female', slow: true }] : [{ text: spaced(replyParts(scene, it, reg)), voice, slow: true }],
+        clip: asks ? [{ text: scene.staff.ask(it).th, voice: SV }] : [{ text: joinTh(replyParts(scene, it, reg)), voice }],
+        slowClip: asks ? [{ text: scene.staff.ask(it).th, voice: SV, slow: true }] : [{ text: spaced(replyParts(scene, it, reg)), voice, slow: true }],
         opts: shuffle([it, ...others(it)]).map((o) => ({ key: o.th, en: asks ? scene.staff.ask(o).en : scene.replyEn(o) })),
         fb: { th: it.th, rom: it.rom, en: it.en, name: !!it.name },
       };
@@ -397,7 +398,14 @@ export default function Start({ sceneId }) {
   const cOpts = useMemo(() => {
     if (!cw) return [];
     // Two wrong answers: the other checked word, then words from today's items (never a name)
-    const pool = [...shuffle(words.filter((w) => w.th !== cw.th)), ...shuffle(scene.items.filter((it) => !it.name && it.th !== cw.th && !it.parts))];
+    // Always 3 choices: other checked words first, then any other word from this scene
+    // (items, their parts, the reply and the follow-up answers), never a name.
+    const sceneWordsAll = [
+      ...scene.items.flatMap((it) => (it.parts ? it.parts : [it])),
+      ...scene.reply.filter((p) => !p.slot),
+      ...(fu ? fu.answers.flatMap((x) => x.parts) : []),
+    ].filter((w) => w.en && !w.name && w.th !== cw.th);
+    const pool = [...shuffle(words.filter((w) => w.th !== cw.th)), ...shuffle(sceneWordsAll)];
     const seen = new Set([cw.en]);
     const others = pool.filter((w) => !seen.has(w.en) && seen.add(w.en)).slice(0, 2);
     return shuffle([cw, ...others]).map((w) => ({ key: w.th, en: w.en }));
@@ -443,9 +451,9 @@ export default function Start({ sceneId }) {
             <Plate sc={prev} pre="Yesterday" />
             <h1 className="st-title">Remember this?</h1>
             <div className="st-bubble is-them">
-              <span className="st-who">{prev.staff.who} asks</span>
+              <span className="st-who">{prev.staff.who} {prev.staff.ask(prevItem).verb || 'asks'}</span>
               <div className="st-line">
-                <PlayBtn id="rask" clips={[{ text: prev.staff.ask(prevItem).th, voice: 'female' }]} player={player} label="Play the question" />
+                <PlayBtn id="rask" clips={[{ text: prev.staff.ask(prevItem).th, voice: prev.staffVoice || 'female' }]} player={player} label="Play the question" />
                 <div><p className="th" lang="th">{prev.staff.ask(prevItem).th}</p><p className="rom">{prev.staff.ask(prevItem).rom}</p><BlurEn className="en" text={prev.staff.ask(prevItem).en} /></div>
               </div>
             </div>
@@ -514,9 +522,9 @@ export default function Start({ sceneId }) {
             <div className={`st-cols${fu ? ' has-2' : ''}`}>
             <div className="st-col">
             <div className="st-bubble is-them">
-              <span className="st-who">{scene.staff.who} asks</span>
+              <span className="st-who">{scene.staff.who} {ask.verb || 'asks'}</span>
               <div className="st-line">
-                <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" {...lineBtn(0)} />
+                <PlayBtn id="ask" clips={[{ text: ask.th, voice: SV }]} player={player} label="Play the question" {...lineBtn(0)} />
                 <div>{ask.words ? <KLine words={ask.words} on={kOn(0, 'ask', ask.words)} /> : <><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p></>}<BlurEn className="en" text={ask.en} /></div>
               </div>
             </div>
@@ -531,9 +539,9 @@ export default function Start({ sceneId }) {
             {fu && (
               <div className="st-col">
                 <div className="st-bubble is-them">
-                  <span className="st-who">{scene.staff.who} asks</span>
+                  <span className="st-who">{scene.staff.who} {fu.staff.verb || 'asks'}</span>
                   <div className="st-line">
-                    <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: 'female' }]} player={player} label="Play the question" {...lineBtn(2)} />
+                    <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: SV }]} player={player} label="Play the question" {...lineBtn(2)} />
                     <div>{fu.staff.words ? <KLine words={fu.staff.words} on={kOn(2, 'fask', fu.staff.words)} /> : <><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p></>}<BlurEn className="en" text={fu.staff.en} /></div>
                   </div>
                 </div>
@@ -655,7 +663,7 @@ export default function Start({ sceneId }) {
 
         {step === 'check' && cw && (
           <section className="st-card">
-            <p className="st-step">Quick check · {ci + 1} of {words.length}</p>
+            <p className="st-step">Words from today · {ci + 1} of {words.length}</p>
             <h1 className="st-title">What does it mean?</h1>
             <div className="st-word">
               <span className="st-who">Today's word</span>
@@ -721,7 +729,6 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, repl
     ...(fu ? fu.answers.map((x, i) => ({ id: `f-${x.key}`, parts: followParts(scene, i, reg), en: x.en })) : []),
   ];
   const mission = missionParts(scene, reg, spiceIdx, item);
-  const [all, setAll] = useState(false);
   const missionEn = scene.missionEnOf ? scene.missionEnOf(item, spiceIdx) : scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
   const [inApp, setInApp] = useState(false);
   useEffect(() => { setInApp(inAppBrowser()); soundDone(); }, []);
@@ -754,27 +761,6 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, repl
         <span className="dn-use-when">When: {scene.mission.charAt(0).toLowerCase()}{scene.mission.slice(1)}</span>
       </button>
 
-      {all ? (
-        <div className="dn-lines" role="list">
-          {lines.map((l) => {
-            const on = player.playing === l.id;
-            return (
-              <button key={l.id} type="button" role="listitem" className={`dn-line${on ? ' is-on' : ''}`}
-                onClick={() => player.play(l.id, [{ text: joinTh(l.parts), voice }])} aria-label={`Play: ${l.en}`}>
-                <span className="dn-line-text">
-                  <span className="th" lang="th">{joinTh(l.parts)}</span>
-                  <span className="rom">{joinRom(l.parts)}</span>
-                </span>
-                <span className="en">{l.en}</span>
-                <span className="dn-line-play" aria-hidden="true">{on ? <StopIcon /> : <PlayIcon />}</span>
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <button type="button" className="dn-more" onClick={() => setAll(true)}>See all your phrases</button>
-      )}
-
       <div className="dn-back">
         <p className="dn-label">Tomorrow · about 2 minutes</p>
         <p className="dn-back-title">{scene.tomorrow || scene.teaser.title.replace(/^Tomorrow: /, '')}</p>
@@ -791,22 +777,14 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, repl
         )}
       </div>
 
-      <p className="dn-report">Spotted a mistake? <Feedback label="Tell us" context={{ scene: scene.id, step: 'done' }} /></p>
-
+      {/* One way out (7-day panel, 22 Oct). Saving is one quiet line, not a second button. */}
       <div className="dn-save">
-        {user ? (
-          <a className="st-cta" href="/today">Go to Today</a>
-        ) : inApp ? (
-          <>
-            <a className="st-cta" href="/signin?next=/today">Save my phrases (free)</a>
-            <p className="dn-save-note">Google sign-in doesn't work inside Instagram, TikTok or LINE, so use your email (or open soitalk.app in Safari or Chrome). <a href="/today">Not now</a></p>
-          </>
+        <a className="st-cta" href="/today">Done for today</a>
+        {!user && (inApp ? (
+          <p className="dn-save-note">Keep your progress on every device: <a href="/signin?next=/today">save it with your email</a>. It's free.</p>
         ) : (
-          <>
-            <button type="button" className="dn-google" onClick={google}><GoogleG /> Save my phrases with Google</button>
-            <p className="dn-save-note">Free. Keep your phrases and pick up tomorrow. <span className="dn-links"><a href="/signin?next=/today">Use email</a> · <a href="/today" className="dn-not-now">Not now</a></span></p>
-          </>
-        )}
+          <p className="dn-save-note">Keep your progress on every device: save it with <button type="button" className="dn-link-btn" onClick={google}>Google</button> or <a href="/signin?next=/today">email</a>. It's free.</p>
+        ))}
       </div>
     </section>
   );

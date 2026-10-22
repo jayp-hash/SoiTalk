@@ -2546,3 +2546,29 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .st-bubble.is-tiles .st-tile.is-xlong .th { font-size: clamp(14px, 4vw, 18px) !important; white-space: nowrap; }
 .st-tile.is-xlong .rom { font-size: 10.5px; white-space: nowrap; }
 .st-tile.is-xlong .rom { white-space: normal; line-height: 1.15; text-align: center; }
+/* ---- One finish line (7-day panel, 22 Oct) ---- */
+/* New word in a card sentence: quiet grey dots, not gold (gold means "your turn") */
+.fc-box.is-new { box-shadow: none; background: transparent; border-bottom: 2px dotted #9AA3B2; border-radius: 6px 6px 2px 2px; }
+/* Today, after the lesson */
+.today-donecard { display: grid; gap: 10px; padding: 18px; border-radius: 18px; background: var(--soi-tint); }
+.today-donecard h2 { margin: 0; font: 800 22px/1.2 var(--font-sign, var(--font-body)), sans-serif; color: var(--soi-ink); }
+.today-donecard-sub { margin: -4px 0 0; font-size: 14.5px; color: #4f5868; }
+.today-line { display: grid; gap: 2px; padding: 0 14px 14px; border-radius: 14px; background: #FFF6DB; border: 2px solid #F2C200; overflow: hidden; }
+.today-line-lbl { margin: 0 -14px 8px; padding: 8px 14px; background: #F2C200; color: #1f2533; font: 800 12px/1 var(--font-body), sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.today-line .th { font: 800 24px/1.3 var(--font-thai), sans-serif; color: #1f2533; }
+.today-line .rom { font: italic 600 13.5px/1.3 var(--font-body), sans-serif; color: #5B4A1A; }
+.today-line .en { font: 800 15.5px/1.3 var(--font-body), sans-serif; color: #1f2533; }
+.today-line .when { margin-top: 4px; font-size: 13.5px; color: #5B4A1A; }
+.today-line-btn { margin-top: 10px; min-height: 44px; border-radius: 12px; border: 2px solid var(--soi-ink); background: #fff; color: var(--soi-ink); font: 800 15px/1 var(--font-body), sans-serif; cursor: pointer; }
+.today-line-btn:hover { background: #EEF3FB; }
+.today-line-done { margin-top: 10px; font: 800 15px/1.3 var(--font-body), sans-serif; color: #7A5600; }
+.today-tomorrow { margin: 0; font-size: 15px; color: #2d3444; }
+.today-extra { display: grid; gap: 10px; }
+.today-section-label span { text-transform: none; letter-spacing: 0; font-weight: 600; color: #6B7383; }
+.today-next-btn span { font-weight: 600; opacity: .75; margin-left: 2px; }
+/* Lesson Done: one button, saving as a quiet line */
+.dn-save { display: grid; gap: 10px; padding: 16px; }
+.dn-save-note { margin: 0; text-align: center; font-size: 14px; line-height: 1.45; color: #4f5868; }
+.dn-link-btn { all: unset; cursor: pointer; color: var(--soi); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.dn-link-btn:hover { color: var(--soi-ink); }
+.dn-link-btn:focus-visible { outline: 3px solid var(--soi); outline-offset: 2px; border-radius: 4px; }
