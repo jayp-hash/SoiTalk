@@ -1,4 +1,5 @@
 'use client';
+import { track } from '../lib/analytics';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import BlurEn from '../components/BlurEn';
 import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
@@ -136,6 +137,7 @@ export default function Practice({ p, level, lex, onLearn }) {
     else setTimeout(go, 700);
     if (pos >= queue.length) {
       const clean = r.misses === 0;
+      track('practice_round_complete', { pattern: p.id, level: level.n, clean, misses: r.misses });
       if (clean) { const signs = readStore('tsc-signs', {}); signs[`${p.id}-${level.n}`] = dayKey(); writeStore('tsc-signs', signs); setTimeout(() => soundDone(), autoplay ? 1600 : 800); }
     }
   };

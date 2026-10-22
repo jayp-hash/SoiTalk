@@ -2,7 +2,7 @@
 // "Continue with Google" sign-in can be opened to everyone.
 // To show a contact email, fill in CONTACT_EMAIL.
 const CONTACT_EMAIL = 'jasonpshyk@gmail.com';
-const UPDATED = '12 October 2026';
+const UPDATED = '22 October 2026';
 
 export const metadata = { title: 'Privacy policy · Soi Talk' };
 
@@ -17,7 +17,10 @@ export default function Privacy() {
       <p>Soi Talk is a small, independent app for learning Thai. This page explains what we store about you and why.</p>
 
       <h2>Using the app without an account</h2>
-      <p>You can study without signing in. Your progress and settings are then kept only in your own browser (local storage) and are not sent to us.</p>
+      <p>You can study without signing in. Your progress and settings are then kept only in your own browser (local storage).</p>
+
+      <h2>Usage statistics and error reports</h2>
+      <p>To learn which parts of the app help people and to fix problems, we record anonymous usage events: pages you open, lessons you start and finish, the link or ad you first arrived from, the type of browser, and any errors the app hits. They're linked to a random ID stored in your browser, not to your name or email. We use them only to improve Soi Talk.</p>
 
       <h2>What we store when you sign in</h2>
       <ul>
@@ -31,6 +34,7 @@ export default function Privacy() {
         <li><b>Supabase</b> stores accounts and progress.</li>
         <li><b>Vercel</b> hosts the website.</li>
         <li><b>Google</b> handles sign-in if you choose "Continue with Google".</li>
+        <li><b>PostHog</b> receives the anonymous usage events and error reports described above.</li>
         <li><b>ElevenLabs</b> generates the Thai audio. Only course text (Thai words and sentences) is sent, never anything about you.</li>
       </ul>
 

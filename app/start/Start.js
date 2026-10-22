@@ -1,4 +1,5 @@
 'use client';
+import { track } from '../lib/analytics';
 import BlurEn from '../components/BlurEn';
 import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -171,7 +172,7 @@ export default function Start({ sceneId }) {
     { text: joinTh(replyParts(scene, it, reg)), voice },
     ...(fu ? [{ text: fu.staff.th, voice: 'female' }, { text: joinTh(followParts(scene, spiceIdx, reg)), voice }] : []),
   ];
-  const go = (s) => { player.stop(); setStep(s); window.scrollTo(0, 0); };
+  const go = (s) => { player.stop(); setStep(s); window.scrollTo(0, 0); track('scene_step', { scene: scene.id, step: s }); };
 
   const switchReg = (r) => {
     setReg(r); setRegister(r); setRegChosen(true);
@@ -329,6 +330,7 @@ export default function Start({ sceneId }) {
     finishToday();
     if (!readStore(FIRST_KEY, null)) writeStore(FIRST_KEY, { scene: scene.id, made, day: dayKey() });
     writeStore(SCENES_KEY, { ...readStore(SCENES_KEY, {}), [scene.id]: dayKey() });
+    track('scene_complete', { scene: scene.id });
     const mine = missionParts(scene, reg, spiceIdx, item);
     const mineEn = scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
     writeStore(MISSION_KEY, { scene: scene.id, th: joinTh(mine), rom: joinRom(mine), en: mineEn, text: scene.mission, day: dayKey(), done: false });

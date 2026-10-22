@@ -1,6 +1,7 @@
 import './globals.css';
 import { Sarabun, Baloo_2, Nunito, Kanit } from 'next/font/google';
 import Header from './components/Header';
+import Analytics from './components/Analytics';
 
 // Fonts are downloaded at build time and served from our own site
 // (faster, and no request to Google from the visitor's browser).
@@ -13,8 +14,12 @@ const kanit = Kanit({ subsets: ['thai', 'latin'], weight: ['500', '700', '800'],
 const nunito = Nunito({ subsets: ['latin'], weight: ['500', '700', '800'], style: ['normal', 'italic'], variable: '--font-body', display: 'swap' });
 
 export const metadata = {
+  metadataBase: new URL('https://soitalk.app'),
   title: 'Soi Talk · Thai for your street',
   description: 'Learn the Thai your street actually speaks: the most useful words first, real audio, and one sentence to say out loud every day.',
+  // Link previews (Instagram DMs, LINE, WhatsApp, Facebook): app/opengraph-image.png is added automatically
+  openGraph: { title: 'Soi Talk · Thai for your street', description: 'One real Thai line a day, learned in 3 minutes. Start free, no sign-up needed.', url: 'https://soitalk.app', siteName: 'Soi Talk', type: 'website' },
+  twitter: { card: 'summary_large_image', title: 'Soi Talk · Thai for your street', description: 'One real Thai line a day, learned in 3 minutes. Start free, no sign-up needed.' },
 };
 
 export default function RootLayout({ children }) {
@@ -23,6 +28,7 @@ export default function RootLayout({ children }) {
       <body>
         {/* Thailand's colour of the day (Sun red, Mon yellow, Tue pink, Wed green, Thu orange, Fri blue, Sat purple) */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.style.setProperty('--day',['#E5383B','#F2C200','#EC6AA8','#2BA84A','#F28C28','#3A8DDE','#8E5CC9'][new Date().getDay()])" }} />
+        <Analytics />
         <Header />
         {children}
       </body>

@@ -1,4 +1,5 @@
 'use client';
+import { track } from '../lib/analytics';
 import { audioVersion } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Deck from '../vocabulary/Deck';
@@ -269,7 +270,7 @@ function SayIt({ studiedBeforeToday, bonus, onSaid }) {
   const total = Object.keys(said).length;
   const markSaid = () => {
     const next = { ...said, [today]: line.day };
-    writeStore(SAID_KEY, next); setSaid(next); onSaid?.();
+    writeStore(SAID_KEY, next); setSaid(next); onSaid?.(); track('said_it', { line: line.day });
     if (user) supabaseBrowser().from('said_it').upsert({ user_id: user.id, day: today, kind: 'sayit', line: line.day })
       .then(({ error }) => { if (error) console.warn('Could not save said_it', error); });
   };
@@ -370,6 +371,7 @@ export default function Today({ words, milestones }) {
 
   // Checks first (words you've met before), then today's new words
   const start = (checks, news) => {
+    track('today_start', { checks: checks.length, new_words: news.length });
     repeats.current = new Map();
     reviewedInSession.current = 0;
     setBefore(known);
@@ -402,7 +404,7 @@ export default function Today({ words, milestones }) {
   };
 
   const [popup, setPopup] = useState(false);
-  const onDone = () => { finishToday(); setMode('done'); setPopup(true); window.scrollTo(0, 0); };
+  const onDone = () => { track('today_complete', { new_words: new Set(queue.map((w) => w.thai)).size, checked: plan.due.length }); finishToday(); setMode('done'); setPopup(true); window.scrollTo(0, 0); };
   useEffect(() => {
     if (mode !== 'picking') return;
     const pick = pickTodayPattern(progress);

@@ -1,4 +1,5 @@
 'use client';
+import { track } from '../lib/analytics';
 import { useState } from 'react';
 import { supabaseBrowser } from '../lib/supabase-browser';
 import { useUser } from '../lib/useUser';
@@ -22,7 +23,7 @@ export default function SignIn() {
   };
 
   const google = async () => {
-    setError('');
+    setError(''); track('signin_click', { method: 'google' });
     const { error } = await supabaseBrowser().auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: back() },
@@ -32,7 +33,7 @@ export default function SignIn() {
 
   const sendLink = async (e) => {
     e.preventDefault();
-    setStatus('sending'); setError('');
+    setStatus('sending'); setError(''); track('signin_click', { method: 'email' });
     const { error } = await supabaseBrowser().auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: back() },
