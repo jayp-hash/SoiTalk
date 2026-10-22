@@ -515,10 +515,14 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
     const p = progressRef.current;
     const today = new Set(allWords.map((w) => w.thai));
     const can = (th) => !!p[th] || today.has(th) || th === word.thai || (th === 'ผม' && !!p['ฉัน']) || (th === 'ฉัน' && !!p['ผม']);
-    const fits = base?.words && base.words.every((w) => w.ending || /^(ครับ|ค่ะ|คะ)$/.test(w.th) || can(w.th));
-    if (fits || (base && !base.words)) return base;
-    if (!lex) return base;
-    return exampleFor(inRegister(PATTERNS, reg, particleFor), word.thai, can, lex) || null;
+    // Words you haven't met yet. One or two are fine: they're marked and you can tap
+    // them for the meaning (Jay, 22 Oct: never show "coming soon"). More than two:
+    // build a sentence from a pattern instead, and if that isn't possible, show none.
+    const unknown = (base?.words || []).filter((w) => !(w.ending || /^(ครับ|ค่ะ|คะ)$/.test(w.th) || can(w.th))).map((w) => w.th);
+    if (base && (!base.words || unknown.length === 0)) return base;
+    if (base && unknown.length <= 2) return { ...base, unknown: new Set(unknown) };
+    const built = lex ? exampleFor(inRegister(PATTERNS, reg, particleFor), word.thai, can, lex) : null;
+    return built || null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [word, help.voice, session]);
   const isLastCard = cardIndex === cards.length - 1;
@@ -780,7 +784,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
                 </div>
               </div>
 
-              <div className="fc-divider" />
+              {sentence && <div className="fc-divider" />}
 
               {sentence ? (
                 <>
@@ -795,7 +799,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
                         <button
                           key={k}
                           type="button"
-                          className={`fc-box${isTarget ? ' is-target' : ''}${isOn ? ' is-on' : ''}`}
+                          className={`fc-box${isTarget ? ' is-target' : ''}${isOn ? ' is-on' : ''}${sentence.unknown?.has(w.th) ? ' is-new' : ''}`}
                           aria-label={`Play ${w.th}${w.en ? `, meaning ${w.en}` : ''}`}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -833,9 +837,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
                     <div className="fc-english">{sentence.english}</div>
                   ))}
                 </>
-              ) : (
-                <p className="fc-soon">Example sentence coming soon</p>
-              )}
+              ) : null}
             </div>
             <div className="fc-rate" data-tour="rate">
               <button type="button" className="fc-rate-btn again" onClick={(e) => { e.stopPropagation(); rateCard(false); }}>

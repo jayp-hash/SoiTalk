@@ -170,6 +170,126 @@ export const SCENES = {
     ],
     missionEnOf: (item, idx) => `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)} ${idx === 1 ? 'small' : 'large'} Thai iced teas, please.`,
     mission: 'Next time you buy drinks for you and a friend.',
+    tomorrow: 'Ask how much',
+    teaser: { title: 'Tomorrow: ask how much', th: 'อันนี้เท่าไหร่', rom: 'an-níi thâo-rài', en: 'How much is this one?', question: true },
+  },
+  // Day 5: the market. Point and ask the price (the swap is the thing), then the
+  // vendor gives a price per kilo and you say how much you'll take. Your line is
+  // a question, so women end with คะ (khá), not ค่ะ.
+  market: {
+    id: 'market',
+    place: 'At a market stall',
+    plate: { th: 'ตลาด', rom: 'dtà-làat', en: 'Market' },
+    promise: 'Ask how much',
+    minutes: 3,
+    staff: { who: 'The vendor', ask: () => ({ th: 'เลือกได้เลยค่ะ', rom: 'lûeaak dâai loeei khâ', en: 'Pick whatever you like!', words: [{ th: 'เลือก', rom: 'lûeaak' }, { th: 'ได้', rom: 'dâai' }, { th: 'เลย', rom: 'loeei' }, { th: 'ค่ะ', rom: 'khâ' }] }) },
+    question: true,
+    reply: [
+      { slot: true },
+      { th: 'เท่าไหร่', rom: 'thâo-rài', en: 'how much' },
+    ],
+    replyEn: (it) => it.q,
+    slotLabel: 'the thing',
+    items: [
+      { th: 'อันนี้', rom: 'an-níi', en: 'this one', a: 'this one', q: 'How much is this one?' },
+      { th: 'มะม่วง', rom: 'má-mûang', en: 'mangoes', a: 'mangoes', q: 'How much are the mangoes?' },
+      { th: 'ส้ม', rom: 'sôm', en: 'oranges', a: 'oranges', q: 'How much are the oranges?' },
+      { th: 'ทุเรียน', rom: 'thú-riian', en: 'durian', a: 'durian', q: 'How much is the durian?' },
+    ],
+    followUp: {
+      staff: { th: 'กิโลละห้าสิบบาทค่ะ', rom: 'gì-loo lá hâa-sìp bàat khâ', en: 'Fifty baht a kilo.', words: [{ th: 'กิโล', rom: 'gì-loo' }, { th: 'ละ', rom: 'lá' }, { th: 'ห้าสิบ', rom: 'hâa-sìp' }, { th: 'บาท', rom: 'bàat' }, { th: 'ค่ะ', rom: 'khâ' }] },
+      answers: [
+        // Spoken Thai: เอากิโลนึง, not the textbook เอาหนึ่งกิโล (Thai Teacher, 22 Oct)
+        { key: 'one', adj: 'a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }, { th: 'นึง', rom: 'nueng', en: 'one' }], en: "I'll take a kilo." },
+        { key: 'half', adj: 'half a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'ครึ่ง', rom: 'khrûeng', en: 'half' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }], en: "I'll take half a kilo." },
+      ],
+      wrong: 'Too expensive.', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'stall',
+    // The line to use for real: point at anything and ask
+    missionOf: (item, idx, reg) => replyParts(SCENES.market, SCENES.market.items[0], reg),
+    missionEnOf: () => 'How much is this one?',
+    mission: 'Next time you see something without a price, point and ask.',
+    tomorrow: "When you don't catch it",
+    teaser: { title: "Tomorrow: when you don't catch it", th: 'พูดช้าๆหน่อยได้ไหม', rom: 'phûut cháa-cháa nàawi dâai mǎi', en: 'Could you say it a bit slower?', question: true },
+  },
+  // Day 6: when you're stuck (merges "I don't understand", "say it slowly" and
+  // "can you speak English?"). The cashier asks the question expats never catch,
+  // you ask her to say it slowly / again / in English, then you answer it.
+  stuck: {
+    id: 'stuck',
+    place: 'At the 7-Eleven counter',
+    plate: { th: 'เซเว่น', rom: 'see-wên', en: '7-Eleven' },
+    promise: "When you don't catch it",
+    minutes: 2,
+    // What cashiers really say, fast (Thai Teacher, 22 Oct)
+    staff: { who: 'The cashier', ask: () => ({ th: 'สะสมแต้มไหมคะ', rom: 'sà-sǒm dtâaem mǎi khá', en: 'Collecting points?', words: [{ th: 'สะสม', rom: 'sà-sǒm' }, { th: 'แต้ม', rom: 'dtâaem' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] }) },
+    question: true,
+    reply: [
+      { slot: true },
+      { th: 'ได้ไหม', rom: 'dâai mǎi', en: 'can you?' },
+    ],
+    replyEn: (it) => `Could you ${it.en}?`,
+    slotLabel: 'what you ask for',
+    items: [
+      // หน่อย softens it: พูดช้าๆ on its own sounds like an order (Thai Teacher)
+      { th: 'พูดช้าๆหน่อย', rom: 'phûut cháa-cháa nàawi', en: 'say it a bit slower', a: 'say it a bit slower', parts: [{ th: 'พูด', rom: 'phûut', en: 'speak' }, { th: 'ช้าๆหน่อย', rom: 'cháa-cháa nàawi', en: 'a bit slower' }] },
+      { th: 'พูดอีกที', rom: 'phûut ìik thii', en: 'say it again', a: 'say it again', parts: [{ th: 'พูด', rom: 'phûut', en: 'speak' }, { th: 'อีกที', rom: 'ìik thii', en: 'again' }] },
+      { th: 'พูดภาษาอังกฤษ', rom: 'phûut phaa-sǎa ang-grìt', en: 'speak English', a: 'speak English', parts: [{ th: 'พูด', rom: 'phûut', en: 'speak' }, { th: 'ภาษาอังกฤษ', rom: 'phaa-sǎa ang-grìt', en: 'English' }] },
+    ],
+    followUp: {
+      staff: { th: 'มีบัตรไหมคะ', rom: 'mii bàt mǎi khá', en: 'Do you have a card?', words: [{ th: 'มี', rom: 'mii' }, { th: 'บัตร', rom: 'bàt' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] },
+      answers: [
+        { key: 'no', adj: "don't have one", parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'มี', rom: 'mii', en: 'have' }], en: "No, I don't." },
+        { key: 'yes', adj: 'have one', parts: [{ th: 'มี', rom: 'mii', en: 'have' }], en: 'Yes, I do.' },
+      ],
+      wrong: 'No bag, thanks.', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'market',
+    missionOf: (item, idx, reg) => replyParts(SCENES.stuck, SCENES.stuck.items[0], reg),
+    missionEnOf: () => 'Could you say it a bit slower?',
+    mission: 'Next time someone talks too fast for you.',
+    tomorrow: 'Find the bathroom',
+    teaser: { title: 'Tomorrow: find the bathroom', th: 'ห้องน้ำอยู่ไหน', rom: 'hâawng-náam yùu nǎi', en: 'Where is the bathroom?', question: true },
+  },
+  // Day 7: where is ___? Ask staff in a mall, swap the place, follow the
+  // directions, then check back ("Left, right?") or say thank you.
+  where: {
+    id: 'where',
+    place: 'At a shopping mall',
+    plate: { th: 'ห้าง', rom: 'hâang', en: 'Shopping mall' },
+    promise: 'Find the bathroom',
+    minutes: 3,
+    staff: { who: 'The staff member', ask: () => ({ th: 'มีอะไรให้ช่วยไหมคะ', rom: 'mii à-rai hâi chûaai mǎi khá', en: 'Can I help you?', words: [{ th: 'มี', rom: 'mii' }, { th: 'อะไร', rom: 'à-rai' }, { th: 'ให้', rom: 'hâi' }, { th: 'ช่วย', rom: 'chûaai' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] }) },
+    question: true,
+    reply: [
+      { slot: true },
+      { th: 'อยู่', rom: 'yùu', en: 'is (at)' },
+      { th: 'ไหน', rom: 'nǎi', en: 'where' },
+    ],
+    replyEn: (it) => `Where is the ${it.en}?`,
+    slotLabel: 'the place',
+    items: [
+      { th: 'ห้องน้ำ', rom: 'hâawng-náam', en: 'bathroom', a: 'the bathroom' },
+      { th: 'ลิฟต์', rom: 'líp', en: 'lift', a: 'the lift' },
+      { th: 'ทางออก', rom: 'thaang-àawk', en: 'exit', a: 'the exit' },
+      { th: 'ร้านขายยา', rom: 'ráan-khǎai-yaa', en: 'pharmacy', a: 'the pharmacy' },
+    ],
+    followUp: {
+      staff: { th: 'เดินตรงไปแล้วเลี้ยวซ้ายค่ะ', rom: 'doeen dtrong-bpai láaeo líaao sáai khâ', en: 'Walk straight, then turn left.', words: [{ th: 'เดิน', rom: 'doeen' }, { th: 'ตรงไป', rom: 'dtrong-bpai' }, { th: 'แล้ว', rom: 'láaeo' }, { th: 'เลี้ยว', rom: 'líaao' }, { th: 'ซ้าย', rom: 'sáai' }, { th: 'ค่ะ', rom: 'khâ' }] },
+      answers: [
+        { key: 'check', adj: 'check', question: true, parts: [{ th: 'ซ้าย', rom: 'sáai', en: 'left' }, { th: 'ใช่', rom: 'châi', en: 'correct' }, { th: 'ไหม', rom: 'mǎi', en: '(question)' }], en: 'Left, is that right?' },
+        { key: 'thanks', adj: 'thanks', parts: [{ th: 'ขอบคุณ', rom: 'khàawp-khun', en: 'thank you' }], en: 'Thank you.' },
+      ],
+      wrong: 'Turn right.', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'stuck',
+    missionOf: (item, idx, reg) => replyParts(SCENES.where, SCENES.where.items[0], reg),
+    missionEnOf: () => 'Where is the bathroom?',
+    mission: 'Next time you need the bathroom in a mall or a café.',
     tomorrow: 'New words and a sentence pattern',
     teaser: { title: 'Tomorrow: new words and a sentence pattern', th: 'ชอบกินส้มตำ', rom: 'châawp gin sôm-dtam', en: 'I like eating som tam.' },
   },
@@ -183,20 +303,22 @@ export const DEFAULT_SCENE = '7eleven';
 const ENDING = {
   male: { th: 'ครับ', rom: 'khráp', en: 'polite ending (men)' },
   female: { th: 'ค่ะ', rom: 'khâ', en: 'polite ending (women)' },
+  // Women end a question with คะ (high tone), a statement with ค่ะ (Thai Teacher)
+  femaleQ: { th: 'คะ', rom: 'khá', en: 'polite ending (women, question)' },
 };
-export const endingFor = (reg) => ENDING[reg === 'male' ? 'male' : 'female'];
+export const endingFor = (reg, question = false) => (reg === 'male' ? ENDING.male : question ? ENDING.femaleQ : ENDING.female);
 
 // The reply as word pieces, in the learner's register
 export function replyParts(scene, item, reg) {
   return [
     ...scene.reply.flatMap((p) => (p.slot ? (item.parts ? item.parts.map((x) => ({ ...x, slot: true })) : [{ ...item, slot: true }]) : [p])),
-    { ...endingFor(reg), ending: true },
+    { ...endingFor(reg, scene.question), ending: true },
   ];
 }
 // The spice answer (or other follow-up) as word pieces, in the learner's register
 export function followParts(scene, idx, reg) {
   const a = scene.followUp.answers[idx];
-  return [...a.parts, { ...endingFor(reg), ending: true }];
+  return [...a.parts, { ...endingFor(reg, a.question), ending: true }];
 }
 // The line the mission asks you to say for real
 export function missionParts(scene, reg, idx = 0, item = scene.items[0]) {
@@ -230,7 +352,7 @@ export function allSceneLines() {
       for (const x of it.parts || []) out.add(x.th);
     }
     for (const p of s.reply) if (!p.slot) out.add(p.th);
-    for (const reg of ['male', 'female']) { out.add(s.teaser.th + endingFor(reg).th); if (s.alsoHeard) out.add(s.alsoHeard.th + endingFor(reg).th); }
+    for (const reg of ['male', 'female']) { out.add(s.teaser.th + endingFor(reg, s.teaser.question).th); if (s.alsoHeard) out.add(s.alsoHeard.th + endingFor(reg).th); }
     if (s.followUp) {
       out.add(s.followUp.staff.th);
       if (s.next) out.add(s.next.th);

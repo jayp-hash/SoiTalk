@@ -485,7 +485,7 @@ export default function Today({ words, milestones }) {
   const firstSession = readStore('tsc-first-session', null);
   const scenesDone = readStore('tsc-scenes', {});
   // One new scene a day, in order, after the first session
-  const SCENE_DAYS = ['restaurant', 'cafe', 'stall'];
+  const SCENE_DAYS = ['restaurant', 'cafe', 'stall', 'market', 'stuck', 'where'];
   const nextSceneId = firstSession && firstSession.day !== dayKey() && !Object.values(scenesDone).includes(dayKey())
     ? SCENE_DAYS.find((id) => !scenesDone[id]) || null : null;
   const sceneToday = nextSceneId && mode === 'home' ? SCENES[nextSceneId] : null;

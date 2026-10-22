@@ -42,7 +42,7 @@ export async function loadWords() {
     frequencyRank: ordinal.get(w.thai) || (w.category === 'Useful phrases' ? 100 + i : null),
     category: categoryFor(w.category), // { name, color, edge } for the card's band
     // One sample sentence per card: the one chosen in the Sentence Worksheet.
-    // Words without a chosen sentence show "coming soon" for now.
+    // Words without a chosen sentence show no sentence (never "coming soon").
     sentences: (w.word_sentences || [])
       .filter((l) => l.is_sample && l.sentences && l.sentences.review_status !== 'rejected')
       .map((l) => l.sentences)

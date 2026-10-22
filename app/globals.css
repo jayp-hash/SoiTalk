@@ -2537,3 +2537,12 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .st-bubble.is-tiles .st-tiles.is-many .st-tile .rom, .st-bubble.is-tiles .st-tiles.is-many .st-tile .en { font-size: 11px; }
 .st-bubble.is-tiles .st-tiles.is-many .st-swap-badge { width: 28px; height: 28px; top: -12px; right: -6px; }
 .st-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+/* A word in the sample sentence you haven't met yet: dotted underline, tap for its meaning */
+.fc-box.is-new { box-shadow: inset 0 -3px 0 -1px #F2B705; background: #FFF9E6; }
+.st-bubble.is-tiles .st-tiles.is-many .st-tile.is-long { flex: 1.8 1 0; }
+.st-bubble.is-tiles .st-tiles.is-many .st-tile.is-long .th { font-size: clamp(15px, 4.4vw, 19px); }
+/* Very long words (ภาษาอังกฤษ) shrink to fit their tile */
+.st-tile.is-xlong { flex-grow: 2.4 !important; }
+.st-bubble.is-tiles .st-tile.is-xlong .th { font-size: clamp(14px, 4vw, 18px) !important; white-space: nowrap; }
+.st-tile.is-xlong .rom { font-size: 10.5px; white-space: nowrap; }
+.st-tile.is-xlong .rom { white-space: normal; line-height: 1.15; text-align: center; }

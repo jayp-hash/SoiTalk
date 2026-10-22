@@ -253,9 +253,9 @@ export default function Landing({ wordCount, demo, curve }) {
       </section>
 
       <section className="lp-sec">
-        <p className="lp-eyebrow">Coming soon</p>
-        <h2>Missions: small wins in real life</h2>
-        <p className="lp-sub">Finish a word pack, then try it for real and tick it off.</p>
+        <p className="lp-eyebrow">Say it today</p>
+        <h2>Small wins in real life</h2>
+        <p className="lp-sub">Every lesson ends with one line to use that same day, then you tick it off.</p>
         <div className="lp-missions">
           {MISSIONS[persona].map(([where, th, rom, text]) => (
             <div key={where} className="lp-mission">
@@ -271,9 +271,9 @@ export default function Landing({ wordCount, demo, curve }) {
       <section className="lp-sec">
         <div className="lp-next">
           <div>
-            <p className="lp-eyebrow yellow">Coming next</p>
+            <p className="lp-eyebrow yellow">Real conversations</p>
             <h2>Practise the conversation before you have it</h2>
-            <p className="lp-sub light">Role-play a 7-Eleven checkout, a taxi ride or a market stall, using only the words you've learned so far.</p>
+            <p className="lp-sub light">Each lesson is a real exchange: the 7-Eleven checkout, a restaurant, a coffee shop, a market stall. New ones every week.</p>
           </div>
           <div className="lp-chat" aria-label="Example role-play at 7-Eleven">
             <div className="lp-msg them"><small>Cashier</small><span lang="th">รับถุงไหมคะ</span><i className="lp-rom">ráp thǔng mǎi khá</i><em>Do you want a bag?</em></div>

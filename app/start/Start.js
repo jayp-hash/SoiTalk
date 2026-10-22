@@ -104,7 +104,7 @@ function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash, hearHint }) {
         const lead = swap && (swapIndex !== 'slot' || i === first); // badge and hint on the first tile only
         return (
           <button key={`${i}-${p.th}`} type="button"
-            className={`st-tile${p.th.length > 5 ? ' is-long' : ''}${swap ? ' is-swap' : ''}${swap && flash ? ' is-flash' : ''}${p.ending ? ' is-ending' : ''}`}
+            className={`st-tile${p.th.length > 5 ? ' is-long' : ''}${p.th.length > 8 ? ' is-xlong' : ''}${swap ? ' is-swap' : ''}${swap && flash ? ' is-flash' : ''}${p.ending ? ' is-ending' : ''}`}
             onClick={() => { if (swap && onSwap) { onSwap(); return; } setSeen((x) => ({ ...x, [p.th]: true })); onTap(p); }}
             aria-label={swap && onSwap ? `${p.th}, ${p.en}. Tap to swap` : `${p.th}, ${p.en}. Tap to hear`}>
             {lead && onSwap && <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>}
@@ -257,7 +257,7 @@ export default function Start({ sceneId }) {
       clips.push({ text: scene.staff.ask(it).th, voice: 'female' }, ...line(replyParts(scene, it, v)), { text: scene.staff.ask(it).th, voice: 'female', slow: true }, ...words(it.parts || [it]));
     }
     const mission = missionParts(scene, v, 0, scene.items[0]);
-    clips.push({ text: joinTh(mission), voice: v }, { text: scene.teaser.th + endingFor(v).th, voice: v });
+    clips.push({ text: joinTh(mission), voice: v }, { text: scene.teaser.th + endingFor(v, scene.teaser.question).th, voice: v });
     preload(clips);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scene.id, reg]);
@@ -779,9 +779,9 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, repl
         <p className="dn-label">Tomorrow · about 2 minutes</p>
         <p className="dn-back-title">{scene.tomorrow || scene.teaser.title.replace(/^Tomorrow: /, '')}</p>
         <button type="button" className={`dn-back-line${player.playing === 'teaser' ? ' is-on' : ''}`}
-          onClick={() => player.play('teaser', [{ text: scene.teaser.th + endingFor(reg).th, voice }])} aria-label="Hear tomorrow's sentence">
+          onClick={() => player.play('teaser', [{ text: scene.teaser.th + endingFor(reg, scene.teaser.question).th, voice }])} aria-label="Hear tomorrow's sentence">
           <span className="dn-line-play" aria-hidden="true">{player.playing === 'teaser' ? <StopIcon /> : <PlayIcon />}</span>
-          <span><span className="th" lang="th">{scene.teaser.th}{endingFor(reg).th}</span><span className="rom">{scene.teaser.rom} {endingFor(reg).rom} · {scene.teaser.en}</span></span>
+          <span><span className="th" lang="th">{scene.teaser.th}{endingFor(reg, scene.teaser.question).th}</span><span className="rom">{scene.teaser.rom} {endingFor(reg, scene.teaser.question).rom} · {scene.teaser.en}</span></span>
         </button>
         {/* A calendar file does nothing inside Instagram/TikTok/LINE: there, saving by email is the one action */}
         {!inApp && (
