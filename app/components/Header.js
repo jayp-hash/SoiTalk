@@ -49,9 +49,18 @@ function Account() {
   );
 }
 
-// The Patterns tab appears from day 3 (before that, patterns come to you in Today)
+// The Patterns tab appears once you've used a pattern or shown you want more,
+// not on a set day (Instagram's browser keeps its own storage, so a day count
+// resets there). Pattern practice is saved with your progress ("pattern:..."
+// keys), so a signed-in learner sees the tab on every device.
 const showPatterns = () => {
-  try { return Object.keys(JSON.parse(localStorage.getItem('tsc-days')) || {}).length >= 3; } catch { return false; }
+  try {
+    if (JSON.parse(localStorage.getItem('tsc-patterns-open'))) return true;
+    const mem = JSON.parse(localStorage.getItem('tsc-memory')) || {};
+    if (Object.keys(mem).some((k) => k.startsWith('pattern:'))) return true;
+    if (Object.keys(JSON.parse(localStorage.getItem('tsc-signs')) || {}).length) return true;
+    return Object.keys(JSON.parse(localStorage.getItem('tsc-days')) || {}).length >= 3;
+  } catch { return false; }
 };
 
 export default function Header() {

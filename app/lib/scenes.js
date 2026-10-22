@@ -19,7 +19,7 @@ export const SCENES = {
   '7eleven': {
     id: '7eleven',
     place: 'At 7-Eleven',
-    plate: { th: 'เซเว่น', rom: 'sé-wên', en: '7-Eleven' }, // district-plate tag (Thai above English, like a street sign)
+    plate: { th: 'เซเว่น', rom: 'see-wên', en: '7-Eleven' }, // district-plate tag (Thai above English, like a street sign)
     promise: 'Turn down a bag in Thai',
     minutes: 2,
     // The other person (always the female voice: most cashiers are women)
@@ -54,10 +54,10 @@ export const SCENES = {
   restaurant: {
     id: 'restaurant',
     place: 'At a Thai restaurant',
-    plate: { th: 'ร้านอาหาร', rom: 'ráan aa-hǎan', en: 'Thai restaurant' },
+    plate: { th: 'ร้านอาหาร', rom: 'ráan-aa-hǎan', en: 'Thai restaurant' },
     promise: 'Order Thai food your way',
     minutes: 3,
-    staff: { who: 'The waitress', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'a-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
+    staff: { who: 'The waitress', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp à-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'à-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
     reply: [
       { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
       { slot: true },
@@ -74,7 +74,7 @@ export const SCENES = {
       staff: { th: 'เผ็ดไหมคะ', rom: 'phèt mǎi khá', en: 'Spicy?', words: [{ th: 'เผ็ด', rom: 'phèt' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] },
       answers: [
         { key: 'none', parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'เผ็ด', rom: 'phèt', en: 'spicy' }], en: 'Not spicy.' },
-        { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nòi', en: 'a little' }], en: 'A little spicy.' },
+        { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nàawi', en: 'a little' }], en: 'A little spicy.' },
       ],
       wrong: 'Very spicy.', // a listening option only
     },
@@ -95,7 +95,7 @@ export const SCENES = {
     plate: { th: 'ร้านกาแฟ', rom: 'ráan gaa-faae', en: 'Coffee shop' },
     promise: 'Order coffee your way',
     minutes: 3,
-    staff: { who: 'The barista', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'a-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
+    staff: { who: 'The barista', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp à-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'à-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
     reply: [
       { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
       { slot: true },
@@ -105,7 +105,7 @@ export const SCENES = {
     items: [
       { th: 'กาแฟเย็น', rom: 'gaa-faae yen', en: 'iced coffee', a: 'iced coffee', parts: [{ th: 'กาแฟ', rom: 'gaa-faae', en: 'coffee' }, { th: 'เย็น', rom: 'yen', en: 'iced' }] },
       { th: 'กาแฟร้อน', rom: 'gaa-faae ráawn', en: 'hot coffee', a: 'hot coffee', parts: [{ th: 'กาแฟ', rom: 'gaa-faae', en: 'coffee' }, { th: 'ร้อน', rom: 'ráawn', en: 'hot' }] },
-      { th: 'ชาเย็น', rom: 'chaa yen', en: 'Thai iced tea', a: 'Thai iced tea', parts: [{ th: 'ชา', rom: 'chaa', en: 'Thai tea' }, { th: 'เย็น', rom: 'yen', en: 'iced' }] },
+      { th: 'ชาเย็น', rom: 'chaa-yen', en: 'Thai iced tea', a: 'Thai iced tea', parts: [{ th: 'ชา', rom: 'chaa', en: 'Thai tea' }, { th: 'เย็น', rom: 'yen', en: 'iced' }] },
       // Spare
       { th: 'ชาร้อน', rom: 'chaa ráawn', en: 'hot tea', a: 'hot tea', parts: [{ th: 'ชา', rom: 'chaa', en: 'tea' }, { th: 'ร้อน', rom: 'ráawn', en: 'hot' }] },
     ],
@@ -114,7 +114,7 @@ export const SCENES = {
     followUp: {
       staff: { th: 'หวานปกติไหมคะ', rom: 'wǎan bpòk-gà-dtì mǎi khá', en: 'Normal sweetness?', words: [{ th: 'หวาน', rom: 'wǎan' }, { th: 'ปกติ', rom: 'bpòk-gà-dtì' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] },
       answers: [
-        { key: 'less', adj: 'less sweet', parts: [{ th: 'หวาน', rom: 'wǎan', en: 'sweet' }, { th: 'น้อย', rom: 'nói', en: 'less' }], en: 'Less sweet.' },
+        { key: 'less', adj: 'less sweet', parts: [{ th: 'หวาน', rom: 'wǎan', en: 'sweet' }, { th: 'น้อย', rom: 'náawi', en: 'less' }], en: 'Less sweet.' },
         { key: 'none', adj: 'not sweet', notFor: ['ชาเย็น'], parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'หวาน', rom: 'wǎan', en: 'sweet' }], en: 'Not sweet.' },
       ],
       wrong: 'Extra sweet.', // a listening option only
@@ -127,7 +127,56 @@ export const SCENES = {
     tomorrow: 'Order two drinks',
     teaser: { title: 'Tomorrow: order two drinks', th: 'ขอชาเย็นสองแก้ว', rom: 'khǎaw chaa-yen sǎawng gâaew', en: 'Two Thai iced teas, please.' },
   },
+  // Day 4 (22 Oct outline): "Two of everything" at a drinks stall. Order Thai
+  // iced tea by the glass (number + แก้ว, the counting word for glasses), swap
+  // the number, then the vendor asks the size. One pair of opposites today
+  // (ใหญ่ / เล็ก); sweetness was yesterday. Opens with yesterday's coffee order.
+  stall: {
+    id: 'stall',
+    place: 'At a drinks stall',
+    plate: { th: 'ร้านน้ำ', rom: 'ráan-náam', en: 'Drinks stall' },
+    promise: 'Order two drinks',
+    minutes: 3,
+    staff: { who: 'The vendor', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp à-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'à-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
+    reply: [
+      { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
+      { th: 'ชา', rom: 'chaa', en: 'tea' },
+      { th: 'เย็น', rom: 'yen', en: 'iced' },
+      { slot: true },
+      { th: 'แก้ว', rom: 'gâaew', en: 'glasses' },
+    ],
+    replyEn: (it) => `${it.en.charAt(0).toUpperCase()}${it.en.slice(1)} Thai iced teas, please.`,
+    slotLabel: 'the number',
+    items: [
+      { th: 'สอง', rom: 'sǎawng', en: 'two', a: 'two' },
+      { th: 'สาม', rom: 'sǎam', en: 'three', a: 'three' },
+      { th: 'สี่', rom: 'sìi', en: 'four', a: 'four' },
+    ],
+    followUp: {
+      // Vendors drop the repeated แก้ว (Thai Teacher, 22 Oct)
+      staff: { th: 'ใหญ่หรือเล็กคะ', rom: 'yài rǔue lék khá', en: 'Large or small?', words: [{ th: 'ใหญ่', rom: 'yài' }, { th: 'หรือ', rom: 'rǔue' }, { th: 'เล็ก', rom: 'lék' }, { th: 'คะ', rom: 'khá' }] },
+      answers: [
+        { key: 'large', adj: 'large', parts: [{ th: 'แก้ว', rom: 'gâaew', en: 'glass' }, { th: 'ใหญ่', rom: 'yài', en: 'large' }], en: 'Large ones.' },
+        { key: 'small', adj: 'small', parts: [{ th: 'แก้ว', rom: 'gâaew', en: 'glass' }, { th: 'เล็ก', rom: 'lék', en: 'small' }], en: 'Small ones.' },
+      ],
+      wrong: 'Medium ones.', // a listening option only
+    },
+    listen: ['reply', 'spice', 'reply'],
+    recall: 'cafe',
+    // The whole order in one line, size before the number: ขอชาเย็นแก้วใหญ่สองแก้วค่ะ
+    missionOf: (item, idx, reg) => [
+      { th: 'ขอ', rom: 'khǎaw', en: 'may I have' }, { th: 'ชา', rom: 'chaa', en: 'tea' }, { th: 'เย็น', rom: 'yen', en: 'iced' },
+      ...SIZE_PARTS(idx), item, { th: 'แก้ว', rom: 'gâaew', en: 'glasses' }, { ...endingFor(reg), ending: true },
+    ],
+    missionEnOf: (item, idx) => `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)} ${idx === 1 ? 'small' : 'large'} Thai iced teas, please.`,
+    mission: 'Next time you buy drinks for you and a friend.',
+    tomorrow: 'New words and a sentence pattern',
+    teaser: { title: 'Tomorrow: new words and a sentence pattern', th: 'ชอบกินส้มตำ', rom: 'châawp gin sôm-dtam', en: 'I like eating som tam.' },
+  },
 };
+const SIZE_PARTS = (idx) => (idx === 1
+  ? [{ th: 'แก้ว', rom: 'gâaew', en: 'glass' }, { th: 'เล็ก', rom: 'lék', en: 'small' }]
+  : [{ th: 'แก้ว', rom: 'gâaew', en: 'glass' }, { th: 'ใหญ่', rom: 'yài', en: 'large' }]);
 
 export const DEFAULT_SCENE = '7eleven';
 
@@ -151,6 +200,7 @@ export function followParts(scene, idx, reg) {
 }
 // The line the mission asks you to say for real
 export function missionParts(scene, reg, idx = 0, item = scene.items[0]) {
+  if (scene.missionOf) return scene.missionOf(item, idx, reg);
   if (scene.missionFull && scene.followUp) {
     // The whole order in one line: ขอกาแฟเย็นแก้วใหญ่ครับ
     return [...replyParts(scene, item, reg).filter((p) => !p.ending), ...followParts(scene, idx, reg)];
@@ -187,7 +237,7 @@ export function allSceneLines() {
       s.followUp.answers.forEach((a, i) => {
         for (const p of a.parts) out.add(p.th);
         for (const reg of ['male', 'female']) out.add(joinTh(followParts(s, i, reg)));
-        if (s.missionFull) for (const it of s.items) for (const reg of ['male', 'female']) out.add(joinTh(missionParts(s, reg, i, it)));
+        if (s.missionFull || s.missionOf) for (const it of s.items) for (const reg of ['male', 'female']) out.add(joinTh(missionParts(s, reg, i, it)));
       });
     }
     out.add(s.teaser.th);

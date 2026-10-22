@@ -6,6 +6,7 @@ import { TOPIC_GROUPS } from '../lib/categories';
 import { renderSentence, setRegister, particleFor } from '../lib/register';
 import { PATTERNS, inRegister, exampleFor } from '../lib/patterns';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import Feedback from '../components/Feedback';
 
 const SET_SIZE = 20;
 
@@ -708,6 +709,7 @@ export default function Deck({ words: allWords, session = false, onRated, onDone
               <button type="button" className="fc-panel-tour" onClick={() => { setPanelOpen(false); setTourOpen('full'); }}>
                 Show the tour again
               </button>
+              <Feedback className="fc-panel-tour" label="Report a mistake on this card" context={{ word: word?.thai, sentence: sentence?.thai || null }} />
               <button type="button" className="fc-panel-reset" onClick={() => { resetProgress(); setRevealed(new Set()); }}>
                 Reset my progress
               </button>

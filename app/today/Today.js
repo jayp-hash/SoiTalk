@@ -12,6 +12,7 @@ import { SAY_IT, sayItFor } from '../lib/sayit';
 import { supabaseBrowser } from '../lib/supabase-browser';
 import { readStore, writeStore, dayKey as todayKey } from '../lib/progress';
 import SoiSign from '../components/SoiSign';
+import Feedback from '../components/Feedback';
 import { renderSentence, getRegister, registerChosen, setRegister } from '../lib/register';
 
 const REVIEW_CAP = 25;     // checks per day; any backlog rolls over, so a session stays ~5 minutes
@@ -484,10 +485,27 @@ export default function Today({ words, milestones }) {
   const firstSession = readStore('tsc-first-session', null);
   const scenesDone = readStore('tsc-scenes', {});
   // One new scene a day, in order, after the first session
-  const SCENE_DAYS = ['restaurant', 'cafe'];
+  const SCENE_DAYS = ['restaurant', 'cafe', 'stall'];
   const nextSceneId = firstSession && firstSession.day !== dayKey() && !Object.values(scenesDone).includes(dayKey())
     ? SCENE_DAYS.find((id) => !scenesDone[id]) || null : null;
   const sceneToday = nextSceneId && mode === 'home' ? SCENES[nextSceneId] : null;
+  // What's next when today's scene is done (or all scenes are): a planned "next", never a dead end
+  const nextUp = firstSession && !nextSceneId ? (SCENE_DAYS.find((id) => !scenesDone[id]) || null) : null;
+  const lastScene = Object.entries(scenesDone).sort((a, b) => (a[1] < b[1] ? 1 : -1))[0]?.[0] || '7eleven';
+  const nextCard = firstSession && !sceneToday ? (
+    <section className="today-next" aria-label="What's next">
+      <p className="today-step-label">Next scene</p>
+      {nextUp ? (
+        <p className="today-next-line"><strong>{SCENES[nextUp].promise}</strong><span>{SCENES[nextUp].place}. Opens tomorrow, about {SCENES[nextUp].minutes} minutes.</span></p>
+      ) : (
+        <p className="today-next-line"><strong>You've done every scene so far</strong><span>New scenes arrive every week. Until then, keep your Thai warm:</span></p>
+      )}
+      <div className="today-next-actions">
+        <a className="today-next-btn" href="/patterns" onClick={() => writeStore('tsc-patterns-open', true)}>Practise a pattern</a>
+        <a className="today-next-btn" href={`/start/${lastScene === '7eleven' ? '' : lastScene}`.replace(/\/$/, '')}>Replay a scene</a>
+      </div>
+    </section>
+  ) : null;
 
   // Brand new (nothing learned, no first session yet): one thing only, the first session
   if (mode === 'home' && Object.keys(progress).length === 0 && !readStore('tsc-first-session', null)) {
@@ -513,7 +531,7 @@ export default function Today({ words, milestones }) {
               knownCount={knownCount} learningCount={learningCount} early={early}
               newToday={reviewedInSession.current > 0 ? new Set(queue.map((w) => w.thai)).size : 0}
               moreCount={plan.fresh.length > 0 ? EXTRA_NEW : 0}
-              onMore={() => { setPopup(false); start([], plan.fresh.slice(0, EXTRA_NEW)); }}
+              onMore={() => { setPopup(false); writeStore('tsc-patterns-open', true); track('learn_more_clicked', { where: 'popup' }); start([], plan.fresh.slice(0, EXTRA_NEW)); }}
               onClose={() => setPopup(false)} />
           )}
           <p className="today-eyebrow">Session complete</p>
@@ -527,10 +545,11 @@ export default function Today({ words, milestones }) {
             <div><b>{streak}</b><span>day{streak === 1 ? '' : 's'} in a row</span></div>
           </div>
           <Week days={days} said={said} />
+          {nextCard}
           <button type="button" className="today-more-link" onClick={() => setPopup(true)}>See your progress</button>
           <div className="today-actions">
             {plan.fresh.length > 0 && (
-              <button type="button" className="today-more-link" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Want more? Learn {EXTRA_NEW} extra words</button>
+              <button type="button" className="today-more-link" onClick={() => { writeStore('tsc-patterns-open', true); track('learn_more_clicked', { where: 'today' }); start([], plan.fresh.slice(0, EXTRA_NEW)); }}>Want more? Learn {EXTRA_NEW} extra words</button>
             )}
             <a className="auth-btn google" href="/vocabulary">Browse all words</a>
           </div>
@@ -565,7 +584,7 @@ export default function Today({ words, milestones }) {
               <div className="today-step-body">
                 <div><strong>Goal done ✓</strong><span>{day.full} is filled in on your week. See you tomorrow.</span></div>
                 {plan.fresh.length > 0 && (
-                  <button type="button" className="today-more-link" onClick={() => start([], plan.fresh.slice(0, EXTRA_NEW))}>Want more? Learn {EXTRA_NEW} extra words</button>
+                  <button type="button" className="today-more-link" onClick={() => { writeStore('tsc-patterns-open', true); track('learn_more_clicked', { where: 'today' }); start([], plan.fresh.slice(0, EXTRA_NEW)); }}>Want more? Learn {EXTRA_NEW} extra words</button>
                 )}
               </div>
             ) : (
@@ -589,6 +608,7 @@ export default function Today({ words, milestones }) {
             )}
           </section>
           )}
+          {nextCard}
           {askReg && (
             <RegisterChooser onClose={() => setAskReg(false)}
               onChoose={(r) => { setRegister(r); setReg(r); setChosen(true); setAskReg(false); setStartAfterChoice(true); }} />
@@ -614,6 +634,7 @@ export default function Today({ words, milestones }) {
 
           {/* Bonus, last: take one line out into real life */}
           {!early && <SayIt studiedBeforeToday={studiedBeforeToday} bonus onSaid={refreshSaid} />}
+          <p className="today-feedback">Something wrong, or an idea? <Feedback label="Tell us" context={{ where: 'today' }} /></p>
         </div>
       )}
     </div>

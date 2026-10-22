@@ -3,6 +3,7 @@ import { track } from '../lib/analytics';
 import BlurEn from '../components/BlurEn';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePlayer, preload } from '../lib/audio';
+import Feedback from '../components/Feedback';
 import { useProgressStore, readStore, writeStore, dayKey } from '../lib/progress';
 import { getRegister, setRegister, registerChosen } from '../lib/register';
 import { useUser } from '../lib/useUser';
@@ -91,24 +92,27 @@ function Plate({ sc, pre }) {
 }
 
 // A line of Thai as word tiles with romanization and English under each
+// The English meaning under each tile stays blurred until you tap that tile (Jay, 22 Oct):
+// you hear the word and see the romanization first, the meaning is the reward.
 function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash, hearHint }) {
   const first = parts.findIndex((p) => p.slot);
+  const [seen, setSeen] = useState({});
   return (
-    <div className="st-tiles" lang="th">
+    <div className={`st-tiles${parts.length > 5 ? ' is-many' : ''}`} lang="th">
       {parts.map((p, i) => {
         const swap = swapIndex === 'slot' ? !!p.slot : i === swapIndex;
         const lead = swap && (swapIndex !== 'slot' || i === first); // badge and hint on the first tile only
         return (
           <button key={`${i}-${p.th}`} type="button"
             className={`st-tile${p.th.length > 5 ? ' is-long' : ''}${swap ? ' is-swap' : ''}${swap && flash ? ' is-flash' : ''}${p.ending ? ' is-ending' : ''}`}
-            onClick={() => (swap && onSwap ? onSwap() : onTap(p))}
+            onClick={() => { if (swap && onSwap) { onSwap(); return; } setSeen((x) => ({ ...x, [p.th]: true })); onTap(p); }}
             aria-label={swap && onSwap ? `${p.th}, ${p.en}. Tap to swap` : `${p.th}, ${p.en}. Tap to hear`}>
             {lead && onSwap && <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>}
             {lead && hint && <span className="st-hint is-below" role="status">Tap to swap</span>}
             {hearHint && i === 0 && <span className="st-hint is-above" role="status">Tap a word to hear it</span>}
             <span className="th">{p.th}</span>
             <span className="rom">{p.rom}</span>
-            <span className="en">{p.ending ? 'polite' : p.en}</span>
+            <span className={`en${seen[p.th] ? '' : ' is-hid'}`} aria-hidden={!seen[p.th]}>{p.ending ? 'polite' : p.en}</span>
           </button>
         );
       })}
@@ -133,7 +137,7 @@ function Tag({ on, right, mine }) {
 
 // Thailand's colours of the day (Sunday red ... Saturday purple), same as Today
 const DAY_COLOURS = ['#E5383B', '#F2C200', '#EC6AA8', '#2BA84A', '#F28C28', '#3A8DDE', '#8E5CC9'];
-function Bar({ step, steps, frac = 0 }) {
+function Bar({ step, steps, frac = 0, report }) {
   const i = steps.indexOf(step) + Math.min(Math.max(frac, 0), 0.95);
   return (
     <div className="st-top">
@@ -141,6 +145,7 @@ function Bar({ step, steps, frac = 0 }) {
       <div className="st-bar" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length - 1} aria-valuenow={i}>
         <i style={{ width: `${Math.max(6, (i / (steps.length - 1)) * 100)}%`, background: DAY_COLOURS[new Date().getDay()] }} />
       </div>
+      {report}
     </div>
   );
 }
@@ -421,7 +426,7 @@ export default function Start({ sceneId }) {
     writeStore(SCENES_KEY, { ...readStore(SCENES_KEY, {}), [scene.id]: dayKey() });
     track('scene_complete', { scene: scene.id });
     const mine = missionParts(scene, reg, spiceIdx, item);
-    const mineEn = scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
+    const mineEn = scene.missionEnOf ? scene.missionEnOf(item, spiceIdx) : scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
     writeStore(MISSION_KEY, { scene: scene.id, th: joinTh(mine), rom: joinRom(mine), en: mineEn, text: scene.mission, day: dayKey(), done: false });
     go('done');
   }
@@ -430,7 +435,7 @@ export default function Start({ sceneId }) {
 
   return (
     <div className="st-wrap">
-      <Bar step={step} steps={steps} frac={step === 'listen' ? qi / Math.max(queue.length, 1) : step === 'check' ? ci / Math.max(words.length, 1) : step === 'swap' ? (made.length - 1) / needSwaps : 0} />
+      <Bar report={<Feedback icon className="st-report" label="Report a mistake" context={{ scene: scene.id, step, item: item.th }} />} step={step} steps={steps} frac={step === 'listen' ? qi / Math.max(queue.length, 1) : step === 'check' ? ci / Math.max(words.length, 1) : step === 'swap' ? (made.length - 1) / needSwaps : 0} />
       <div className="st-body">
 
         {step === 'recall' && prev && rStage === 0 && (
@@ -717,7 +722,7 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, repl
   ];
   const mission = missionParts(scene, reg, spiceIdx, item);
   const [all, setAll] = useState(false);
-  const missionEn = scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
+  const missionEn = scene.missionEnOf ? scene.missionEnOf(item, spiceIdx) : scene.missionFull ? `${item.en.charAt(0).toUpperCase()}${item.en.slice(1)}, ${fu.answers[spiceIdx].adj}, please.` : fu ? fu.answers[spiceIdx].en : scene.replyEn(scene.items[0]);
   const [inApp, setInApp] = useState(false);
   useEffect(() => { setInApp(inAppBrowser()); soundDone(); }, []);
   const google = async () => {
@@ -785,6 +790,8 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, repl
           </a>
         )}
       </div>
+
+      <p className="dn-report">Spotted a mistake? <Feedback label="Tell us" context={{ scene: scene.id, step: 'done' }} /></p>
 
       <div className="dn-save">
         {user ? (

@@ -286,8 +286,8 @@ const ORDER_EXTRA = {
   food: [{ th: 'ไม่เผ็ด', rom: 'mâi phèt', en: 'not spicy' }],
   'น้ำเปล่า': [{ th: 'ไม่ใส่น้ำแข็ง', rom: 'mâi sài náam-khǎeng', en: 'no ice' }],
   'เบียร์': [{ th: 'ไม่ใส่น้ำแข็ง', rom: 'mâi sài náam-khǎeng', en: 'no ice' }],
-  'กาแฟ': [{ th: 'หวานน้อย', rom: 'wǎan nói', en: 'less sweet' }],
-  'ชาเย็น': [{ th: 'หวานน้อย', rom: 'wǎan nói', en: 'less sweet' }],
+  'กาแฟ': [{ th: 'หวานน้อย', rom: 'wǎan náawi', en: 'less sweet' }],
+  'ชาเย็น': [{ th: 'หวานน้อย', rom: 'wǎan náawi', en: 'less sweet' }],
 };
 const extrasFor = (thing) => ORDER_EXTRA[thing.th] || (thing.kind === 'food' ? ORDER_EXTRA.food : []);
 const singular = { bottles: 'bottle', glasses: 'glass', plates: 'plate', bowls: 'bowl' };
@@ -390,13 +390,13 @@ function allLadderSentences() {
 // ---------------------------------------------------------------------
 const W = (th, rom) => ({ th, rom });
 const ASK_ORDER = [
-  { parts: [W('รับอะไรดี', 'ráp a-rai dii')], en: 'What can I get you?', group: 'what' },
-  { parts: [W('เอาอะไร', 'ao a-rai')], en: 'What would you like?', group: 'what' },
+  { parts: [W('รับอะไรดี', 'ráp à-rai dii')], en: 'What can I get you?', group: 'what' },
+  { parts: [W('เอาอะไร', 'ao à-rai')], en: 'What would you like?', group: 'what' },
 ];
 // The follow-up question for an order, and the reply words, by the extra it asks about
 const FOLLOW_UP = {
   'หวานน้อย': { parts: [W('หวานปกติไหม', 'wǎan bpòk-gà-dtì mǎi')], en: 'Normal sweetness?', group: 'sweet',
-    reply: [W('หวาน', 'wǎan'), W('น้อย', 'nói')], replyEn: 'Less sweet, please.' },
+    reply: [W('หวาน', 'wǎan'), W('น้อย', 'náawi')], replyEn: 'Less sweet, please.' },
   'ไม่ใส่น้ำแข็ง': { parts: [W('ใส่น้ำแข็งไหม', 'sài náam-khǎeng mǎi')], en: 'With ice?', group: 'ice',
     reply: [W('ไม่', 'mâi'), W('ใส่', 'sài'), W('น้ำแข็ง', 'náam-khǎeng')], replyEn: 'No ice, please.' },
   'ไม่เผ็ด': { parts: [W('เอาเผ็ดไหม', 'ao phèt mǎi')], en: 'Do you want it spicy?', group: 'spicy',
@@ -423,7 +423,7 @@ function likeAsk(p, v) {
     const lead = p.who === WHO[0] ? [] : p.ask;
     return { parts: [...lead, W('ชอบ', 'châawp'), ...doingWords(v.doing), W('ไหม', 'mǎi')], en: `${p.yesNoEn} ${v.doing.en}?`, group: 'likeit' };
   }
-  return { parts: [...p.ask, W('ชอบ', 'châawp'), W('ทำ', 'tham'), W('อะไร', 'a-rai')], en: p.askEn, group: 'likewhat' };
+  return { parts: [...p.ask, W('ชอบ', 'châawp'), W('ทำ', 'tham'), W('อะไร', 'à-rai')], en: p.askEn, group: 'likewhat' };
 }
 const pickOneP = (a) => a[Math.floor(Math.random() * a.length)];
 // One exchange: { ask: {parts, en, group}, values for the level's make(), follow-up flag }

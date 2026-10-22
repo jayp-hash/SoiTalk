@@ -11,12 +11,12 @@ const PERSONA_KEY = 'tsc-persona';
 
 const PERSONAS = {
   live: {
-    chip: 'I live here, or soon will',
+    chip: 'I live here (or soon will)',
     h1: <>Thai for the street <span className="lp-th">you live on</span></>,
     lede: 'Order food, give the taxi directions and sort things out with the condo office. Learn the words people around you actually use, most useful first.',
   },
   partner: {
-    chip: 'Someone close to me is Thai',
+    chip: 'My partner or family is Thai',
     h1: <>Talk with them, <span className="lp-th">not just smile and nod</span></>,
     lede: 'Follow the conversation at dinner, say the right thing to their family and surprise the people you care about. Start with the everyday Thai families really speak.',
   },

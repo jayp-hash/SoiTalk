@@ -2489,3 +2489,51 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 /* The save box sits after "Tomorrow", never on top of it on small phones */
 .dn-save { position: static; margin: 4px 0 0; border-radius: 18px; box-shadow: 0 1px 0 #E3E0D8; }
 .st-word > .st-who { background: var(--soi-ink); }
+/* Word tiles: the meaning is blurred until you tap the tile */
+.st-tile .en.is-hid { filter: blur(5px); opacity: .7; user-select: none; }
+.st-tile .en { transition: filter .2s, opacity .2s; }
+/* Landing: "I'm learning Thai because" as one row of three equal choices, not stacked pills */
+.lp-who { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 560px; }
+.lp-who button { min-height: 56px; padding: 8px 10px; border-radius: 12px; font: 700 14px/1.25 var(--font-body), sans-serif; text-align: center; white-space: normal; background: #fff; border: 2px solid #D5DBE5; }
+/* ---- Feedback / report a mistake (components/Feedback.js) ---- */
+.fb-link { all: unset; cursor: pointer; color: var(--soi); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.fb-link:hover { color: var(--soi-ink); }
+.fb-link:focus-visible { outline: 3px solid var(--soi); outline-offset: 2px; border-radius: 4px; }
+.st-report { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; color: #6B7383; display: grid; place-items: center; cursor: pointer; }
+.st-report:hover { background: #E8E6DF; color: var(--soi-ink); }
+.st-report:focus-visible { outline: 3px solid var(--soi); outline-offset: 2px; }
+.dn-report, .today-feedback { margin: 4px 0 0; text-align: center; font-size: 14px; color: #4f5868; }
+.fb-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(15,23,40,.45); display: flex; align-items: flex-end; justify-content: center; animation: pp-fade .2s ease; }
+.fb-sheet { width: min(480px, 100%); max-height: 92dvh; overflow: auto; background: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.18); animation: pp-up .25s ease; }
+@media (min-width: 600px) { .fb-overlay { align-items: center; } .fb-sheet { border-radius: 18px; } }
+.fb-band { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--soi-ink); color: #fff; font: 800 13px/1 var(--font-body), sans-serif; letter-spacing: .08em; text-transform: uppercase; border-radius: inherit; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.fb-close { margin-left: auto; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; }
+.fb-close:hover { background: rgba(255,255,255,.24); }
+.fb-body { display: grid; gap: 10px; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+.fb-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.fb-kinds button { min-height: 48px; padding: 8px 10px; border-radius: 12px; border: 2px solid #D5DBE5; background: #fff; font: 700 14px/1.25 var(--font-body), sans-serif; color: #1f2533; cursor: pointer; text-align: center; }
+.fb-kinds button:hover { border-color: var(--soi); background: #F5F8FD; }
+.fb-kinds button.on { border-color: var(--soi-ink); background: #EEF3FB; }
+.fb-label { font: 800 13px/1.2 var(--font-body), sans-serif; color: #2d3444; margin-top: 4px; }
+.fb-label span { font-weight: 600; color: #6B7383; }
+.fb-body textarea, .fb-body input { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; border: 2px solid #D5DBE5; font: 500 16px/1.4 var(--font-body), sans-serif; color: #1f2533; resize: vertical; }
+.fb-body textarea:focus, .fb-body input:focus { outline: none; border-color: var(--soi); }
+.fb-thanks { margin: 4px 0; font: 600 16px/1.45 var(--font-body), sans-serif; color: #1f2533; }
+/* Today: "Next scene" card, so running out of scenes feels planned */
+.today-next { display: grid; gap: 10px; padding: 14px 16px 16px; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 2px #E3E0D8; }
+.today-next-line { margin: 0; display: grid; gap: 3px; }
+.today-next-line strong { font: 800 17px/1.25 var(--font-sign, var(--font-body)), sans-serif; color: #1f2533; }
+.today-next-line span { font-size: 14.5px; color: #4f5868; }
+.today-next-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.today-next-btn { flex: 1 1 140px; display: grid; place-items: center; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 2px solid var(--soi-ink); color: var(--soi-ink); font: 800 15px/1 var(--font-body), sans-serif; text-decoration: none; background: #fff; }
+.today-next-btn:hover { background: #EEF3FB; }
+.today-next-btn:focus-visible { outline: 3px solid var(--soi); outline-offset: 2px; }
+.today-next-actions { flex-wrap: nowrap; }
+.today-next-btn { flex: 1 1 0; min-width: 0; padding: 6px 8px; font-size: 14px; line-height: 1.2; text-align: center; }
+/* Six-word sentences (day 4) stay on one line on a phone */
+.st-bubble.is-tiles .st-tiles.is-many { flex-wrap: nowrap; gap: 4px; }
+.st-bubble.is-tiles .st-tiles.is-many .st-tile { flex: 1 1 0; min-width: 0; padding: 10px 1px 8px; border-radius: 12px; }
+.st-bubble.is-tiles .st-tiles.is-many .st-tile .th { font-size: clamp(17px, 5vw, 22px); }
+.st-bubble.is-tiles .st-tiles.is-many .st-tile .rom, .st-bubble.is-tiles .st-tiles.is-many .st-tile .en { font-size: 11px; }
+.st-bubble.is-tiles .st-tiles.is-many .st-swap-badge { width: 28px; height: 28px; top: -12px; right: -6px; }
+.st-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }

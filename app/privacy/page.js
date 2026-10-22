@@ -22,6 +22,9 @@ export default function Privacy() {
       <h2>Usage statistics and error reports</h2>
       <p>To learn which parts of the app help people and to fix problems, we record anonymous usage events: pages you open, lessons you start and finish, the link or ad you first arrived from, the type of browser, and any errors the app hits. They're linked to a random ID stored in your browser, not to your name or email. We use them only to improve Soi Talk.</p>
 
+      <h2>Feedback you send</h2>
+      <p>If you use "Report a mistake", we store your message, the page and lesson step you were on, your browser type and, only if you type it, your email address so we can reply. We use it only to fix and improve Soi Talk.</p>
+
       <h2>What we store when you sign in</h2>
       <ul>
         <li><b>Your email address</b>, and your name if you sign in with Google. We use these to sign you in and to show you who you're signed in as.</li>
@@ -31,7 +34,7 @@ export default function Privacy() {
 
       <h2>Services we use</h2>
       <ul>
-        <li><b>Supabase</b> stores accounts and progress.</li>
+        <li><b>Supabase</b> stores accounts, progress and feedback messages.</li>
         <li><b>Vercel</b> hosts the website.</li>
         <li><b>Google</b> handles sign-in if you choose "Continue with Google".</li>
         <li><b>PostHog</b> receives the anonymous usage events and error reports described above.</li>
