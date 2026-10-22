@@ -33,27 +33,40 @@ function usePlayer() {
   const cur = useRef(null);
   const token = useRef(0);
   const [playing, setPlaying] = useState(null);
-  const stop = () => { token.current += 1; cur.current?.pause(); setPlaying(null); };
+  const [idx, setIdx] = useState(-1); // which clip of a sequence is playing
+  const [progress, setProgress] = useState(0); // 0..1 through the current clip, for the karaoke
+  const stop = () => { token.current += 1; cur.current?.pause(); setPlaying(null); setIdx(-1); setProgress(0); };
   const play = async (id, clips) => {
     if (playing === id) { stop(); return; }
     stop();
     const my = token.current;
     setPlaying(id);
-    for (const c of clips) {
-      if (token.current !== my) return;
+    for (const [i, c] of clips.entries()) {
+      if (token.current !== my) return false;
+      setIdx(i);
       try {
         const a = new Audio(`/api/speak?text=${encodeURIComponent(c.text)}&voice=${c.voice}${c.slow ? '&slow=1' : ''}&v=${audioVersion(c.text, c.slow)}`);
         a.preservesPitch = true; a.webkitPreservesPitch = true;
         if (c.slow) { a.defaultPlaybackRate = SLOW_RATE; a.playbackRate = SLOW_RATE; }
         cur.current = a;
+        setProgress(0);
+        const tick = () => {
+          if (cur.current !== a || token.current !== my) return;
+          if (a.duration) setProgress(a.currentTime / a.duration);
+          if (!a.ended) requestAnimationFrame(tick);
+        };
+        a.onplaying = tick;
         await new Promise((res) => { a.onended = res; a.onerror = res; a.play().catch(res); });
+        setProgress(0);
         await new Promise((res) => setTimeout(res, 250));
       } catch { /* keep going */ }
     }
-    if (token.current === my) setPlaying(null);
+    if (token.current !== my) return false;
+    setPlaying(null); setIdx(-1); setProgress(0);
+    return true; // played to the end
   };
   useEffect(() => () => { token.current += 1; cur.current?.pause(); }, []);
-  return { play, stop, playing };
+  return { play, stop, playing, idx, progress };
 }
 
 const PlayIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>;
@@ -74,13 +87,35 @@ function SlowBtn({ id, clips, player }) {
   );
 }
 
-function PlayBtn({ id, clips, player, label, big }) {
-  const on = player.playing === id;
+function PlayBtn({ id, clips, player, label, big, hidden, live }) {
+  const on = player.playing === id || live;
   return (
-    <button type="button" className={`st-play${big ? ' is-big' : ''}${on ? ' is-on' : ''}`} aria-label={on ? 'Stop' : label}
+    <button type="button" className={`st-play${big ? ' is-big' : ''}${on ? ' is-on' : ''}${hidden && !live ? ' is-hidden' : ''}`} aria-label={on ? 'Stop' : label}
+      tabIndex={hidden && !live ? -1 : undefined} aria-hidden={hidden && !live ? true : undefined}
       onClick={(e) => { e.stopPropagation(); player.play(id, clips); }}>
       {on ? <StopIcon /> : <PlayIcon />}
     </button>
+  );
+}
+
+// Karaoke, same as the word cards: each word gets a share of the clip
+// in proportion to its syllables, and lights up while it is spoken.
+function activeWord(words, progress) {
+  if (!words || progress <= 0) return -1;
+  const weights = words.map((w) => (w.rom || '').split(/[-\s]/).filter(Boolean).length + 0.6);
+  const total = weights.reduce((a, b) => a + b, 0);
+  const p = Math.min(Math.max((progress - 0.06) / 0.88, 0), 0.999); // the voice starts a moment after the clip
+  let acc = 0;
+  for (let k = 0; k < weights.length; k++) { acc += weights[k] / total; if (p < acc) return k; }
+  return weights.length - 1;
+}
+// Thai and romanization word by word, with the spoken word highlighted
+function KLine({ words, on }) {
+  return (
+    <>
+      <p className="th" lang="th">{words.map((w, k) => <span key={k} className={`st-k${on === k ? ' is-on' : ''}`}>{w.th}</span>)}</p>
+      <p className="rom">{words.map((w, k) => <span key={k}>{k ? ' ' : ''}<span className={`st-k${on === k ? ' is-on' : ''}`}>{w.rom}</span></span>)}</p>
+    </>
   );
 }
 
@@ -176,7 +211,23 @@ export default function Start({ sceneId }) {
 
   const switchReg = (r) => {
     setReg(r); setRegister(r); setRegChosen(true);
-    player.play('both', [{ text: scene.staff.ask(item).th, voice: 'female' }, { text: joinTh(replyParts(scene, item, r)), voice: r }]);
+    player.play('reg', [{ text: scene.staff.ask(item).th, voice: 'female' }, { text: joinTh(replyParts(scene, item, r)), voice: r }]);
+  };
+  // Scene step: the line play buttons appear only after the whole conversation has played once.
+  // While it plays, the speaking line's button shows as live. If they don't tap within a few
+  // seconds, the button gets a gentle pulse.
+  const seq = player.playing === 'both' || player.playing === 'reg';
+  const lineBtn = (n) => ({ hidden: !heard, live: seq && player.idx === n });
+  const kOn = (n, id, words) => ((seq && player.idx === n) || player.playing === id ? activeWord(words, player.progress) : -1);
+  const [nudge, setNudge] = useState(false);
+  useEffect(() => {
+    if (step !== 'scene' || heard || !regChosen || player.playing) { setNudge(false); return undefined; }
+    const t = setTimeout(() => setNudge(true), 4000);
+    return () => clearTimeout(t);
+  }, [step, heard, regChosen, player.playing]);
+  const hearAll = async () => {
+    setNudge(false);
+    if (await player.play('both', conversation())) setHeard(true);
   };
 
   // ---- 0. recall (day 2+): yesterday's line from memory, then 2 of its words
@@ -416,15 +467,15 @@ export default function Start({ sceneId }) {
             <div className="st-bubble is-them">
               <span className="st-who">{scene.staff.who} asks</span>
               <div className="st-line">
-                <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" />
-                <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><BlurEn className="en" text={ask.en} /></div>
+                <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" {...lineBtn(0)} />
+                <div>{ask.words ? <KLine words={ask.words} on={kOn(0, 'ask', ask.words)} /> : <><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p></>}<BlurEn className="en" text={ask.en} /></div>
               </div>
             </div>
             <div className="st-bubble is-you">
               <span className="st-who">You say</span>
               <div className="st-line">
-                <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play your answer" />
-                <div><p className="th" lang="th">{joinTh(parts)}</p><p className="rom">{joinRom(parts)}</p><BlurEn className="en" text={scene.replyEn(item)} /></div>
+                <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play your answer" {...lineBtn(1)} />
+                <div><KLine words={parts} on={kOn(1, 'reply', parts)} /><BlurEn className="en" text={scene.replyEn(item)} /></div>
               </div>
             </div>
             {fu && (
@@ -432,22 +483,22 @@ export default function Start({ sceneId }) {
                 <div className="st-bubble is-them">
                   <span className="st-who">{scene.staff.who} asks</span>
                   <div className="st-line">
-                    <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: 'female' }]} player={player} label="Play the question" />
-                    <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><BlurEn className="en" text={fu.staff.en} /></div>
+                    <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: 'female' }]} player={player} label="Play the question" {...lineBtn(2)} />
+                    <div>{fu.staff.words ? <KLine words={fu.staff.words} on={kOn(2, 'fask', fu.staff.words)} /> : <><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p></>}<BlurEn className="en" text={fu.staff.en} /></div>
                   </div>
                 </div>
                 <div className="st-bubble is-you">
                   <span className="st-who">You say</span>
                   <div className="st-line">
-                    <PlayBtn id="spice" clips={[{ text: joinTh(spiceParts), voice }]} player={player} label="Play your answer" />
-                    <div><p className="th" lang="th">{joinTh(spiceParts)}</p><p className="rom">{joinRom(spiceParts)}</p><BlurEn className="en" text={fu.answers[spiceIdx].en} /></div>
+                    <PlayBtn id="spice" clips={[{ text: joinTh(spiceParts), voice }]} player={player} label="Play your answer" {...lineBtn(3)} />
+                    <div><KLine words={spiceParts} on={kOn(3, 'spice', spiceParts)} /><BlurEn className="en" text={fu.answers[spiceIdx].en} /></div>
                   </div>
                 </div>
               </>
             )}
-            <button type="button" className="st-cta" disabled={!regChosen} onClick={() => {
-              if (!heard) { setHeard(true); player.play('both', conversation()); } else go('parts');
-            }}>{!regChosen ? 'Choose woman or man above' : heard ? 'Next: how it works' : 'Hear the conversation'}</button>
+            <button type="button" className={`st-cta${nudge ? ' is-nudge' : ''}${player.playing === 'both' && !heard ? ' is-busy' : ''}`} disabled={!regChosen} onClick={() => {
+              if (heard) go('parts'); else if (player.playing !== 'both') hearAll();
+            }}>{!regChosen ? 'Choose woman or man above' : heard ? 'Next: how it works' : player.playing === 'both' ? 'Listening…' : 'Hear the conversation'}</button>
           </section>
         )}
 
@@ -499,6 +550,7 @@ export default function Start({ sceneId }) {
               <>
                 <p className="st-sub">Swap {scene.slotLabel} and you have a new sentence.</p>
                 <div className="st-bubble is-them is-small">
+                  <span className="st-who">{scene.staff.who} asks</span>
                   <div className="st-line">
                     <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" />
                     <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><BlurEn className="en" text={ask.en} /></div>
@@ -515,6 +567,7 @@ export default function Start({ sceneId }) {
             {fu && (
               <div className="st-spice">
                 <div className="st-bubble is-them is-small">
+                  <span className="st-who">{scene.staff.who} asks</span>
                   <div className="st-line">
                     <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: 'female' }]} player={player} label="Play the question" />
                     <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><BlurEn className="en" text={fu.staff.en} /></div>

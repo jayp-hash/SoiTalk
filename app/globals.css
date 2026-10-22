@@ -2391,3 +2391,23 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .auth-sent-text b { color: #1f2533; }
 .auth-sent .auth-link { margin-top: 10px; font-size: 14px; }
 @media (hover: hover) { .auth-link:hover { color: #0E2E63; } }
+
+/* Scene step: line play buttons wait until the conversation has played once */
+.st-play { transition: opacity .35s ease, transform .35s ease; }
+.st-play.is-hidden { visibility: hidden; opacity: 0; transform: scale(.8); }
+.st-cta.is-busy { background: var(--soi-ink); cursor: default; }
+.st-cta.is-nudge { animation: st-nudge 1.6s ease-in-out infinite; }
+@keyframes st-nudge { 0%, 100% { box-shadow: 0 0 0 0 rgba(242,183,5,0); transform: none; } 50% { box-shadow: 0 0 0 6px rgba(242,183,5,.55); transform: scale(1.02); } }
+@media (prefers-reduced-motion: reduce) { .st-cta.is-nudge { animation: none; box-shadow: 0 0 0 4px rgba(242,183,5,.55); } }
+/* Karaoke on the lesson conversation: the spoken word turns navy with a gold underline */
+.st-k { border-radius: 4px; transition: color .12s ease, box-shadow .12s ease; }
+.st-k.is-on { color: var(--navy, #0E2E63); box-shadow: inset 0 -3px 0 #F2B705; }
+/* Speech cards get a colour header band, like the word cards and the Instagram posts:
+   the place colour for the other person, navy for you. Icon + uppercase name. */
+.st-bubble > .st-who { display: flex; align-items: center; gap: 7px; margin: -14px -14px 2px; padding: 9px 14px; border-radius: 18px 18px 0 0; background: var(--district); color: #fff; font: 800 12px/1 var(--font-body), sans-serif; letter-spacing: .08em; }
+.st-bubble > .st-who::before { content: ''; width: 14px; height: 14px; flex: none; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-5 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z'/%3E%3C/svg%3E") center / contain no-repeat; }
+.st-bubble.is-you > .st-who { background: var(--soi-ink); }
+.st-bubble.is-you > .st-who::before { -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4.5'/%3E%3Cpath d='M3.5 21a8.5 8.5 0 0 1 17 0z'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4.5'/%3E%3Cpath d='M3.5 21a8.5 8.5 0 0 1 17 0z'/%3E%3C/svg%3E"); }
+.st-bubble.is-small > .st-who { margin: -10px -12px 0; padding: 8px 12px; }
+.st-bubble.is-swap > .st-who { margin: -10px -12px 4px; border-radius: 15px 15px 0 0; }
+.st-bubble.is-you { box-shadow: inset 0 0 0 2px #C9D7EF; }

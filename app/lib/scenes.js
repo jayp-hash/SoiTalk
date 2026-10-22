@@ -22,7 +22,7 @@ export const SCENES = {
     promise: 'Turn down a bag in Thai',
     minutes: 2,
     // The other person (always the female voice: most cashiers are women)
-    staff: { who: 'The cashier', ask: (it) => ({ th: `รับ${it.th}ไหมคะ`, rom: `ráp ${it.rom} mǎi khá`, en: `Do you want ${it.a}?` }) },
+    staff: { who: 'The cashier', ask: (it) => ({ th: `รับ${it.th}ไหมคะ`, rom: `ráp ${it.rom} mǎi khá`, en: `Do you want ${it.a}?`, words: [{ th: 'รับ', rom: 'ráp' }, ...(it.parts || [it]), { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] }) },
     // Your reply: fixed words, then the slot. The polite ending is added by register.
     reply: [
       { th: 'ไม่', rom: 'mâi', en: 'not' },
@@ -56,7 +56,7 @@ export const SCENES = {
     place: 'At a Thai restaurant',
     promise: 'Order Thai food your way',
     minutes: 3,
-    staff: { who: 'The waitress', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?' }) },
+    staff: { who: 'The waitress', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'a-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
     reply: [
       { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
       { slot: true },
@@ -70,7 +70,7 @@ export const SCENES = {
     ],
     // The second exchange: the waitress asks, you pick how spicy
     followUp: {
-      staff: { th: 'เผ็ดไหมคะ', rom: 'phèt mǎi khá', en: 'Spicy?' },
+      staff: { th: 'เผ็ดไหมคะ', rom: 'phèt mǎi khá', en: 'Spicy?', words: [{ th: 'เผ็ด', rom: 'phèt' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] },
       answers: [
         { key: 'none', parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'เผ็ด', rom: 'phèt', en: 'spicy' }], en: 'Not spicy.' },
         { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nòi', en: 'a little' }], en: 'A little spicy.' },
@@ -93,7 +93,7 @@ export const SCENES = {
     place: 'At a coffee shop',
     promise: 'Order coffee your way',
     minutes: 3,
-    staff: { who: 'The barista', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?' }) },
+    staff: { who: 'The barista', ask: () => ({ th: 'รับอะไรดีคะ', rom: 'ráp a-rai dii khá', en: 'What would you like?', words: [{ th: 'รับ', rom: 'ráp' }, { th: 'อะไร', rom: 'a-rai' }, { th: 'ดี', rom: 'dii' }, { th: 'คะ', rom: 'khá' }] }) },
     reply: [
       { th: 'ขอ', rom: 'khǎaw', en: 'may I have' },
       { slot: true },
@@ -110,7 +110,7 @@ export const SCENES = {
     // Sweetness, not size: the question baristas really ask, and no pair of
     // opposites on the same day (Learning Scientist, Jay, 13 Oct). Size moves to day 4.
     followUp: {
-      staff: { th: 'หวานปกติไหมคะ', rom: 'wǎan bpòk-gà-dtì mǎi khá', en: 'Normal sweetness?' },
+      staff: { th: 'หวานปกติไหมคะ', rom: 'wǎan bpòk-gà-dtì mǎi khá', en: 'Normal sweetness?', words: [{ th: 'หวาน', rom: 'wǎan' }, { th: 'ปกติ', rom: 'bpòk-gà-dtì' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] },
       answers: [
         { key: 'less', adj: 'less sweet', parts: [{ th: 'หวาน', rom: 'wǎan', en: 'sweet' }, { th: 'น้อย', rom: 'nói', en: 'less' }], en: 'Less sweet.' },
         { key: 'none', adj: 'not sweet', notFor: ['ชาเย็น'], parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'หวาน', rom: 'wǎan', en: 'sweet' }], en: 'Not sweet.' },
