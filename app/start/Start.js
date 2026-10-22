@@ -1,8 +1,8 @@
 'use client';
 import { track } from '../lib/analytics';
 import BlurEn from '../components/BlurEn';
-import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePlayer, preload } from '../lib/audio';
 import { useProgressStore, readStore, writeStore, dayKey } from '../lib/progress';
 import { getRegister, setRegister, registerChosen } from '../lib/register';
 import { useUser } from '../lib/useUser';
@@ -28,47 +28,7 @@ export const SCENES_KEY = 'tsc-scenes';  // { <scene id>: day finished }
 export const MISSION_KEY = 'tsc-mission'; // { scene, th, rom, en, text, day, done }
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 
-// Plays one clip or a short sequence (cashier, then you). One at a time.
-function usePlayer() {
-  const cur = useRef(null);
-  const token = useRef(0);
-  const [playing, setPlaying] = useState(null);
-  const [idx, setIdx] = useState(-1); // which clip of a sequence is playing
-  const [progress, setProgress] = useState(0); // 0..1 through the current clip, for the karaoke
-  const stop = () => { token.current += 1; cur.current?.pause(); setPlaying(null); setIdx(-1); setProgress(0); };
-  const play = async (id, clips) => {
-    if (playing === id) { stop(); return; }
-    stop();
-    const my = token.current;
-    setPlaying(id);
-    for (const [i, c] of clips.entries()) {
-      if (token.current !== my) return false;
-      setIdx(i);
-      try {
-        const a = new Audio(`/api/speak?text=${encodeURIComponent(c.text)}&voice=${c.voice}${c.slow ? '&slow=1' : ''}&v=${audioVersion(c.text, c.slow)}`);
-        a.preservesPitch = true; a.webkitPreservesPitch = true;
-        if (c.slow) { a.defaultPlaybackRate = SLOW_RATE; a.playbackRate = SLOW_RATE; }
-        cur.current = a;
-        setProgress(0);
-        const tick = () => {
-          if (cur.current !== a || token.current !== my) return;
-          if (a.duration) setProgress(a.currentTime / a.duration);
-          if (!a.ended) requestAnimationFrame(tick);
-        };
-        a.onplaying = tick;
-        await new Promise((res) => { a.onended = res; a.onerror = res; a.play().catch(res); });
-        setProgress(0);
-        await new Promise((res) => setTimeout(res, 250));
-      } catch { /* keep going */ }
-    }
-    if (token.current !== my) return false;
-    setPlaying(null); setIdx(-1); setProgress(0);
-    return true; // played to the end
-  };
-  useEffect(() => () => { token.current += 1; cur.current?.pause(); }, []);
-  return { play, stop, playing, idx, progress };
-}
-
+// The player (download whole clips, preload, ignore extra taps) lives in lib/audio.js
 const PlayIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" /></svg>;
 const StopIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>;
 const SlowIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15c0-3.9 3.1-7 7-7s7 3.1 7 7" /><path d="M2 15h19c1 0 1.5-.8 1.2-1.6L21 11" /><path d="M7 15l-1 3M15 15l1 3" /></svg>;
@@ -120,7 +80,7 @@ function KLine({ words, on }) {
 }
 
 // A line of Thai as word tiles with romanization and English under each
-function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash }) {
+function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash, hearHint }) {
   const first = parts.findIndex((p) => p.slot);
   return (
     <div className="st-tiles" lang="th">
@@ -134,6 +94,7 @@ function Tiles({ parts, onTap, swapIndex, onSwap, hint, flash }) {
             aria-label={swap && onSwap ? `${p.th}, ${p.en}. Tap to swap` : `${p.th}, ${p.en}. Tap to hear`}>
             {lead && onSwap && <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>}
             {lead && hint && <span className="st-hint is-below" role="status">Tap to swap</span>}
+            {hearHint && i === 0 && <span className="st-hint is-above" role="status">Tap a word to hear it</span>}
             <span className="th">{p.th}</span>
             <span className="rom">{p.rom}</span>
             <span className="en">{p.ending ? 'polite' : p.en}</span>
@@ -189,6 +150,7 @@ export default function Start({ sceneId }) {
   const [made, setMade] = useState([scene.items[0].th]); // items used in sentences so far
   const [heard, setHeard] = useState(false);
   const [toast, setToast] = useState('');
+  const [tapped, setTapped] = useState(false); // parts step: hide the hint after the first tap
   const [flash, setFlash] = useState(false);
   const item = scene.items[itemIdx];
   const parts = replyParts(scene, item, reg);
@@ -201,7 +163,7 @@ export default function Start({ sceneId }) {
   const pickSpice = (i) => { setSpiceIdx(i); player.play('spice', [{ text: joinTh(followParts(scene, i, reg)), voice }]); };
   const swapIndex = 'slot';
 
-  const say = (p) => player.play(`w-${p.th}`, [{ text: p.th, voice: p.ending ? voice : voice }]);
+  const say = (p) => { setTapped(true); player.play(`w-${p.th}`, [{ text: p.th, voice }]); };
   const conversation = (it = item) => [
     { text: scene.staff.ask(it).th, voice: 'female' },
     { text: joinTh(replyParts(scene, it, reg)), voice },
@@ -229,6 +191,50 @@ export default function Start({ sceneId }) {
     setNudge(false);
     if (await player.play('both', conversation())) setHeard(true);
   };
+
+  // The other person's line as a small card with its header band
+  const askCard = (id, line) => (
+    <div className="st-bubble is-them is-small">
+      <span className="st-who">{scene.staff.who} asks</span>
+      <div className="st-line">
+        <PlayBtn id={id} clips={[{ text: line.th, voice: 'female' }]} player={player} label="Play the question" />
+        <div><p className="th" lang="th">{line.th}</p><p className="rom">{line.rom}</p><BlurEn className="en" text={line.en} /></div>
+      </div>
+    </div>
+  );
+  // A whole line under its tiles: play, slow, and the English (blur setting applies)
+  const whole = (id, slowId, ps, en) => (
+    <div className="st-whole">
+      <PlayBtn id={id} clips={[{ text: joinTh(ps), voice }]} player={player} label="Play the whole sentence" />
+      <SlowBtn id={slowId} clips={[{ text: spaced(ps), voice, slow: true }]} player={player} />
+      <BlurEn className="en" text={en} />
+    </div>
+  );
+
+  // Download every clip this lesson can play in the background, in the order
+  // they're needed, so taps play straight away (lib/audio.js).
+  useEffect(() => {
+    const v = reg;
+    const line = (ps) => [{ text: joinTh(ps), voice: v }, { text: spaced(ps), voice: v, slow: true }];
+    const words = (ps) => ps.map((w) => ({ text: w.th, voice: v }));
+    const clips = [];
+    if (scene.recall) {
+      const pv = SCENES[scene.recall]; const pi = pv.items[0];
+      clips.push({ text: pv.staff.ask(pi).th, voice: 'female' }, { text: joinTh(replyParts(pv, pi, v)), voice: v }, ...pv.items.map((it) => ({ text: it.th, voice: v })));
+    }
+    clips.push(...conversation(scene.items[0]));
+    const fus = fu ? fu.answers.map((_, i) => followParts(scene, i, v)) : [];
+    clips.push(...words(replyParts(scene, scene.items[0], v)), ...line(replyParts(scene, scene.items[0], v)));
+    for (const ps of fus) clips.push(...words(ps), ...line(ps));
+    if (fu) clips.push({ text: fu.staff.th, voice: 'female' });
+    for (const it of scene.items) {
+      clips.push({ text: scene.staff.ask(it).th, voice: 'female' }, ...line(replyParts(scene, it, v)), { text: scene.staff.ask(it).th, voice: 'female', slow: true }, ...words(it.parts || [it]));
+    }
+    const mission = missionParts(scene, v, 0, scene.items[0]);
+    clips.push({ text: joinTh(mission), voice: v }, { text: scene.teaser.th + endingFor(v).th, voice: v });
+    preload(clips);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scene.id, reg]);
 
   // ---- 0. recall (day 2+): yesterday's line from memory, then 2 of its words
   const prev = scene.recall ? SCENES[scene.recall] : null;
@@ -406,7 +412,9 @@ export default function Start({ sceneId }) {
                 <div><p className="th" lang="th">{prev.staff.ask(prevItem).th}</p><p className="rom">{prev.staff.ask(prevItem).rom}</p><BlurEn className="en" text={prev.staff.ask(prevItem).en} /></div>
               </div>
             </div>
-            <p className="st-sub">Build your answer: <b>{prev.replyEn(prevItem)}</b></p>
+            <div className="st-bubble is-you is-tiles">
+            <span className="st-who">You say</span>
+            <p className="st-task">Build your answer: <b>{prev.replyEn(prevItem)}</b></p>
             <div className={`st-built${rDone ? ` is-${rDone}` : ''}`} lang="th" aria-label="Your answer">
               {built.length === 0 && <span className="st-built-empty">Tap the words below in order</span>}
               {built.map((t) => (
@@ -420,6 +428,7 @@ export default function Start({ sceneId }) {
                 ))}
               </div>
             )}
+            </div>
             {rDone ? (
               <div className="st-feedback" role="status">
                 {rDone === 'right'
@@ -438,6 +447,7 @@ export default function Start({ sceneId }) {
             <p className="st-place">Yesterday's words · {rStage} of {prevWords.length}</p>
             <h1 className="st-title">What does it mean?</h1>
             <div className="st-word">
+              <span className="st-who">Yesterday's word</span>
               <PlayBtn id={`r-${rStage}`} clips={[{ text: rw.th, voice }]} player={player} label="Play the word" />
               <div><p className="th" lang="th">{rw.th}</p><p className="rom">{rw.rom}</p></div>
             </div>
@@ -458,12 +468,14 @@ export default function Start({ sceneId }) {
             <h1 className="st-title">The conversation</h1>
             <div className={`st-reg is-top${regChosen ? '' : ' is-ask'}`} role="radiogroup" aria-label="I speak as">
               <span>I'm speaking as:</span>
-              {[['female', 'Woman', 'ค่ะ'], ['male', 'Man', 'ครับ']].map(([r, label, end]) => (
+              {[['female', 'Woman', 'ค่ะ', 'khâ'], ['male', 'Man', 'ครับ', 'khráp']].map(([r, label, end, endRom]) => (
                 <button key={r} type="button" role="radio" aria-checked={regChosen && reg === r} className={regChosen && reg === r ? 'on' : ''} onClick={() => switchReg(r)}>
-                  {label} <span lang="th">{end}</span>
+                  {label} <span lang="th">{end}</span> <i className="st-reg-rom">{endRom}</i>
                 </button>
               ))}
             </div>
+            <div className={`st-cols${fu ? ' has-2' : ''}`}>
+            <div className="st-col">
             <div className="st-bubble is-them">
               <span className="st-who">{scene.staff.who} asks</span>
               <div className="st-line">
@@ -478,8 +490,9 @@ export default function Start({ sceneId }) {
                 <div><KLine words={parts} on={kOn(1, 'reply', parts)} /><BlurEn className="en" text={scene.replyEn(item)} /></div>
               </div>
             </div>
+            </div>
             {fu && (
-              <>
+              <div className="st-col">
                 <div className="st-bubble is-them">
                   <span className="st-who">{scene.staff.who} asks</span>
                   <div className="st-line">
@@ -494,8 +507,9 @@ export default function Start({ sceneId }) {
                     <div><KLine words={spiceParts} on={kOn(3, 'spice', spiceParts)} /><BlurEn className="en" text={fu.answers[spiceIdx].en} /></div>
                   </div>
                 </div>
-              </>
+              </div>
             )}
+            </div>
             <button type="button" className={`st-cta${nudge ? ' is-nudge' : ''}${player.playing === 'both' && !heard ? ' is-busy' : ''}`} disabled={!regChosen} onClick={() => {
               if (heard) go('parts'); else if (player.playing !== 'both') hearAll();
             }}>{!regChosen ? 'Choose woman or man above' : heard ? 'Next: how it works' : player.playing === 'both' ? 'Listening…' : 'Hear the conversation'}</button>
@@ -506,24 +520,26 @@ export default function Start({ sceneId }) {
           <section className="st-card">
             <p className="st-place">{scene.place}</p>
             <h1 className="st-title">{fu ? 'Word by word' : `${parts.length} little words`}</h1>
-            <p className="st-sub">Tap each one to hear it.</p>
-            <Tiles parts={parts} onTap={say} />
-            <div className="st-whole">
-              <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play the whole sentence" />
-              <SlowBtn id="slow" clips={[{ text: spaced(parts), voice, slow: true }]} player={player} />
-              <span className="en">{scene.replyEn(item)}</span>
-            </div>
-            {fu && (
-              <>
-                <p className="st-row-label">{scene.staff.who} asks <span lang="th">{fu.staff.th}</span> <i>{fu.staff.rom}</i>, {fu.staff.en.toLowerCase()} You say:</p>
-                <Tiles parts={spiceParts} onTap={say} />
-                <div className="st-whole">
-                  <PlayBtn id="spice" clips={[{ text: joinTh(spiceParts), voice }]} player={player} label="Play the whole sentence" />
-                  <SlowBtn id="slow2" clips={[{ text: spaced(spiceParts), voice, slow: true }]} player={player} />
-                  <span className="en">{fu.answers[spiceIdx].en}</span>
+            <div className={`st-cols${fu ? ' has-2' : ''}`}>
+              <div className="st-col">
+                {askCard('ask', ask)}
+                <div className="st-bubble is-you is-tiles">
+                  <span className="st-who">You say</span>
+                  <Tiles parts={parts} onTap={say} hearHint={!tapped} />
+                  {whole('reply', 'slow', parts, scene.replyEn(item))}
                 </div>
-              </>
-            )}
+              </div>
+              {fu && (
+                <div className="st-col">
+                  {askCard('fask', fu.staff)}
+                  <div className="st-bubble is-you is-tiles">
+                    <span className="st-who">You say</span>
+                    <Tiles parts={spiceParts} onTap={say} />
+                    {whole('spice', 'slow2', spiceParts, fu.answers[spiceIdx].en)}
+                  </div>
+                </div>
+              )}
+            </div>
             <button type="button" className="st-cta" onClick={() => go('swap')}>Next: make your own</button>
           </section>
         )}
@@ -532,66 +548,51 @@ export default function Start({ sceneId }) {
           <section className="st-card">
             <p className="st-place">{scene.place}</p>
             <h1 className="st-title">Now make your own</h1>
-            {scene.swapOn === 'ask' ? (
-              <>
-                <p className="st-sub">Tap her question to change what she offers. Your answer changes with it.</p>
-                <button type="button" className={`st-bubble is-them is-small is-swap${flash ? ' is-flash' : ''}`} onClick={swap} aria-label={`${ask.th}, ${ask.en} Tap to change`}>
-                  <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>
-                  {made.length === 1 && <span className="st-hint is-below" role="status">Tap to change</span>}
-                  <span className="st-who">{scene.staff.who} asks</span>
-                  <span className="th" lang="th">{ask.th}</span>
-                  <span className="rom">{ask.rom}</span>
-                  <span className="en">{ask.en}</span>
-                </button>
-                <p className="st-you-say">You say:</p>
-                <Tiles parts={parts} onTap={say} swapIndex={swapIndex} flash={flash} />
-              </>
-            ) : (
-              <>
-                <p className="st-sub">Swap {scene.slotLabel} and you have a new sentence.</p>
-                <div className="st-bubble is-them is-small">
-                  <span className="st-who">{scene.staff.who} asks</span>
-                  <div className="st-line">
-                    <PlayBtn id="ask" clips={[{ text: ask.th, voice: 'female' }]} player={player} label="Play the question" />
-                    <div><p className="th" lang="th">{ask.th}</p><p className="rom">{ask.rom}</p><BlurEn className="en" text={ask.en} /></div>
-                  </div>
-                </div>
-                <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1} flash={flash} />
-              </>
-            )}
-            <div className="st-whole">
-              <PlayBtn id="reply" clips={[{ text: joinTh(parts), voice }]} player={player} label="Play the sentence" />
-              <SlowBtn id="slow" clips={[{ text: spaced(parts), voice, slow: true }]} player={player} />
-              <span className="en">{scene.replyEn(item)}</span>
-            </div>
-            {fu && (
-              <div className="st-spice">
-                <div className="st-bubble is-them is-small">
-                  <span className="st-who">{scene.staff.who} asks</span>
-                  <div className="st-line">
-                    <PlayBtn id="fask" clips={[{ text: fu.staff.th, voice: 'female' }]} player={player} label="Play the question" />
-                    <div><p className="th" lang="th">{fu.staff.th}</p><p className="rom">{fu.staff.rom}</p><BlurEn className="en" text={fu.staff.en} /></div>
-                  </div>
-                </div>
-                <p className="st-choose">You say:</p>
-                <div className="st-choices" role="radiogroup" aria-label="How spicy?">
-                  {fu.answers.map((x, i) => {
-                    const ps = followParts(scene, i, reg);
-                    const off = (x.notFor || []).includes(item.th);
-                    return (
-                      <button key={x.key} type="button" role="radio" aria-checked={spiceIdx === i} disabled={off} title={off ? `Not usually ordered with ${item.en}` : undefined} className={spiceIdx === i ? 'on' : ''} onClick={() => pickSpice(i)}>
-                        <span className="th" lang="th">{joinTh(ps)}</span><span className="rom">{joinRom(ps)}</span><span className="en">{x.en}</span>
-                      </button>
-                    );
-                  })}
+            <div className={`st-cols${fu ? ' has-2' : ''}`}>
+              <div className="st-col">
+                {scene.swapOn === 'ask' ? (
+                  <button type="button" className={`st-bubble is-them is-small is-swap${flash ? ' is-flash' : ''}`} onClick={swap} aria-label={`${ask.th}, ${ask.en} Tap to change`}>
+                    <span className="st-swap-badge" aria-hidden="true"><SwapIcon /></span>
+                    {made.length === 1 && <span className="st-hint is-below" role="status">Tap to change</span>}
+                    <span className="st-who">{scene.staff.who} asks</span>
+                    <span className="th" lang="th">{ask.th}</span>
+                    <span className="rom">{ask.rom}</span>
+                    <span className="en">{ask.en}</span>
+                  </button>
+                ) : askCard('ask', ask)}
+                <div className="st-bubble is-you is-tiles">
+                  <span className="st-who">You say</span>
+                  {scene.swapOn === 'ask'
+                    ? <Tiles parts={parts} onTap={say} swapIndex={swapIndex} flash={flash} />
+                    : <Tiles parts={parts} onTap={say} swapIndex={swapIndex} onSwap={swap} hint={made.length === 1} flash={flash} />}
+                  {whole('reply', 'slow', parts, scene.replyEn(item))}
                 </div>
               </div>
-            )}
+              {fu && (
+                <div className="st-col">
+                  {askCard('fask', fu.staff)}
+                  <div className="st-bubble is-you is-tiles">
+                    <span className="st-who">You say</span>
+                    <div className="st-choices" role="radiogroup" aria-label={fu.staff.en}>
+                      {fu.answers.map((x, i) => {
+                        const ps = followParts(scene, i, reg);
+                        const off = (x.notFor || []).includes(item.th);
+                        return (
+                          <button key={x.key} type="button" role="radio" aria-checked={spiceIdx === i} disabled={off} title={off ? `Not usually ordered with ${item.en}` : undefined} className={spiceIdx === i ? 'on' : ''} onClick={() => pickSpice(i)}>
+                            <span className="th" lang="th">{joinTh(ps)}</span><span className="rom">{joinRom(ps)}</span><span className="en">{x.en}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <p className={`st-toast${toast ? ' is-on' : ''}`} role="status">{toast || ' '}</p>
             {made.length < needSwaps ? (
               <p className="st-gate" aria-live="polite">
                 <span className="dots" aria-hidden="true">{Array.from({ length: needSwaps }, (_, k) => <i key={k} className={k < made.length ? 'on' : ''} />)}</span>
-                {made.length} of {needSwaps} sentences made. {scene.swapOn === 'ask' ? 'Tap her question to make another.' : 'Tap ↻ to make another.'}
+                {made.length} of {needSwaps} sentences made
               </p>
             ) : (
               <button type="button" className="st-cta" onClick={() => go('listen')}>Next: test your ear</button>
@@ -634,6 +635,7 @@ export default function Start({ sceneId }) {
             <p className="st-place">Quick check · {ci + 1} of {words.length}</p>
             <h1 className="st-title">What does it mean?</h1>
             <div className="st-word">
+              <span className="st-who">Today's word</span>
               <PlayBtn id={`c-${ci}`} clips={[{ text: cw.th, voice }]} player={player} label="Play the word" />
               <div><p className="th" lang="th">{cw.th}</p><p className="rom">{cw.rom}</p></div>
             </div>
@@ -722,11 +724,11 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
       <button type="button" className={`dn-use${player.playing === 'mission' ? ' is-on' : ''}`}
         onClick={() => player.play('mission', [{ text: joinTh(mission), voice }])} aria-label={`Play: ${joinTh(mission)}`}>
         <span className="dn-label">Say it today</span>
+        <span className="dn-use-play" aria-hidden="true">{player.playing === 'mission' ? <StopIcon /> : <PlayIcon />}</span>
         <span className="dn-use-line" lang="th">{joinTh(mission)}</span>
         <span className="dn-use-rom">{joinRom(mission)}</span>
         <span className="dn-use-en">{missionEn}</span>
         <span className="dn-use-when">When: {scene.mission.charAt(0).toLowerCase()}{scene.mission.slice(1)}</span>
-        <span className="dn-use-play" aria-hidden="true">{player.playing === 'mission' ? <StopIcon /> : <PlayIcon />}</span>
       </button>
 
       {all ? (
@@ -747,7 +749,7 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
           })}
         </div>
       ) : (
-        <button type="button" className="dn-more" onClick={() => setAll(true)}>See all {lines.length} phrases</button>
+        <button type="button" className="dn-more" onClick={() => setAll(true)}>See all your phrases</button>
       )}
 
       <div className="dn-back">
@@ -768,12 +770,12 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user }) {
           <a className="st-cta" href="/today">Go to Today</a>
         ) : inApp ? (
           <>
-            <a className="st-cta" href="/signin?next=/today">Save my {lines.length} phrases (free)</a>
+            <a className="st-cta" href="/signin?next=/today">Save my phrases (free)</a>
             <p className="dn-save-note">Google sign-in doesn't work inside Instagram, TikTok or LINE, so use your email (or open soitalk.app in Safari or Chrome). <a href="/today">Not now</a></p>
           </>
         ) : (
           <>
-            <button type="button" className="dn-google" onClick={google}><GoogleG /> Save my {lines.length} phrases with Google</button>
+            <button type="button" className="dn-google" onClick={google}><GoogleG /> Save my phrases with Google</button>
             <p className="dn-save-note">Free. Keep your phrases and pick up tomorrow. <span className="dn-links"><a href="/signin?next=/today">Use email</a> · <a href="/today" className="dn-not-now">Not now</a></span></p>
           </>
         )}
