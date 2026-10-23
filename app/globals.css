@@ -1147,7 +1147,7 @@ body:has(.fc) .page { padding-bottom: 0; }
   background: var(--soi); color: #fff !important; box-shadow: var(--lift); transition: background .15s; }
 .tp-start:hover { background: var(--soi-ink); }
 .tp-start-text { flex: 1; display: grid; gap: 4px; min-width: 0; }
-.tp-start-kicker { font: 800 11px/1 var(--font-body), sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #FFC83D; }
+.tp-start-kicker { font: 800 11px/1 var(--font-body), sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #BFD0EE; } /* not gold: gold is for milestones only (principle 9) */
 .tp-start-title { font: 700 22px/1.2 var(--font-sign), sans-serif; }
 .tp-start-sub { color: #D6E0F3; font-size: 14.5px; }
 .tp-start-sub [lang="th"] { font-family: var(--font-thai), sans-serif; font-weight: 700; color: #fff; }

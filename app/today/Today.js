@@ -236,7 +236,7 @@ function DoneToday({ day, next, onSaid }) {
   };
   return (
     <section className="today-donecard" aria-label="Done for today">
-      <h2>You're done for today ✓</h2>
+      <h2>Done for today ✓</h2>
       <p className="today-donecard-sub">{day.full} is filled in on your week.</p>
       {mine && (
         <div className="today-line">

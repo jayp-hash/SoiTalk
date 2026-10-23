@@ -25,7 +25,7 @@ Agreed with Jay on 21 Oct 2026; 12 to 14 added 22 Oct after the 7-day walkthroug
 12. **One finish line a day.**
     - The lesson is the day.
     - The Done screen has one main button, "Done for today".
-    - Today then says "You're done for today ✓" and stays done.
+    - Today and the Word library then say "Done for today ✓" and stay done.
     - Extra practice (words, building sentences) is clearly optional and never shown as a new goal. After extra practice, the progress pop-up closes back onto that same Today screen, never a second "done" page.
 13. **One primary action per screen. Remove before you add.** If a screen has more than one thing asking to be tapped first, cut, merge or fold something away. Design quality must hold when things are removed.
 14. **Never show anything unbuilt.** No "coming soon" or "coming next". If something isn't ready, leave it out.

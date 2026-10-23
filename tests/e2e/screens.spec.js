@@ -41,7 +41,7 @@ test('words banner says done for today once the lesson is done', async ({ page }
   await expect(banner).not.toContainText('Next up');
   await expect(banner).not.toContainText('Continue on Today');
   await page.goto('/today');
-  await expect(page.locator('.today-donecard')).toContainText("You're done for today ✓");
+  await expect(page.locator('.today-donecard')).toContainText('Done for today ✓');
 });
 
 test('words banner still points to today before the lesson', async ({ page }) => {
