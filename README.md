@@ -105,6 +105,12 @@ Create the tables by running the files in `supabase/` (001 to 010) in order in t
 node scripts/import-curriculum.js path/to/your-workbook.xlsx
 ```
 
+Run the automated checks (they use a pretend database, so no keys are needed):
+
+```bash
+npm test
+```
+
 Keys go in `.env.local`, which is never committed. On Vercel they are set as encrypted environment variables.
 
 ## About me

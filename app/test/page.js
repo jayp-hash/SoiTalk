@@ -47,7 +47,7 @@ export default function TestPage() {
       }
       const blob = await res.blob();
       setAudioUrl(URL.createObjectURL(blob));
-      setElevenlabs({ status: 'ok', message: 'Audio generated — press play below.' });
+      setElevenlabs({ status: 'ok', message: 'Audio generated. Press play below.' });
     } catch (e) {
       setElevenlabs({ status: 'error', message: e.message });
     }

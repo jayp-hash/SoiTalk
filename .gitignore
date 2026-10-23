@@ -20,3 +20,7 @@ npm-debug.log*
 
 # Vercel CLI project link (machine-specific)
 .vercel/
+
+# test output
+test-results/
+playwright-report/

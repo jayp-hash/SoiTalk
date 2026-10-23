@@ -1,0 +1,29 @@
+/* Fonts are installed with the app (npm @fontsource packages) and served from our own site:
+   faster, no request to Google from the visitor's browser, and builds work without
+   internet access to Google (automated tests, previews). Each file only downloads the
+   letters a page uses (Thai or Latin).
+   Sarabun: the classic Thai textbook typeface, with the small loops on letters (ม ห ด)
+   that help learners tell similar letters apart.
+   Kanit: the heavy Thai face on Bangkok shop and street signs (logo and headings). */
+@import '@fontsource/sarabun/400.css';
+@import '@fontsource/sarabun/600.css';
+@import '@fontsource/sarabun/700.css';
+@import '@fontsource/baloo-2/500.css';
+@import '@fontsource/baloo-2/700.css';
+@import '@fontsource/baloo-2/800.css';
+@import '@fontsource/kanit/500.css';
+@import '@fontsource/kanit/700.css';
+@import '@fontsource/kanit/800.css';
+@import '@fontsource/nunito/500.css';
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
+@import '@fontsource/nunito/500-italic.css';
+@import '@fontsource/nunito/700-italic.css';
+@import '@fontsource/nunito/800-italic.css';
+
+:root {
+  --font-thai: 'Sarabun';
+  --font-display: 'Baloo 2';
+  --font-sign: 'Kanit';
+  --font-body: 'Nunito';
+}
