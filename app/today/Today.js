@@ -7,6 +7,7 @@ import { useProgressStore, coverage, countKnown, countLearning, endOfToday, dayK
 import CheckSession, { shortMeaning } from './Check';
 import { TodayPattern, pickTodayPattern } from '../patterns/Patterns';
 import { SCENES } from '../lib/scenes';
+import { SCENE_DAYS, lessonDoneToday as isLessonDoneToday, nextLessonId } from '../lib/daily';
 import { useUser } from '../lib/useUser';
 import { SAY_IT, sayItFor } from '../lib/sayit';
 import { supabaseBrowser } from '../lib/supabase-browser';
@@ -516,15 +517,13 @@ export default function Today({ words, milestones }) {
   // Day 2+: the next scene, if the first session was on an earlier day and it isn't done yet
   const firstSession = readStore('tsc-first-session', null);
   const scenesDone = readStore('tsc-scenes', {});
-  // One new scene a day, in order, after the first session
-  const SCENE_DAYS = ['restaurant', 'cafe', 'stall', 'market', 'stuck', 'where', 'taxi', 'smalltalk', 'bargain'];
   const nextSceneId = firstSession && firstSession.day !== dayKey() && !Object.values(scenesDone).includes(dayKey())
     ? SCENE_DAYS.find((id) => !scenesDone[id]) || null : null;
   const sceneToday = nextSceneId && mode === 'home' ? SCENES[nextSceneId] : null;
   // What's next when today's scene is done (or all scenes are): a planned "next", never a dead end
-  const nextUp = firstSession && !nextSceneId ? (SCENE_DAYS.find((id) => !scenesDone[id]) || null) : null;
+  const nextUp = firstSession && !nextSceneId ? nextLessonId(scenesDone) : null;
   // The lesson is the day: once today's lesson is done, Today says so and stays done
-  const lessonDoneToday = !!firstSession && (firstSession.day === dayKey() || Object.values(scenesDone).includes(dayKey()));
+  const lessonDoneToday = isLessonDoneToday(firstSession, scenesDone);
   const nextLesson = nextUp ? SCENES[nextUp] : null;
   const practiceCount = new Set([...plan.due, ...plan.newCards].map((w) => w.thai)).size;
   // Not on day 1: a brand-new learner simply finishes

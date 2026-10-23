@@ -5,6 +5,8 @@ import TopicIcon from './TopicIcon';
 import { useProgressStore } from '../lib/progress';
 import { isKnown as knownEntry } from '../lib/memory';
 import { TOPIC_GROUPS, TOPIC_HERO } from '../lib/categories';
+import { lessonDoneToday, nextLessonId } from '../lib/daily';
+import { SCENES } from '../lib/scenes';
 
 // /vocabulary: a topic page first, then the cards for what you pick.
 // The choice sits in the URL (?topic=Food%20%26%20drink, ?topic=all&set=3) so Back works.
@@ -91,6 +93,10 @@ function TopicPage({ words, allPct, onOpen }) {
   const firstGap = words.findIndex((w) => !isMet(w));
   const nextSet = firstGap < 0 ? 0 : Math.floor(firstGap / SET_SIZE);
   const started = learnedAll > 0;
+  // Match Today: once today's lesson is done, the banner says so (ui-principles 12)
+  const doneToday = lessonDoneToday();
+  const tomorrowId = doneToday ? nextLessonId() : null;
+  const tomorrow = tomorrowId ? SCENES[tomorrowId] : null;
   const group = (label) => (TOPIC_GROUPS.find((g) => g.label === label)?.names || []).map((n) => topics.get(n)).filter(Boolean);
   const startHere = group('Start here');
   const blocks = group('Building blocks');
@@ -107,9 +113,11 @@ function TopicPage({ words, allPct, onOpen }) {
       <a className="tp-start" href="/today">
         <span className="tp-start-text">
           <span className="tp-start-kicker">Your daily lesson</span>
-          <span className="tp-start-title">{started ? 'Continue on Today' : 'Start on Today'}</span>
+          <span className="tp-start-title">{doneToday ? 'Done for today ✓' : started ? 'Continue on Today' : 'Start on Today'}</span>
           <span className="tp-start-sub">
-            {started
+            {doneToday
+              ? <>Tomorrow: {tomorrow ? `${tomorrow.promise}, about ${tomorrow.minutes} minutes.` : 'a review day. New lessons arrive every week.'}</>
+              : started
               ? <>{learnedAll} words met, {knownAll} known. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
               : <>A few new words a day, most useful first. First up: <span lang="th">สวัสดี</span> (sà-wàt-dii), hello.</>}
           </span>
