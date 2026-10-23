@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Deck from './Deck';
 import TopicIcon from './TopicIcon';
-import { useProgressStore } from '../lib/progress';
+import { useProgressStore, readStore, dayKey } from '../lib/progress';
+import { SCENES, lessonState, tomorrowLine } from '../lib/scenes';
 import { isKnown as knownEntry } from '../lib/memory';
 import { TOPIC_GROUPS, TOPIC_HERO } from '../lib/categories';
 
@@ -91,6 +92,9 @@ function TopicPage({ words, allPct, onOpen }) {
   const firstGap = words.findIndex((w) => !isMet(w));
   const nextSet = firstGap < 0 ? 0 : Math.floor(firstGap / SET_SIZE);
   const started = learnedAll > 0;
+  // Same finish line as Today: once today's lesson is done, say so (journey 1, G3)
+  const lesson = lessonState(readStore('tsc-first-session', null), readStore('tsc-scenes', {}), dayKey());
+  const next = lesson.nextId ? SCENES[lesson.nextId] : null;
   const group = (label) => (TOPIC_GROUPS.find((g) => g.label === label)?.names || []).map((n) => topics.get(n)).filter(Boolean);
   const startHere = group('Start here');
   const blocks = group('Building blocks');
@@ -107,13 +111,15 @@ function TopicPage({ words, allPct, onOpen }) {
       <a className="tp-start" href="/today">
         <span className="tp-start-text">
           <span className="tp-start-kicker">Your daily lesson</span>
-          <span className="tp-start-title">{started ? 'Continue on Today' : 'Start on Today'}</span>
+          <span className="tp-start-title">{lesson.doneToday ? 'Done for today ✓' : started ? 'Continue on Today' : 'Start on Today'}</span>
           <span className="tp-start-sub">
-            {started
+            {lesson.doneToday
+              ? <><b>Tomorrow:</b> {tomorrowLine(next)}</>
+              : started
               ? <>{learnedAll} words met, {knownAll} known. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
               : <>A few new words a day, most useful first. First up: <span lang="th">สวัสดี</span> (sà-wàt-dii), hello.</>}
           </span>
-          {started && <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(learnedAll / words.length) * 100}%` }} /></span>}
+          {started && !lesson.doneToday && <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(learnedAll / words.length) * 100}%` }} /></span>}
           {allPct ? <span className="tp-start-why">All {words.length.toLocaleString('en')} words cover about {allPct}% of everyday spoken Thai.</span> : null}
         </span>
         <span className="tp-start-go" aria-hidden="true">

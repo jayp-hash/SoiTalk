@@ -415,6 +415,21 @@ const SIZE_PARTS = (idx) => (idx === 1
 
 export const DEFAULT_SCENE = '7eleven';
 
+// One new lesson a day, in this order, after the first session (7-Eleven)
+export const SCENE_DAYS = ['restaurant', 'cafe', 'stall', 'market', 'stuck', 'where', 'taxi', 'smalltalk', 'bargain'];
+
+// Where the learner is in the daily lessons. One answer for every screen, so
+// Today and the Word library never disagree ("one finish line a day").
+//   firstSession: { scene, day } or null; scenesDone: { id: day }; today: "2026-10-23"
+export function lessonState(firstSession, scenesDone = {}, today) {
+  const doneToday = !!firstSession && (firstSession.day === today || Object.values(scenesDone).includes(today));
+  const nextId = SCENE_DAYS.find((id) => !scenesDone[id]) || null;
+  return { doneToday, nextId };
+}
+
+// The "Tomorrow:" line after today's lesson, the same on Today and in the Word library
+export const tomorrowLine = (next) => (next ? `${next.promise}, about ${next.minutes} minutes.` : 'a review day. New lessons arrive every week.');
+
 const ENDING = {
   male: { th: 'ครับ', rom: 'khráp', en: 'polite ending (men)' },
   female: { th: 'ค่ะ', rom: 'khâ', en: 'polite ending (women)' },
