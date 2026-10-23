@@ -5,9 +5,8 @@ To add something, write one line under **Ready** (or under **Needs Jay** if a de
 When an item is done, Claude moves it to **Done** with the pull request link.
 
 ## Ready
-1. **Words page banner contradicts Today.** When today's lesson is done, the Word library still says "Your daily lesson: Continue on Today. Next up: …". It should match Today: "Done for today ✓". (Journey 1, gap G3.)
-2. **Romanization check in the tests.** Add a content test that flags the same Thai word romanized two ways across lessons, patterns and the word list (e.g. น้อย as both "nói" and "náawi"). Report the list; don't change any romanization until Jay picks.
-3. **Lesson test on every size.** The lesson walk runs every lesson on a phone but only some on the small phone and the laptop. Run all lessons at all three sizes once the run time allows (under 10 minutes on GitHub).
+1. **Romanization check in the tests.** Add a content test that flags the same Thai word romanized two ways across lessons, patterns and the word list (e.g. น้อย as both "nói" and "náawi"). Report the list; don't change any romanization until Jay picks.
+2. **Lesson test on every size.** The lesson walk runs every lesson on a phone but only some on the small phone and the laptop. Run all lessons at all three sizes once the run time allows (under 10 minutes on GitHub).
 
 ## Needs Jay
 - **Journey 1 (metro check-in):** answer the 4 questions on the board, then build Quick practice, Replay a lesson, and a quick check after a new-words-only session.
@@ -16,4 +15,5 @@ When an item is done, Claude moves it to **Done** with the pull request link.
 - **Native check** of lessons 1 to 10 (Thai lines, romanization, endings).
 
 ## Done
+- 23 Oct: Words page banner says "Done for today ✓" once today's lesson is done, with the same Tomorrow line as Today (Journey 1, gap G3). [PR #2](https://github.com/jayp-hash/SoiTalk/pull/2)
 - 23 Oct: every lesson step keeps its main button in view (sticky on long steps); automated tests added to the repo; fonts served from the app instead of Google.
