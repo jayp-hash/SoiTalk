@@ -2655,3 +2655,23 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 .st-wrap section > .st-feedback { position: sticky; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 6; background: #F6F4EF; box-shadow: 0 0 0 8px #F6F4EF; border-radius: 12px; }
 /* Done screen: the "Done for today" card stays in view at the bottom of the screen until you reach it. */
 .dn-save { position: sticky; bottom: max(12px, env(safe-area-inset-bottom, 0px)); z-index: 6; box-shadow: 0 0 0 8px #F6F4EF, 0 10px 30px rgba(14,46,99,.16); }
+
+/* Landing: counting words explainer (23 Oct 2026) */
+.lp-count .lp-count-img { width: 96px; height: 96px; border-radius: 14px; margin-bottom: 4px; }
+.lp-btn.lp-btn-alt { margin-top: 18px; background: #fff; color: var(--soi); font-size: 16px; padding: 14px 22px; }
+
+/* Five tabs on a phone (Counting added 23 Oct): tighter spacing so the nav fits at 360px */
+@media (max-width: 560px) {
+  .site-header nav, body:has(.fc) .site-header nav { gap: 10px; font-size: 13.5px; }
+}
+@media (max-width: 380px) {
+  .site-header, body:has(.fc) .site-header { padding-inline: 12px; }
+  .site-header nav, body:has(.fc) .site-header nav { gap: 7px; font-size: 12.5px; }
+  .site-header .brand .soi-sign { width: 78px; }
+}
+/* Counting explainer on phones: picture beside the words, so three examples take one screen */
+@media (max-width: 560px) {
+  .lp-count .lp-mission { display: grid; grid-template-columns: 72px 1fr; column-gap: 14px; align-items: start; }
+  .lp-count .lp-count-img { width: 72px; height: 72px; grid-row: 1 / span 3; margin: 0; }
+  .lp-count .lp-mission > :not(img) { grid-column: 2; }
+}

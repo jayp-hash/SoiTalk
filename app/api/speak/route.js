@@ -22,6 +22,7 @@
 import { SAY_IT } from '../../lib/sayit';
 import { allPatternSentences } from '../../lib/patterns';
 import { allSceneLines } from '../../lib/scenes';
+import { allClassifierLines } from '../../lib/classifiers';
 import { neutralForms } from '../../lib/register';
 import { isSentence } from '../../lib/audioVersion';
 import { supabasePublic } from '../../lib/supabase-public';
@@ -62,6 +63,8 @@ async function isCourseTextExact(text) {
   if (allPatternSentences().has(text)) return true;
   // First-session scenes (lib/scenes.js), also built in code
   if (allSceneLines().has(text)) return true;
+  // Classifiers tab: nouns, classifiers and their counting phrases (lib/classifiers.js)
+  if (allClassifierLines().has(text)) return true;
   const [word, sentence, box] = await Promise.all([
     supabasePublic.from('vocabulary').select('id').eq('thai', text).limit(1),
     supabasePublic.from('sentences').select('id').eq('thai', text).neq('review_status', 'rejected').limit(1),

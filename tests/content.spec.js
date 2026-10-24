@@ -29,3 +29,30 @@ test('every lesson has the parts a lesson needs', () => {
     expect(n, `every lesson has a ${key}`).toBeGreaterThanOrEqual(ids.length);
   }
 });
+
+// Classifiers: every noun has a real classifier, a picture and romanization; no em dashes.
+test('classifiers data is complete', async () => {
+  const fs = require('fs'); const path = require('path');
+  // The data file is an ES module; load it as plain JS for this check
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'classifiers.js'), 'utf8').replace(/^export /gm, '');
+  const { CLASSIFIERS, NOUNS, SAY, CONFUSE } = new Function(`${src}; return { CLASSIFIERS, NOUNS, SAY, CONFUSE };`)();
+  const cls = new Set(CLASSIFIERS.map((c) => c.th));
+  expect(CLASSIFIERS).toHaveLength(10);
+  for (const n of NOUNS) {
+    expect(cls.has(n.cls), `${n.th} has an unknown classifier`).toBe(true);
+    expect(n.rom && n.en, `${n.th} needs romanization and English`).toBeTruthy();
+    expect(fs.existsSync(path.join(__dirname, '..', 'public', 'classifiers', `${n.img}.webp`)), `${n.th} picture`).toBe(true);
+  }
+  for (const c of CLASSIFIERS) expect(NOUNS.filter((n) => n.cls === c.th).length, `${c.th} needs at least 3 nouns`).toBeGreaterThanOrEqual(3);
+  // Every noun has an everyday sentence that uses it with its own classifier
+  for (const n of NOUNS) {
+    const say = SAY[n.th];
+    expect(say, `${n.th} needs a sentence`).toBeTruthy();
+    expect(say.parts.find((x) => x.role === 'noun')?.th, `${n.th} sentence noun`).toBe(n.th);
+    expect(say.parts.find((x) => x.role === 'cls')?.th, `${n.th} sentence classifier`).toBe(n.cls);
+    expect(say.parts.every((x) => x.th && x.rom), `${n.th} sentence romanization`).toBe(true);
+    expect(say.en, `${n.th} sentence English`).toBeTruthy();
+  }
+  for (const c of CLASSIFIERS) expect(CONFUSE[c.th]?.length, `${c.th} look-alikes`).toBeGreaterThan(0);
+  expect(fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'classifiers.js'), 'utf8')).not.toContain('—');
+});
