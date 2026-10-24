@@ -29,3 +29,20 @@ test('every lesson has the parts a lesson needs', () => {
     expect(n, `every lesson has a ${key}`).toBeGreaterThanOrEqual(ids.length);
   }
 });
+
+// Counting words: every noun has a real classifier, a picture and romanization; no em dashes.
+test('counting words data is complete', async () => {
+  const fs = require('fs'); const path = require('path');
+  // The data file is an ES module; load it as plain JS for this check
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'classifiers.js'), 'utf8').replace(/^export /gm, '');
+  const { CLASSIFIERS, NOUNS } = new Function(`${src}; return { CLASSIFIERS, NOUNS };`)();
+  const cls = new Set(CLASSIFIERS.map((c) => c.th));
+  expect(CLASSIFIERS).toHaveLength(10);
+  for (const n of NOUNS) {
+    expect(cls.has(n.cls), `${n.th} has an unknown classifier`).toBe(true);
+    expect(n.rom && n.en, `${n.th} needs romanization and English`).toBeTruthy();
+    expect(fs.existsSync(path.join(__dirname, '..', 'public', 'classifiers', `${n.img}.webp`)), `${n.th} picture`).toBe(true);
+  }
+  for (const c of CLASSIFIERS) expect(NOUNS.filter((n) => n.cls === c.th).length, `${c.th} needs at least 3 nouns`).toBeGreaterThanOrEqual(3);
+  expect(fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'classifiers.js'), 'utf8')).not.toContain('—');
+});
