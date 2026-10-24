@@ -10,7 +10,7 @@ const LINKS = [
   { href: '/today', label: 'Today' },
   { href: '/vocabulary', label: 'Words' },
   { href: '/patterns', label: 'Patterns' },
-  { href: '/classifiers', label: 'Counting' },
+  { href: '/classifiers', label: 'Classifiers' },
 ];
 
 // "Sign in" when signed out; a round initial with a small menu when signed in.

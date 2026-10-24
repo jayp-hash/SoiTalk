@@ -10,7 +10,7 @@ const SCREENS = [
   ['today (returning learner)', '/today', returningLearner()],
   ['words', '/vocabulary', returningLearner()],
   ['patterns', '/patterns', returningLearner()],
-  ['counting words', '/classifiers', null],
+  ['classifiers', '/classifiers', null],
   ['sign in', '/signin', null],
   ['first lesson', '/start', null],
 ];

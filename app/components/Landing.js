@@ -269,9 +269,9 @@ export default function Landing({ wordCount, demo, curve }) {
       </section>
 
       <section className="lp-sec">
-        <p className="lp-eyebrow">Counting words</p>
+        <p className="lp-eyebrow">Classifiers</p>
         <h2>Thai counts things differently</h2>
-        <p className="lp-sub">You can&apos;t just say &quot;two coffees&quot;. Thai says the thing, the number, then a counting word that depends on what you&apos;re counting. Learn the 10 you&apos;ll use this week.</p>
+        <p className="lp-sub">You can&apos;t just say &quot;two coffees&quot;. Thai says the thing, the number, then a classifier: a small word that depends on what you&apos;re counting. Learn the 10 you&apos;ll use this week.</p>
         <div className="lp-missions lp-count">
           {[['coffee', 'กาแฟสองแก้ว', 'gaa-faae sǎawng gâaew', 'Two coffees. Literally "coffee two glass".'],
             ['dog', 'หมาสามตัว', 'mǎa sǎam dtuaa', 'Three dogs. ตัว (dtuaa) is for animals, and also for shirts and chairs.'],
@@ -284,7 +284,7 @@ export default function Landing({ wordCount, demo, curve }) {
             </div>
           ))}
         </div>
-        <p><a className="lp-btn lp-btn-alt" href="/classifiers">Learn the counting words</a></p>
+        <p><a className="lp-btn lp-btn-alt" href="/classifiers">Learn the classifiers</a></p>
       </section>
 
       <section className="lp-sec">

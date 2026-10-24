@@ -2665,8 +2665,9 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
   .site-header nav, body:has(.fc) .site-header nav { gap: 10px; font-size: 13.5px; }
 }
 @media (max-width: 380px) {
-  .site-header nav, body:has(.fc) .site-header nav { gap: 8px; font-size: 13px; }
-  .site-header .brand .soi-sign { width: 84px; }
+  .site-header, body:has(.fc) .site-header { padding-inline: 12px; }
+  .site-header nav, body:has(.fc) .site-header nav { gap: 7px; font-size: 12.5px; }
+  .site-header .brand .soi-sign { width: 78px; }
 }
 /* Counting explainer on phones: picture beside the words, so three examples take one screen */
 @media (max-width: 560px) {
