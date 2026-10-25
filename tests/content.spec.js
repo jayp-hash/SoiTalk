@@ -56,3 +56,24 @@ test('classifiers data is complete', async () => {
   for (const c of CLASSIFIERS) expect(CONFUSE[c.th]?.length, `${c.th} look-alikes`).toBeGreaterThan(0);
   expect(fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'classifiers.js'), 'utf8')).not.toContain('—');
 });
+
+// Romanization: the same Thai word is spelled one way across lessons, patterns and the word list.
+// Words already spelled two ways wait in tests/romanization-known.json for Jay to pick one.
+// Full list any time: node tests/romanization.js
+test('every Thai word is romanized one way', async ({}, testInfo) => {
+  const { collect, conflicts, report } = require('./romanization');
+  const pairs = collect();
+  // The check really reads the content (not an empty scan)
+  expect(pairs.length, 'Thai words with romanization found').toBeGreaterThan(1000);
+  expect(pairs.some((p) => p.th === 'สวัสดี' && p.rom === 'sà-wàt-dii' && p.where.startsWith('word list'))).toBe(true);
+  expect(pairs.some((p) => p.where.startsWith('app/lib/scenes.js'))).toBe(true);
+  expect(pairs.some((p) => p.where.startsWith('app/lib/patterns.js'))).toBe(true);
+
+  const list = conflicts();
+  await testInfo.attach('romanization.txt', { body: report(list), contentType: 'text/plain' });
+  const known = JSON.parse(fs.readFileSync(path.join(__dirname, 'romanization-known.json'), 'utf8'));
+  const fresh = list.filter((c) => !known[c.th] || c.spellings.some((s) => !known[c.th].includes(s.rom)));
+  expect(fresh, `New Thai words romanized two ways. Use one spelling, or add them to tests/romanization-known.json for Jay:\n${report(fresh)}\n`).toEqual([]);
+  const fixed = Object.keys(known).filter((th) => th !== '_note' && !list.some((c) => c.th === th));
+  expect(fixed, 'Now spelled one way everywhere: delete these from tests/romanization-known.json').toEqual([]);
+});

@@ -5,15 +5,17 @@ To add something, write one line under **Ready** (or under **Needs Jay** if a de
 When an item is done, Claude moves it to **Done** with the pull request link.
 
 ## Ready
-1. **Romanization check in the tests.** Add a content test that flags the same Thai word romanized two ways across lessons, patterns and the word list (e.g. น้อย as both "nói" and "náawi"). Report the list; don't change any romanization until Jay picks.
-2. **Lesson test on every size.** The lesson walk runs every lesson on a phone but only some on the small phone and the laptop. Run all lessons at all three sizes once the run time allows (under 10 minutes on GitHub).
+1. **Lesson test on every size.** The lesson walk runs every lesson on a phone but only some on the small phone and the laptop. Run all lessons at all three sizes once the run time allows (under 10 minutes on GitHub).
 
 ## Needs Jay
 - **Journey 1 (metro check-in):** answer the 4 questions on the board, then build Quick practice, Replay a lesson, and a quick check after a new-words-only session.
-- **น้อย romanization:** "nói" or "náawi"? Then make it the same everywhere.
+- **น้อย romanization:** "nói" or "náawi"? Then make it the same everywhere. (In the repo it is "náawi" everywhere; "nói" must be in the live word list only.)
+- **Romanization style, vowels:** the word list writes long vowels with a glide (à-ràwi, diaao, gâaeo), some lessons use the short style (à-ròi, diao, gâaew, dtǔaa). Which style? This settles อร่อย, เดียว, แก้ว, ตั๋ว (see PR #4).
+- **Romanization style, hyphens:** hyphen inside one word, space between words? This settles อันนี้, เลี้ยวซ้าย, วินมอเตอร์ไซค์.
 - **Landing headline** still says "Thai for the street you live on". Change it to match the slogan "Thai you'll use today"?
 - **Native check** of lessons 1 to 10 (Thai lines, romanization, endings).
 
 ## Done
+- 25 Oct: romanization check in the tests: flags any Thai word romanized two ways; 8 current ones listed for Jay ([PR #4](https://github.com/jayp-hash/SoiTalk/pull/4)).
 - 23 Oct: Word library banner says "Done for today ✓" with the Tomorrow line once today's lesson is done, matching Today ([PR #1](https://github.com/jayp-hash/SoiTalk/pull/1)).
 - 23 Oct: every lesson step keeps its main button in view (sticky on long steps); automated tests added to the repo; fonts served from the app instead of Google.

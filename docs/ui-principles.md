@@ -37,7 +37,7 @@ Agreed with Jay on 21 Oct 2026; 12 to 14 added 22 Oct after the 7-day walkthroug
   - `tests/e2e/screens.spec.js`: every main screen at 390x844, 360x640, 964x653 and 1440x800. Fails on sideways scroll, anything sticking out, or the main button below the screen.
   - `tests/e2e/lessons.spec.js`: walks every lesson to the Done screen and checks every step.
   - `tests/e2e/today.spec.js`: a practice session with the sentence-pattern block. Fails if answering moves the page, or if the progress pop-up doesn't close onto Today.
-  - `tests/content.spec.js`: no em dashes, never "coming soon", and every lesson has a mission and a teaser.
+  - `tests/content.spec.js`: no em dashes, never "coming soon", every lesson has a mission and a teaser, and every Thai word is romanized one way (words still waiting for Jay's pick are in `tests/romanization-known.json`; full list: `node tests/romanization.js`).
 - Screenshot every changed screen at phone and laptop size and look at it before sending.
 - **Lessons:** where a step is taller than the screen (two-part conversations), the main button sticks to the bottom of the screen and the content scrolls under it (23 Oct).
 
