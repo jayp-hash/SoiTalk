@@ -14,7 +14,7 @@ When an item is done, Claude moves it to **Done** with the pull request link.
 - **Lesson test, missing button:** the layout check quietly passes a step with no main button at all. Make that a failure?
 
 ## Done
-- 26 Oct: the lesson test now walks all 10 lessons on the phone, the small phone and the laptop (30 walks, was 16), and fails if a conversation never finishes playing. The pretend test audio is shorter so the whole run stays under 10 minutes ([PR #PRNUM](PRLINK)).
+- 26 Oct: the lesson test now walks all 10 lessons on the phone, the small phone and the laptop (30 walks, was 16), and fails if a conversation never finishes playing. The pretend test audio is shorter so the whole run stays under 10 minutes ([PR #5](https://github.com/jayp-hash/SoiTalk/pull/5)).
 - 26 Oct: romanization as Jay picked: the "oi" sound is written oi everywhere (nói, nít-nòi, à-ròi, rói, soi), and เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa, อันนี้ an-níi, เลี้ยวซ้าย líaao sáai, วินมอเตอร์ไซค์ win maaw-dtoe-sai. The import script now does the same, so the live word list matches after the next import ([PR #4](https://github.com/jayp-hash/SoiTalk/pull/4)).
 - 25 Oct: romanization check in the tests: flags any Thai word romanized two ways; 8 current ones listed for Jay ([PR #4](https://github.com/jayp-hash/SoiTalk/pull/4)).
 - 23 Oct: Word library banner says "Done for today ✓" with the Tomorrow line once today's lesson is done, matching Today ([PR #1](https://github.com/jayp-hash/SoiTalk/pull/1)).
