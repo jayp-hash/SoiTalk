@@ -302,8 +302,8 @@ const ORDER_EXTRA = {
   food: [{ th: 'ไม่เผ็ด', rom: 'mâi phèt', en: 'not spicy' }],
   'น้ำเปล่า': [{ th: 'ไม่ใส่น้ำแข็ง', rom: 'mâi sài náam-khǎeng', en: 'no ice' }],
   'เบียร์': [{ th: 'ไม่ใส่น้ำแข็ง', rom: 'mâi sài náam-khǎeng', en: 'no ice' }],
-  'กาแฟ': [{ th: 'หวานน้อย', rom: 'wǎan náawi', en: 'less sweet' }],
-  'ชาเย็น': [{ th: 'หวานน้อย', rom: 'wǎan náawi', en: 'less sweet' }],
+  'กาแฟ': [{ th: 'หวานน้อย', rom: 'wǎan nói', en: 'less sweet' }],
+  'ชาเย็น': [{ th: 'หวานน้อย', rom: 'wǎan nói', en: 'less sweet' }],
 };
 const extrasFor = (thing) => ORDER_EXTRA[thing.th] || (thing.kind === 'food' ? ORDER_EXTRA.food : []);
 const singular = { bottles: 'bottle', glasses: 'glass', plates: 'plate', bowls: 'bowl' };
@@ -413,7 +413,7 @@ const ASK_ORDER = [
 // The follow-up question for an order, and the reply words, by the extra it asks about
 const FOLLOW_UP = {
   'หวานน้อย': { parts: [W('หวานปกติไหม', 'wǎan bpòk-gà-dtì mǎi')], en: 'Normal sweetness?', group: 'sweet',
-    reply: [W('หวาน', 'wǎan'), W('น้อย', 'náawi')], replyEn: 'Less sweet, please.' },
+    reply: [W('หวาน', 'wǎan'), W('น้อย', 'nói')], replyEn: 'Less sweet, please.' },
   'ไม่ใส่น้ำแข็ง': { parts: [W('ใส่น้ำแข็งไหม', 'sài náam-khǎeng mǎi')], en: 'With ice?', group: 'ice',
     reply: [W('ไม่', 'mâi'), W('ใส่', 'sài'), W('น้ำแข็ง', 'náam-khǎeng')], replyEn: 'No ice, please.' },
   'ไม่เผ็ด': { parts: [W('เอาเผ็ดไหม', 'ao phèt mǎi')], en: 'Do you want it spicy?', group: 'spicy',
@@ -483,7 +483,7 @@ const ALIKE = {
   'ตอนเช้า': 'ตอนเย็น', 'ตอนเย็น': 'ตอนเช้า', 'สนุก': 'สบาย', 'สบาย': 'สนุก',
   'บ้าน': 'ร้าน', 'ร้าน': 'บ้าน', 'ตลาด': 'ห้าง', 'ห้าง': 'ตลาด', 'สวน': 'ทะเล', 'ทะเล': 'สวน', 'โรงเรียน': 'คอนโด', 'คอนโด': 'บ้าน', 'ร้านอาหาร': 'ร้าน',
 };
-const ALIKE_ROM = { 'ทำงาน': 'tham-ngaan', 'มาก': 'mâak', 'ปกติ': 'bpòk-gà-dtì', 'จาน': 'jaan', 'แก้ว': 'gâaeo', 'ฟัง': 'fang', 'ดู': 'duu', 'เพลง': 'phleeng', 'หนัง': 'nǎng' };
+const ALIKE_ROM = { 'ทำงาน': 'tham-ngaan', 'มาก': 'mâak', 'ปกติ': 'bpòk-gà-dtì', 'จาน': 'jaan', 'แก้ว': 'gâaew', 'ฟัง': 'fang', 'ดู': 'duu', 'เพลง': 'phleeng', 'หนัง': 'nǎng' };
 export const alikeFor = (th) => (ALIKE[th] ? { th: ALIKE[th], rom: ALIKE_ROM[ALIKE[th]] } : null);
 
 // Every practice line, for /api/speak's list of allowed text (endings are stripped there)

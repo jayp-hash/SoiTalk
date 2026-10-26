@@ -115,7 +115,7 @@ export const SAY = {
   'นม': S('I bought two bottles of milk at 7-Eleven.', [['ซื้อ', 'súue'], ['นม', 'nom', 'noun'], ['สอง', 'sǎawng', 'num'], ['ขวด', 'khùat', 'cls'], ['ที่เซเว่น', 'thîi see-wên']]),
   'แชมพู': S('How much is a bottle of shampoo?', [['แชมพู', 'chaaem-phuu', 'noun'], ['ขวด', 'khùat', 'cls'], ['ละเท่าไหร่', 'lá thâo-rài']], true),
   'กาแฟ': S('Two iced coffees, please.', [['ขอ', 'khǎaw'], ['กาแฟ', 'gaa-faae', 'noun'], ['เย็น', 'yen'], ['สอง', 'sǎawng', 'num'], ['แก้ว', 'gâaew', 'cls']]),
-  'ชาเย็น': S('One Thai iced tea, less sweet.', [['ชาเย็น', 'chaa-yen', 'noun'], ['หนึ่ง', 'nùeng', 'num'], ['แก้ว', 'gâaew', 'cls'], [' หวานน้อย', 'wǎan náawy']]),
+  'ชาเย็น': S('One Thai iced tea, less sweet.', [['ชาเย็น', 'chaa-yen', 'noun'], ['หนึ่ง', 'nùeng', 'num'], ['แก้ว', 'gâaew', 'cls'], [' หวานน้อย', 'wǎan nói']]),
   'ชาเขียว': S('Three green teas to go.', [['เอา', 'ao'], ['ชาเขียว', 'chaa-khǐao', 'noun'], ['สาม', 'sǎam', 'num'], ['แก้ว', 'gâaew', 'cls'], [' กลับบ้าน', 'glàp bâan']]),
   'น้ำปั่น': S('Two smoothies, no sugar.', [['ขอ', 'khǎaw'], ['น้ำปั่น', 'náam-bpàn', 'noun'], ['สอง', 'sǎawng', 'num'], ['แก้ว', 'gâaew', 'cls'], [' ไม่ใส่น้ำตาล', 'mâi sài náam-dtaan']]),
   'ข้าวผัด': S('Two plates of fried rice, please.', [['ขอ', 'khǎaw'], ['ข้าวผัด', 'khâao-phàt', 'noun'], ['สอง', 'sǎawng', 'num'], ['จาน', 'jaan', 'cls']]),

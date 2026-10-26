@@ -164,7 +164,7 @@ export const SAY_IT = [
   "words": [
    "พูดช้าๆ หน่อย"
   ],
-  "rom": "phûut cháa-cháa nàawi",
+  "rom": "phûut cháa-cháa nòi",
   "en": "Please speak slowly.",
   "where": "Right after \"I don't understand\"."
  },
@@ -248,7 +248,7 @@ export const SAY_IT = [
    "แพงไป",
    "ลดหน่อยได้ไหม"
   ],
-  "rom": "phaaeng bpai lót nàawi dâai mǎi",
+  "rom": "phaaeng bpai lót nòi dâai mǎi",
   "en": "Too expensive. Can you give a little discount?",
   "where": "Clothes or souvenir markets only, never at food stalls or 7-Eleven."
  },
@@ -268,7 +268,7 @@ export const SAY_IT = [
   "words": [
    "หวานน้อย"
   ],
-  "rom": "wǎan náawi",
+  "rom": "wǎan nói",
   "en": "Less sweet.",
   "where": "Ordering coffee or tea from a street stall."
  },
@@ -344,7 +344,7 @@ export const SAY_IT = [
   "words": [
    "ขับช้าๆ หน่อย"
   ],
-  "rom": "khàp cháa-cháa nàawi",
+  "rom": "khàp cháa-cháa nòi",
   "en": "Please drive slower.",
   "where": "On a motorbike taxi. Your safety comes first."
  },
@@ -367,7 +367,7 @@ export const SAY_IT = [
    "ชาเย็น",
    "หวานน้อย"
   ],
-  "rom": "chaa-yen wǎan náawi",
+  "rom": "chaa-yen wǎan nói",
   "en": "Thai iced tea, less sweet.",
   "where": "Order at a drinks stall."
  },
@@ -447,7 +447,7 @@ export const SAY_IT = [
    "ส้มตำ",
    "เผ็ดนิดหน่อย"
   ],
-  "rom": "sôm-dtam phèt nít-nàawi",
+  "rom": "sôm-dtam phèt nít-nòi",
   "en": "Papaya salad, a little spicy.",
   "where": "At a som tam stall. Heads up: som tam usually has fish sauce and often crab or dried shrimp. With a seafood allergy, say แพ้อาหารทะเล first."
  },
@@ -530,7 +530,7 @@ export const SAY_IT = [
    "น้ำแข็ง",
    "หน่อย"
   ],
-  "rom": "phîi khǎaw náam-khǎeng nàawi",
+  "rom": "phîi khǎaw náam-khǎeng nòi",
   "en": "Excuse me, some ice please.",
   "where": "Call the server พี่. It's friendly and polite."
  },
@@ -613,7 +613,7 @@ export const SAY_IT = [
    "ถาม",
    "หน่อย"
   ],
-  "rom": "khǎaw thǎam nàawi",
+  "rom": "khǎaw thǎam nòi",
   "en": "Can I ask something?",
   "where": "Before asking a stranger for directions."
  },
