@@ -74,7 +74,7 @@ export const SCENES = {
       staff: { th: 'เผ็ดไหมคะ', rom: 'phèt mǎi khá', en: 'Spicy?', words: [{ th: 'เผ็ด', rom: 'phèt' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] },
       answers: [
         { key: 'none', parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'เผ็ด', rom: 'phèt', en: 'spicy' }], en: 'Not spicy.' },
-        { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nàawi', en: 'a little' }], en: 'A little spicy.' },
+        { key: 'little', parts: [{ th: 'เผ็ด', rom: 'phèt', en: 'spicy' }, { th: 'นิดหน่อย', rom: 'nít-nòi', en: 'a little' }], en: 'A little spicy.' },
       ],
       wrong: 'Very spicy.', // a listening option only
     },
@@ -114,7 +114,7 @@ export const SCENES = {
     followUp: {
       staff: { th: 'หวานปกติไหมคะ', rom: 'wǎan bpòk-gà-dtì mǎi khá', en: 'Normal sweetness?', words: [{ th: 'หวาน', rom: 'wǎan' }, { th: 'ปกติ', rom: 'bpòk-gà-dtì' }, { th: 'ไหม', rom: 'mǎi' }, { th: 'คะ', rom: 'khá' }] },
       answers: [
-        { key: 'less', adj: 'less sweet', parts: [{ th: 'หวาน', rom: 'wǎan', en: 'sweet' }, { th: 'น้อย', rom: 'náawi', en: 'less' }], en: 'Less sweet.' },
+        { key: 'less', adj: 'less sweet', parts: [{ th: 'หวาน', rom: 'wǎan', en: 'sweet' }, { th: 'น้อย', rom: 'nói', en: 'less' }], en: 'Less sweet.' },
         { key: 'none', adj: 'not sweet', notFor: ['ชาเย็น'], parts: [{ th: 'ไม่', rom: 'mâi', en: 'not' }, { th: 'หวาน', rom: 'wǎan', en: 'sweet' }], en: 'Not sweet.' },
       ],
       wrong: 'Extra sweet.', // a listening option only
@@ -212,7 +212,7 @@ export const SCENES = {
     missionEnOf: () => 'How much is this one?',
     mission: 'Next time you see something without a price, point and ask.',
     tomorrow: "When you don't catch it",
-    teaser: { title: "Tomorrow: when you don't catch it", th: 'พูดช้าๆหน่อยได้ไหม', rom: 'phûut cháa-cháa nàawi dâai mǎi', en: 'Could you say it a bit slower?', question: true },
+    teaser: { title: "Tomorrow: when you don't catch it", th: 'พูดช้าๆหน่อยได้ไหม', rom: 'phûut cháa-cháa nòi dâai mǎi', en: 'Could you say it a bit slower?', question: true },
   },
   // Day 6: when you're stuck (merges "I don't understand", "say it slowly" and
   // "can you speak English?"). The cashier asks the question expats never catch,
@@ -234,7 +234,7 @@ export const SCENES = {
     slotLabel: 'what you ask for',
     items: [
       // หน่อย softens it: พูดช้าๆ on its own sounds like an order (Thai Teacher)
-      { th: 'พูดช้าๆหน่อย', rom: 'phûut cháa-cháa nàawi', en: 'say it a bit slower', a: 'say it a bit slower', parts: [{ th: 'พูด', rom: 'phûut', en: 'speak' }, { th: 'ช้าๆหน่อย', rom: 'cháa-cháa nàawi', en: 'a bit slower' }] },
+      { th: 'พูดช้าๆหน่อย', rom: 'phûut cháa-cháa nòi', en: 'say it a bit slower', a: 'say it a bit slower', parts: [{ th: 'พูด', rom: 'phûut', en: 'speak' }, { th: 'ช้าๆหน่อย', rom: 'cháa-cháa nòi', en: 'a bit slower' }] },
       { th: 'พูดอีกที', rom: 'phûut ìik thii', en: 'say it again', a: 'say it again', parts: [{ th: 'พูด', rom: 'phûut', en: 'speak' }, { th: 'อีกที', rom: 'ìik thii', en: 'again' }] },
       { th: 'พูดภาษาอังกฤษ', rom: 'phûut phaa-sǎa ang-grìt', en: 'speak English', a: 'speak English', parts: [{ th: 'พูด', rom: 'phûut', en: 'speak' }, { th: 'ภาษาอังกฤษ', rom: 'phaa-sǎa ang-grìt', en: 'English' }] },
     ],
@@ -291,7 +291,7 @@ export const SCENES = {
     missionEnOf: () => 'Where is the bathroom?',
     mission: 'Next time you need the bathroom in a mall or a café.',
     tomorrow: 'Get home by motorbike taxi',
-    teaser: { title: 'Tomorrow: get home by motorbike taxi', th: 'ไปซอยสิบเอ็ด', rom: 'bpai saawy sìp-èt', en: 'To Soi 11, please.' },
+    teaser: { title: 'Tomorrow: get home by motorbike taxi', th: 'ไปซอยสิบเอ็ด', rom: 'bpai soi sìp-èt', en: 'To Soi 11, please.' },
   },
   // Day 8: the motorbike taxi stand. Say where you're going (your soi), then where
   // to stop. The driver is a man, so his lines end with ครับ and use the male voice.
@@ -310,9 +310,9 @@ export const SCENES = {
     replyEn: (it) => `To ${it.en}, please.`,
     slotLabel: 'the place',
     items: [
-      { th: 'ซอยสิบเอ็ด', rom: 'saawy sìp-èt', en: 'Soi 11', a: 'Soi 11', parts: [{ th: 'ซอย', rom: 'saawy', en: 'soi (lane)' }, { th: 'สิบเอ็ด', rom: 'sìp-èt', en: 'eleven' }] },
-      { th: 'ซอยยี่สิบ', rom: 'saawy yîi-sìp', en: 'Soi 20', a: 'Soi 20', parts: [{ th: 'ซอย', rom: 'saawy', en: 'soi (lane)' }, { th: 'ยี่สิบ', rom: 'yîi-sìp', en: 'twenty' }] },
-      { th: 'ปากซอย', rom: 'bpàak saawy', en: 'the soi entrance', a: 'the soi entrance', parts: [{ th: 'ปาก', rom: 'bpàak', en: 'mouth (of)' }, { th: 'ซอย', rom: 'saawy', en: 'soi (lane)' }] },
+      { th: 'ซอยสิบเอ็ด', rom: 'soi sìp-èt', en: 'Soi 11', a: 'Soi 11', parts: [{ th: 'ซอย', rom: 'soi', en: 'soi (lane)' }, { th: 'สิบเอ็ด', rom: 'sìp-èt', en: 'eleven' }] },
+      { th: 'ซอยยี่สิบ', rom: 'soi yîi-sìp', en: 'Soi 20', a: 'Soi 20', parts: [{ th: 'ซอย', rom: 'soi', en: 'soi (lane)' }, { th: 'ยี่สิบ', rom: 'yîi-sìp', en: 'twenty' }] },
+      { th: 'ปากซอย', rom: 'bpàak soi', en: 'the soi entrance', a: 'the soi entrance', parts: [{ th: 'ปาก', rom: 'bpàak', en: 'mouth (of)' }, { th: 'ซอย', rom: 'soi', en: 'soi (lane)' }] },
     ],
     followUp: {
       staff: { th: 'จอดตรงไหนครับ', rom: 'jàawt dtrong nǎi khráp', en: 'Where do I stop?', words: [{ th: 'จอด', rom: 'jàawt' }, { th: 'ตรง', rom: 'dtrong' }, { th: 'ไหน', rom: 'nǎi' }, { th: 'ครับ', rom: 'khráp' }] },
@@ -368,7 +368,7 @@ export const SCENES = {
     missionEnOf: (item) => `I'm from ${item.en}.`,
     mission: 'Next time someone asks where you are from. Taxi drivers always do.',
     tomorrow: 'Bargain at the weekend market',
-    teaser: { title: 'Tomorrow: bargain at the weekend market', th: 'ร้อยยี่สิบได้ไหม', rom: 'ráawi yîi-sìp dâai mǎi', en: 'Can you do 120?', question: true },
+    teaser: { title: 'Tomorrow: bargain at the weekend market', th: 'ร้อยยี่สิบได้ไหม', rom: 'rói yîi-sìp dâai mǎi', en: 'Can you do 120?', question: true },
   },
   // Day 10: market level 2, bargaining. Only where it's normal (weekend markets,
   // clothes and souvenir stalls), never at 7-Eleven, malls or street food (Thai Teacher).
@@ -378,7 +378,7 @@ export const SCENES = {
     plate: { th: 'ตลาดนัด', rom: 'dtà-làat-nát', en: 'Weekend market' },
     promise: 'Bargain at the weekend market',
     minutes: 3,
-    staff: { who: 'The vendor', ask: () => ({ th: 'ตัวนี้ร้อยห้าสิบค่ะ', rom: 'dtuaa níi ráawi hâa-sìp khâ', en: 'This one is 150.', verb: 'says', words: [{ th: 'ตัว', rom: 'dtuaa' }, { th: 'นี้', rom: 'níi' }, { th: 'ร้อย', rom: 'ráawi' }, { th: 'ห้าสิบ', rom: 'hâa-sìp' }, { th: 'ค่ะ', rom: 'khâ' }] }) },
+    staff: { who: 'The vendor', ask: () => ({ th: 'ตัวนี้ร้อยห้าสิบค่ะ', rom: 'dtuaa níi rói hâa-sìp khâ', en: 'This one is 150.', verb: 'says', words: [{ th: 'ตัว', rom: 'dtuaa' }, { th: 'นี้', rom: 'níi' }, { th: 'ร้อย', rom: 'rói' }, { th: 'ห้าสิบ', rom: 'hâa-sìp' }, { th: 'ค่ะ', rom: 'khâ' }] }) },
     question: true,
     reply: [
       { slot: true },
@@ -388,12 +388,12 @@ export const SCENES = {
     slotLabel: 'your price',
     items: [
       // Every offer is below her 130, so her answer always makes sense (Thai Teacher)
-      { th: 'ร้อยยี่สิบ', rom: 'ráawi yîi-sìp', en: '120', a: '120', parts: [{ th: 'ร้อย', rom: 'ráawi', en: 'hundred' }, { th: 'ยี่สิบ', rom: 'yîi-sìp', en: 'twenty' }] },
-      { th: 'ร้อยสิบ', rom: 'ráawi sìp', en: '110', a: '110', parts: [{ th: 'ร้อย', rom: 'ráawi', en: 'hundred' }, { th: 'สิบ', rom: 'sìp', en: 'ten' }] },
-      { th: 'หนึ่งร้อย', rom: 'nùeng ráawi', en: '100', a: '100', parts: [{ th: 'หนึ่ง', rom: 'nùeng', en: 'one' }, { th: 'ร้อย', rom: 'ráawi', en: 'hundred' }] },
+      { th: 'ร้อยยี่สิบ', rom: 'rói yîi-sìp', en: '120', a: '120', parts: [{ th: 'ร้อย', rom: 'rói', en: 'hundred' }, { th: 'ยี่สิบ', rom: 'yîi-sìp', en: 'twenty' }] },
+      { th: 'ร้อยสิบ', rom: 'rói sìp', en: '110', a: '110', parts: [{ th: 'ร้อย', rom: 'rói', en: 'hundred' }, { th: 'สิบ', rom: 'sìp', en: 'ten' }] },
+      { th: 'หนึ่งร้อย', rom: 'nùeng rói', en: '100', a: '100', parts: [{ th: 'หนึ่ง', rom: 'nùeng', en: 'one' }, { th: 'ร้อย', rom: 'rói', en: 'hundred' }] },
     ],
     followUp: {
-      staff: { th: 'ร้อยสามสิบก็แล้วกันค่ะ', rom: 'ráawi sǎam-sìp gâaw láaeo gan khâ', en: "Let's say 130.", verb: 'says', words: [{ th: 'ร้อย', rom: 'ráawi' }, { th: 'สามสิบ', rom: 'sǎam-sìp' }, { th: 'ก็', rom: 'gâaw' }, { th: 'แล้วกัน', rom: 'láaeo gan' }, { th: 'ค่ะ', rom: 'khâ' }] },
+      staff: { th: 'ร้อยสามสิบก็แล้วกันค่ะ', rom: 'rói sǎam-sìp gâaw láaeo gan khâ', en: "Let's say 130.", verb: 'says', words: [{ th: 'ร้อย', rom: 'rói' }, { th: 'สามสิบ', rom: 'sǎam-sìp' }, { th: 'ก็', rom: 'gâaw' }, { th: 'แล้วกัน', rom: 'láaeo gan' }, { th: 'ค่ะ', rom: 'khâ' }] },
       answers: [
         { key: 'deal', adj: 'deal', parts: [{ th: 'ตกลง', rom: 'dtòk-long', en: 'deal / OK' }], en: 'Deal.' },
         { key: 'no', adj: 'no thanks', parts: [{ th: 'ไม่เป็นไร', rom: 'mâi-bpen-rai', en: 'never mind' }], en: 'Never mind, thanks.' },

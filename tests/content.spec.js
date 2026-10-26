@@ -56,3 +56,38 @@ test('classifiers data is complete', async () => {
   for (const c of CLASSIFIERS) expect(CONFUSE[c.th]?.length, `${c.th} look-alikes`).toBeGreaterThan(0);
   expect(fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'classifiers.js'), 'utf8')).not.toContain('—');
 });
+
+// Romanization: the same Thai word is spelled one way across lessons, patterns and the word list.
+// Words already spelled two ways wait in tests/romanization-known.json for Jay to pick one.
+// Full list any time: node tests/romanization.js
+test('every Thai word is romanized one way', async ({}, testInfo) => {
+  const { collect, conflicts, report } = require('./romanization');
+  const pairs = collect();
+  // The check really reads the content (not an empty scan)
+  expect(pairs.length, 'Thai words with romanization found').toBeGreaterThan(1000);
+  expect(pairs.some((p) => p.th === 'สวัสดี' && p.rom === 'sà-wàt-dii' && p.where.startsWith('word list'))).toBe(true);
+  expect(pairs.some((p) => p.where.startsWith('app/lib/scenes.js'))).toBe(true);
+  expect(pairs.some((p) => p.where.startsWith('app/lib/patterns.js'))).toBe(true);
+
+  const list = conflicts();
+  await testInfo.attach('romanization.txt', { body: report(list), contentType: 'text/plain' });
+  const known = JSON.parse(fs.readFileSync(path.join(__dirname, 'romanization-known.json'), 'utf8'));
+  const fresh = list.filter((c) => !known[c.th] || c.spellings.some((s) => !known[c.th].includes(s.rom)));
+  expect(fresh, `New Thai words romanized two ways. Use one spelling, or add them to tests/romanization-known.json for Jay:\n${report(fresh)}\n`).toEqual([]);
+  const fixed = Object.keys(known).filter((th) => th !== '_note' && !list.some((c) => c.th === th));
+  expect(fixed, 'Now spelled one way everywhere: delete these from tests/romanization-known.json').toEqual([]);
+});
+
+// Spellings Jay picked: the "oi" sound is written oi (nói, à-ròi, soi), and เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa, อันนี้ an-níi,
+// เลี้ยวซ้าย líaao sáai, วินมอเตอร์ไซค์ win maaw-dtoe-sai.
+test('romanization follows the spellings Jay picked', () => {
+  const { collect } = require('./romanization');
+  const old = /([aàáâǎ])a?w[iy](?![\p{L}\p{M}])|(?<![\p{L}\p{M}])(diaao|gâaeo|dtǔa)(?![\p{L}\p{M}])|(?<![\p{L}\p{M}-])(an níi|líaao-sáai|win-maaw-dtoe-sai)(?![\p{L}\p{M}])/u;
+  const db = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'db.json'), 'utf8'));
+  const hits = [
+    ...collect().filter((p) => old.test(p.rom)).map((p) => `${p.th} ${p.rom} (${p.where})`),
+    ...db.sentences.filter((s) => old.test(s.romanization || '')).map((s) => `${s.thai} ${s.romanization} (word list sentence #${s.id})`),
+    ...files.flatMap((f) => (f.includes(`${path.sep}data${path.sep}`) ? [] : code(fs.readFileSync(f, 'utf8')).split('\n').map((l, i) => (old.test(l) ? `${path.relative(APP, f)}:${i + 1}` : null)).filter(Boolean))),
+  ];
+  expect(hits, 'Old spellings (náawi, à-ràwi, saawy, diaao, gâaeo, dtǔa, an níi, líaao-sáai, win-maaw-dtoe-sai)').toEqual([]);
+});
