@@ -1,11 +1,3 @@
 {
-  "_note": "Thai words romanized more than one way, waiting for Jay to pick one spelling. When a word is fixed everywhere, delete its line. The test fails if a new word shows up here, so new content stays consistent.",
-  "เลี้ยวซ้าย": [
-    "líaao sáai",
-    "líaao-sáai"
-  ],
-  "วินมอเตอร์ไซค์": [
-    "win-maaw-dtoe-sai",
-    "win maaw-dtoe-sai"
-  ]
+  "_note": "Thai words romanized more than one way, waiting for Jay to pick one spelling. When a word is fixed everywhere, delete its line. The test fails if a new word shows up here, so new content stays consistent."
 }

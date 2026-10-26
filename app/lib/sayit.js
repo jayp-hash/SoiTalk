@@ -578,7 +578,7 @@ export const SAY_IT = [
    "อยู่",
    "ไหน"
   ],
-  "rom": "win-maaw-dtoe-sai yùu nǎi",
+  "rom": "win maaw-dtoe-sai yùu nǎi",
   "en": "Where is the motorbike taxi stand?",
   "where": "When you're somewhere new."
  },
