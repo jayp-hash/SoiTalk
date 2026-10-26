@@ -75,12 +75,13 @@ function sheetRows(ws) {
 // Romanization house rule (Jay, 12 Oct 2026): the "oi" sound (-อย) is written
 // the way expats recognise it: น้อย nói, นิดหน่อย nít-nòi, อร่อย à-ròi, ซอย soi
 // (the workbook writes náawi, nít-nàawi, à-ràwi, saawy). The tone mark is kept.
-// Word spellings Jay picked (26 Oct 2026): เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa.
+// Word spellings Jay picked (26 Oct 2026): เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa, อันนี้ an-níi.
 const OI_TONE = { a: 'o', 'à': 'ò', 'á': 'ó', 'â': 'ô', 'ǎ': 'ǒ' };
 const ROM_FIX = { 'diaao': 'diao', 'gâaeo': 'gâaew', 'dtǔa': 'dtǔaa' };
 const rom = (s) => (s ? String(s).normalize('NFC')
   .replace(/([aàáâǎ])a?w[iy](?=$|[\s\-.,?!])/g, (_, v) => `${OI_TONE[v]}i`)
-  .replace(/(?<![\p{L}\p{M}])(diaao|gâaeo|dtǔa)(?![\p{L}\p{M}])/gu, (w) => ROM_FIX[w]) : s);
+  .replace(/(?<![\p{L}\p{M}])(diaao|gâaeo|dtǔa)(?![\p{L}\p{M}])/gu, (w) => ROM_FIX[w])
+  .replace(/(?<![\p{L}\p{M}-])an níi(?![\p{L}\p{M}])/gu, 'an-níi') : s);
 
 const col = (row, startsWith) => {
   const key = Object.keys(row).find((k) => k.toLowerCase().startsWith(startsWith.toLowerCase()));

@@ -80,7 +80,7 @@ export const SAY_IT = [
    "อัน",
    "นี้"
   ],
-  "rom": "an níi",
+  "rom": "an-níi",
   "en": "This one.",
   "where": "Point at what you want at a food stall."
  },
@@ -92,7 +92,7 @@ export const SAY_IT = [
    "นี้",
    "เท่าไหร่"
   ],
-  "rom": "an níi thâo-rài",
+  "rom": "an-níi thâo-rài",
   "en": "How much is this one?",
   "where": "Ask at a market stall or street-food cart."
  },
@@ -134,7 +134,7 @@ export const SAY_IT = [
    "อัน",
    "นี้"
   ],
-  "rom": "khǎaw an níi",
+  "rom": "khǎaw an-níi",
   "en": "This one, please.",
   "where": "Order by pointing at the food you want."
  },

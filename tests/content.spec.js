@@ -78,15 +78,15 @@ test('every Thai word is romanized one way', async ({}, testInfo) => {
   expect(fixed, 'Now spelled one way everywhere: delete these from tests/romanization-known.json').toEqual([]);
 });
 
-// Spellings Jay picked: the "oi" sound is written oi (nói, à-ròi, soi), and เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa.
+// Spellings Jay picked: the "oi" sound is written oi (nói, à-ròi, soi), and เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa, อันนี้ an-níi.
 test('romanization follows the spellings Jay picked', () => {
   const { collect } = require('./romanization');
-  const old = /([aàáâǎ])a?w[iy](?![\p{L}\p{M}])|(?<![\p{L}\p{M}])(diaao|gâaeo|dtǔa)(?![\p{L}\p{M}])/u;
+  const old = /([aàáâǎ])a?w[iy](?![\p{L}\p{M}])|(?<![\p{L}\p{M}])(diaao|gâaeo|dtǔa)(?![\p{L}\p{M}])|(?<![\p{L}\p{M}-])an níi(?![\p{L}\p{M}])/u;
   const db = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'db.json'), 'utf8'));
   const hits = [
     ...collect().filter((p) => old.test(p.rom)).map((p) => `${p.th} ${p.rom} (${p.where})`),
     ...db.sentences.filter((s) => old.test(s.romanization || '')).map((s) => `${s.thai} ${s.romanization} (word list sentence #${s.id})`),
     ...files.flatMap((f) => (f.includes(`${path.sep}data${path.sep}`) ? [] : code(fs.readFileSync(f, 'utf8')).split('\n').map((l, i) => (old.test(l) ? `${path.relative(APP, f)}:${i + 1}` : null)).filter(Boolean))),
   ];
-  expect(hits, 'Old spellings (náawi, à-ràwi, saawy, diaao, gâaeo, dtǔa)').toEqual([]);
+  expect(hits, 'Old spellings (náawi, à-ràwi, saawy, diaao, gâaeo, dtǔa, an níi)').toEqual([]);
 });
