@@ -406,8 +406,9 @@ export default function Start({ sceneId }) {
       ...(fu ? fu.answers.flatMap((x) => x.parts) : []),
     ].filter((w) => w.en && !w.name && w.th !== cw.th);
     const pool = [...shuffle(words.filter((w) => w.th !== cw.th)), ...shuffle(sceneWordsAll)];
-    const seen = new Set([cw.en]);
-    const others = pool.filter((w) => !seen.has(w.en) && seen.add(w.en)).slice(0, 2);
+    // One choice per meaning and per Thai word (แก้ว is both "glass" and "glasses" in one lesson)
+    const seen = new Set([cw.en, cw.th]);
+    const others = pool.filter((w) => !seen.has(w.en) && !seen.has(w.th) && seen.add(w.en) && seen.add(w.th)).slice(0, 2);
     return shuffle([cw, ...others]).map((w) => ({ key: w.th, en: w.en }));
   }, [cw, words]);
   useEffect(() => { if (step === 'check' && cw && !cPicked) player.play(`c-${ci}`, [{ text: cw.th, voice }]); // eslint-disable-next-line react-hooks/exhaustive-deps
