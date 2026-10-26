@@ -4,12 +4,10 @@ const { test, expect } = require('@playwright/test');
 const { SIZES, lessonIds, preparePage, layoutProblems, day } = require('../helpers');
 
 const LESSONS = lessonIds();
-// Every lesson on a phone; a few on the small phone and the laptop window to keep the run short.
-const RUNS = [
-  ...LESSONS.map((id) => [id, 'phone']),
-  ...LESSONS.filter((_, i) => i % 3 === 1).map((id) => [id, 'smallPhone']),
-  ...LESSONS.filter((_, i) => i % 3 === 2).map((id) => [id, 'laptop']),
-];
+// Every lesson at all three lesson sizes: phone, small phone and laptop window.
+// (The pretend audio in tests/fixtures/tone.mp3 is half a second long to keep this under 10 minutes on GitHub.)
+const LESSON_SIZES = ['phone', 'smallPhone', 'laptop'];
+const RUNS = LESSON_SIZES.flatMap((sizeName) => LESSONS.map((id) => [id, sizeName]));
 
 const store = { 'tsc-register-chosen': true, 'tsc-first-session': { scene: '7eleven', made: ['ถุง', 'หลอด', 'ช้อน'], day: day(1) } };
 
@@ -51,7 +49,8 @@ for (const [id, sizeName] of RUNS) {
       } else if (t === 'The conversation') {
         await check('conversation');
         await cta().click();
-        for (let i = 0; i < 40; i++) { const ct = await cta().innerText(); if (/Next|said/.test(ct)) break; await page.waitForTimeout(500); }
+        // The button only moves on once the whole conversation has played; fail if it never does.
+        await expect(cta(), 'the conversation should finish playing').toHaveText(/Next|said/, { timeout: 20_000 });
         await check('conversation played'); await cta().click();
       } else if (t.startsWith('Word by word') || t.includes('little words')) {
         await check('word by word'); await cta().click();
