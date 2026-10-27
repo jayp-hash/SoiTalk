@@ -200,7 +200,7 @@ export const SCENES = {
       staff: { th: 'กิโลละห้าสิบบาทค่ะ', rom: 'gì-loo lá hâa-sìp bàat khâ', en: 'Fifty baht a kilo.', words: [{ th: 'กิโล', rom: 'gì-loo' }, { th: 'ละ', rom: 'lá' }, { th: 'ห้าสิบ', rom: 'hâa-sìp' }, { th: 'บาท', rom: 'bàat' }, { th: 'ค่ะ', rom: 'khâ' }] },
       answers: [
         // Spoken Thai: เอากิโลนึง, not the textbook เอาหนึ่งกิโล (Thai Teacher, 22 Oct)
-        { key: 'one', adj: 'a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }, { th: 'นึง', rom: 'nueng', en: 'one' }], en: "I'll take a kilo." },
+        { key: 'one', adj: 'a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }, { th: 'นึง', rom: 'nùeng', en: 'one' }], en: "I'll take a kilo." },
         { key: 'half', adj: 'half a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'ครึ่ง', rom: 'khrûeng', en: 'half' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }], en: "I'll take half a kilo." },
       ],
       wrong: 'Too expensive.', // a listening option only

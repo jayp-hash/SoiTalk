@@ -189,14 +189,14 @@ export const SAY = {
   // Street nouns (27 Oct panel draft; native check needed)
   'ก๋วยเตี๋ยว': S('Two bowls of noodle soup, no coriander.', [['ขอ', 'khǎaw'], ['ก๋วยเตี๋ยว', 'gǔay-dtǐao', 'noun'], ['สอง', 'sǎawng', 'num'], ['ชาม', 'chaam', 'cls'], [' ไม่ใส่ผักชี', 'mâi sài phàk-chii']]),
   'ต้มยำ': S('Just one bowl of tom yum is enough.', [['ต้มยำ', 'dtôm-yam', 'noun'], ['ชาม', 'chaam', 'cls'], ['เดียว', 'diao', 'num'], ['ก็พอ', 'gâaw phaaw']]),
-  'โจ๊ก': S('One bowl of rice porridge with egg, please.', [['ขอ', 'khǎaw'], ['โจ๊ก', 'jóok', 'noun'], ['ชาม', 'chaam', 'cls'], ['นึง', 'nueng', 'num'], ['ใส่ไข่', 'sài khài']]),
+  'โจ๊ก': S('One bowl of rice porridge with egg, please.', [['ขอ', 'khǎaw'], ['โจ๊ก', 'jóok', 'noun'], ['ชาม', 'chaam', 'cls'], ['นึง', 'nùeng', 'num'], ['ใส่ไข่', 'sài khài']]),
   'หมูปิ้ง': S("I'll take five pork skewers.", [['เอา', 'ao'], ['หมูปิ้ง', 'mǔu-bpîng', 'noun'], ['ห้า', 'hâa', 'num'], ['ไม้', 'máai', 'cls']]),
   'ไส้กรอก': S('Two sausage sticks to go, please.', [['ขอ', 'khǎaw'], ['ไส้กรอก', 'sâi-gràawk', 'noun'], ['สอง', 'sǎawng', 'num'], ['ไม้', 'máai', 'cls'], [' กลับบ้าน', 'glàp bâan']]),
   'สะเต๊ะ': S('I ate five satay skewers.', [['ฉันกิน', 'chǎn gin'], ['สะเต๊ะ', 'sà-dté', 'noun'], ['ไป', 'bpai'], ['ห้า', 'hâa', 'num'], ['ไม้', 'máai', 'cls']]),
   'มะม่วง': S('Three mangoes for 100, OK?', [['มะม่วง', 'má-mûang', 'noun'], ['สาม', 'sǎam', 'num'], ['ลูก', 'lûuk', 'cls'], ['ร้อย', 'rói'], ['ได้ไหม', 'dâai mǎi']], true),
   'มะพร้าว': S('Just one coconut, please.', [['ขอ', 'khǎaw'], ['มะพร้าว', 'má-práao', 'noun'], ['ลูก', 'lûuk', 'cls'], ['เดียว', 'diao', 'num']]),
   'แตงโม': S('Is this watermelon sweet?', [['แตงโม', 'dtaeng-moo', 'noun'], ['ลูก', 'lûuk', 'cls'], ['นี้', 'níi'], ['หวานไหม', 'wǎan mǎi']], true),
-  'น้ำแข็ง': S('One more bag of ice, please.', [['ขอ', 'khǎaw'], ['น้ำแข็ง', 'náam-khǎeng', 'noun'], ['เพิ่มอีก', 'phôeem ìik'], ['ถุง', 'thǔng', 'cls'], ['นึง', 'nueng', 'num']]),
+  'น้ำแข็ง': S('One more bag of ice, please.', [['ขอ', 'khǎaw'], ['น้ำแข็ง', 'náam-khǎeng', 'noun'], ['เพิ่มอีก', 'phôeem ìik'], ['ถุง', 'thǔng', 'cls'], ['นึง', 'nùeng', 'num']]),
   'ผลไม้': S('Two bags of cut fruit.', [['เอา', 'ao'], ['ผลไม้', 'phǒn-lá-máai', 'noun'], ['สอง', 'sǎawng', 'num'], ['ถุง', 'thǔng', 'cls']]),
   'กล้วยทอด': S('Fried bananas are 20 baht a bag, right?', [['กล้วยทอด', 'glûay-thâawt', 'noun'], ['ถุง', 'thǔng', 'cls'], ['ละ', 'lá'], ['ยี่สิบ', 'yîi-sìp'], ['ใช่ไหม', 'châi mǎi']], true),
 };
