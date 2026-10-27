@@ -41,12 +41,31 @@ function firstTouch() {
   return ft;
 }
 
+// Signed in: events use the account id, so one person on two devices (or in
+// Instagram's browser and then Safari) counts as one person, not two.
+const USER_KEY = 'tsc-ph-user';
+const distinctId = () => get(USER_KEY) || visitorId();
+
+// Called once when someone signs in: tells PostHog that this device's
+// anonymous id and the account are the same person ($identify).
+export function identify(userId) {
+  if (!userId || typeof window === 'undefined' || get(USER_KEY) === userId) return;
+  const anon = visitorId();
+  set(USER_KEY, userId);
+  track('$identify', { $anon_distinct_id: anon });
+}
+// Signed out: this device starts again with a fresh anonymous id, so what
+// happens next isn't counted to the account that just left
+export function forgetUser() {
+  try { localStorage.removeItem(USER_KEY); localStorage.removeItem('tsc-anon-id'); } catch { /* private mode */ }
+}
+
 export function track(event, props = {}) {
   if (!KEY || typeof window === 'undefined') return;
   try {
     const ft = firstTouch();
     const body = {
-      api_key: KEY, event, distinct_id: visitorId(), timestamp: new Date().toISOString(),
+      api_key: KEY, event, distinct_id: distinctId(), timestamp: new Date().toISOString(),
       properties: {
         ...props,
         $current_url: window.location.href, $pathname: window.location.pathname, $referrer: document.referrer,

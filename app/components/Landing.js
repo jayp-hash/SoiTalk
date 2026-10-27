@@ -3,6 +3,7 @@ import { audioVersion } from '../lib/audioVersion';
 import { useEffect, useRef, useState } from 'react';
 import { useUser } from '../lib/useUser';
 import SoiSign from './SoiSign';
+import { track } from '../lib/analytics';
 
 // The home page for new visitors. The pitch changes with who's visiting
 // (live in Thailand / Thai partner / visiting); the choice is remembered
@@ -162,7 +163,7 @@ export default function Landing({ wordCount, demo, curve }) {
   useEffect(() => {
     try { const p = localStorage.getItem(PERSONA_KEY); if (p && PERSONAS[p]) setPersona(p); } catch {}
   }, []);
-  const choose = (p) => { setPersona(p); try { localStorage.setItem(PERSONA_KEY, p); } catch {} };
+  const choose = (p) => { setPersona(p); track('landing_persona', { persona: p }); try { localStorage.setItem(PERSONA_KEY, p); } catch {} };
   const count = wordCount.toLocaleString('en');
   const cta = user
     ? <a className="lp-btn" href="/today">Continue to Today</a>
@@ -230,7 +231,6 @@ export default function Landing({ wordCount, demo, curve }) {
           <p className="lp-sub">Every word in the course is ranked by how often Thai people use it, so each word you learn moves a real number: the share of everyday Thai you can follow.</p>
           <ul className="lp-ticks">
             <li><i><Tick /></i><span><b>Daily review.</b> The cards you're about to forget, at the right time.</span></li>
-            <li><i><Tick /></i><span><b>Streaks in Thailand's colours of the day.</b> Yellow Monday, pink Tuesday and so on.</span></li>
             <li><i><Tick /></i><span><b>On every device.</b> Sign in once and pick up on your phone or laptop.</span></li>
           </ul>
         </div>

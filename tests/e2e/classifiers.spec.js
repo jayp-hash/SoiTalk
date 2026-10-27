@@ -1,17 +1,13 @@
-// Classifiers tab (rebuilt 24 Oct): Learn opens each classifier, and every Practice
+// Classifiers tab (rebuilt 27 Oct): Learn opens each classifier, and every Practice
 // activity can be played through at phone and laptop sizes without anything sticking out.
 const { test, expect } = require('@playwright/test');
 const { SIZES, preparePage, layoutProblems } = require('../helpers');
 
-const practice = async (page, size) => {
+const practice = async (page, size, act = 'match', level = 1) => {
   await page.setViewportSize(size);
   await preparePage(page);
-  await page.goto('/classifiers');
-  await page.locator('.pm-mode:visible button', { hasText: 'Practice' }).click();
-};
-const pickLevel = async (page, n) => {
-  const sel = page.locator('.pm-pick select:visible').filter({ has: page.locator('option[value="3"]') }).first();
-  await sel.selectOption(String(n));
+  await page.goto(`/classifiers?mode=practice&act=${act}&level=${level}`);
+  await expect(page.locator(act === 'slots' ? '.cl-cabinet' : '.cl-arena')).toBeVisible();
 };
 // Tap the tile that the next gap wants, until the sentence is built
 const buildIt = async (page) => {
@@ -22,30 +18,31 @@ const buildIt = async (page) => {
   await expect(page.locator('.cl-built')).toBeVisible();
 };
 
-test('Learn: intro, 10 classifiers, open one and get a sentence', async ({ page }) => {
+test('Learn: intro, every classifier, open one and get a sentence', async ({ page }) => {
   await page.setViewportSize(SIZES.phone);
   await preparePage(page);
   await page.goto('/classifiers');
   await expect(page.locator('.cl-intro')).toBeVisible();
-  await expect(page.locator('.cl-row')).toHaveCount(10);
-  for (const k of [0, 6]) {
-    await page.locator('.cl-row').nth(k).click();
+  const rows = page.locator('.cl-row');
+  expect(await rows.count()).toBeGreaterThanOrEqual(14);
+  for (const k of [0, 5, 13]) {
+    await rows.nth(k).click();
     await expect(page.locator('.cl-open .cl-noun').first()).toBeVisible();
     await page.locator('.cl-open .cl-noun').last().click();
     await expect(page.locator('.cl-say .pm-tile.is-slot')).toBeVisible();
-    const broken = await page.locator('.cl-open img').evaluateAll((imgs) => imgs.filter((i) => i.complete && i.naturalWidth === 0).length);
+    const broken = await page.locator('.cl-open img, .cl-row-img').evaluateAll((imgs) => imgs.filter((i) => i.complete && i.naturalWidth === 0).length);
     expect(broken).toBe(0);
   }
+  // The intro has folded into a strip once a classifier was opened
+  await expect(page.locator('.cl-intro-strip')).toBeVisible();
   expect(await layoutProblems(page, null)).toEqual([]);
 });
 
 for (const [sizeName, size] of [['phone', SIZES.phone], ['smallPhone', SIZES.smallPhone], ['laptop', SIZES.laptop]]) {
   test(`Find the matches L1: fill the circle, build the sentence (${sizeName})`, async ({ page }) => {
     await practice(page, size);
-    await expect(page.locator('.cl-circle')).toBeVisible();
     expect(await layoutProblems(page, null)).toEqual([]);
     const target = await page.locator('.cl-circle').getAttribute('data-cls');
-    // One wrong tap shows a hint and keeps the picture out
     await page.locator(`.cl-pic:not([data-cls="${target}"])`).first().click();
     await expect(page.locator('.cl-strip.is-hint')).toBeVisible();
     const rights = page.locator(`.cl-pic[data-cls="${target}"]`);
@@ -59,7 +56,7 @@ for (const [sizeName, size] of [['phone', SIZES.phone], ['smallPhone', SIZES.sma
   });
 }
 
-test('Find the matches: drag a picture into the circle', async ({ page }) => {
+test('Find the matches: drag a card into the circle', async ({ page }) => {
   await practice(page, SIZES.phone);
   const target = await page.locator('.cl-circle').getAttribute('data-cls');
   const pic = page.locator(`.cl-pic[data-cls="${target}"]`).first();
@@ -73,48 +70,67 @@ test('Find the matches: drag a picture into the circle', async ({ page }) => {
   await expect(page.locator('.cl-strip.is-say')).toBeVisible();
 });
 
-test('Find the matches L2: sort into two circles', async ({ page }) => {
-  await practice(page, SIZES.phone);
-  await pickLevel(page, 2);
-  await expect(page.locator('.cl-circle')).toHaveCount(2);
-  expect(await layoutProblems(page, null)).toEqual([]);
-  const pics = page.locator('.cl-pic');
-  const n = await pics.count();
-  for (let i = 0; i < n; i++) {
-    const p = pics.nth(i);
-    const cls = await p.getAttribute('data-cls');
-    await p.click();
-    await page.locator(`.cl-circle[data-cls="${cls}"]`).click();
-  }
-  await expect(page.locator('.cl-build')).toBeVisible({ timeout: 5000 });
-  await buildIt(page);
-});
-
-test('Find the matches L3: build the phrase from a picture', async ({ page }) => {
-  await practice(page, SIZES.phone);
-  await pickLevel(page, 3);
-  await expect(page.locator('.cl-scene')).toBeVisible();
-  expect(await layoutProblems(page, null)).toEqual([]);
-  await buildIt(page);
-  await page.getByRole('button', { name: 'Next picture' }).click();
-  await expect(page.locator('.cl-bank')).toBeVisible();
-});
-
-for (const [sizeName, size] of [['phone', SIZES.phone], ['laptop', SIZES.laptop]]) {
-  test(`Slot machine: spin and stop every reel on the picture (${sizeName})`, async ({ page }) => {
-    await practice(page, size);
-    const pickAct = page.locator('.cl-pickers select:visible');
-    if (await pickAct.count()) await pickAct.first().selectOption('slots');
-    else await page.getByRole('button', { name: 'Slot machine' }).click();
-    await expect(page.locator('.cl-reel')).toHaveCount(3);
+for (const level of [2, 3]) {
+  test(`Find the matches L${level}: sort into two circles`, async ({ page }) => {
+    await practice(page, SIZES.phone, 'match', level);
+    await expect(page.locator('.cl-circle')).toHaveCount(2);
     expect(await layoutProblems(page, null)).toEqual([]);
-    await page.locator('.cl-spin').click();
-    for (const k of [0, 1, 2]) {
-      const reel = page.locator('.cl-reel').nth(k);
-      const want = await reel.getAttribute('data-want');
-      await expect.poll(async () => reel.getAttribute('data-cur'), { timeout: 8000, intervals: [40] }).toBe(want);
-      await reel.click();
+    const pics = page.locator('.cl-pic');
+    const n = await pics.count();
+    for (let i = 0; i < n; i++) {
+      const p = pics.nth(i);
+      const cls = await p.getAttribute('data-cls');
+      await p.click();
+      await page.locator(`.cl-circle[data-cls="${cls}"]`).click();
     }
-    await expect(page.locator('.cl-jackpot')).toBeVisible();
+    await expect(page.locator('.cl-build')).toBeVisible({ timeout: 5000 });
+    await buildIt(page);
   });
 }
+
+// Set every reel with the nudge buttons until it shows the wanted item, then pull
+async function serve(page) {
+  await expect(page.locator('.cl-nudge').first()).toBeEnabled({ timeout: 3000 });
+  const reels = page.locator('.cl-reel');
+  for (let k = 0; k < await reels.count(); k++) {
+    const reel = reels.nth(k);
+    const want = await reel.getAttribute('data-want');
+    for (let i = 0; i < 8 && (await reel.getAttribute('data-cur')) !== want; i++) await reel.locator('.cl-nudge').last().click();
+    expect(await reel.getAttribute('data-cur')).toBe(want);
+  }
+  await page.getByRole('button', { name: 'Pull the lever' }).click();
+}
+
+for (const [sizeName, size] of [['phone', SIZES.phone], ['smallPhone', SIZES.smallPhone], ['laptop', SIZES.laptop]]) {
+  test(`How many? L1: five customers to the finish (${sizeName})`, async ({ page }) => {
+    await practice(page, size, 'slots', 1);
+    expect(await layoutProblems(page, '.cl-pull')).toEqual([]);
+    for (let c = 0; c < 5; c++) {
+      await serve(page);
+      await expect(page.locator('.cl-reel.is-right').first()).toBeVisible();
+      await page.locator('.cl-pull').click();
+    }
+    await expect(page.locator('.cl-finish')).toBeVisible();
+    await expect(page.locator('.cl-marquee.is-jackpot')).toBeVisible();
+  });
+}
+
+test('How many? L3: three reels, a wrong pull shows a hint, the answer works', async ({ page }) => {
+  await practice(page, SIZES.phone, 'slots', 3);
+  await expect(page.locator('.cl-reel')).toHaveCount(3);
+  await expect(page.locator('.cl-nudge').first()).toBeEnabled({ timeout: 3000 });
+  await page.getByRole('button', { name: 'Pull the lever' }).click(); // every reel starts wrong
+  await expect(page.locator('.cl-reel.is-wrong').first()).toBeVisible();
+  await expect(page.locator('.cl-hint.on')).toBeVisible();
+  await serve(page);
+  await expect(page.locator('.cl-reel.is-right')).toHaveCount(3);
+});
+
+test('How many? reels work with the keyboard', async ({ page }) => {
+  await practice(page, SIZES.laptop, 'slots', 2);
+  await expect(page.locator('.cl-nudge').first()).toBeEnabled({ timeout: 3000 });
+  const win = page.locator('.cl-reel-win').first();
+  const before = await page.locator('.cl-reel').first().getAttribute('data-cur');
+  await win.focus(); await page.keyboard.press('ArrowDown');
+  expect(await page.locator('.cl-reel').first().getAttribute('data-cur')).not.toBe(before);
+});

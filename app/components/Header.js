@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useUser } from '../lib/useUser';
 import { supabaseBrowser } from '../lib/supabase-browser';
 import SoiSign from './SoiSign';
+import { forgetUser } from '../lib/analytics';
 
 const LINKS = [
   { href: '/', label: 'Home' },
@@ -34,7 +35,7 @@ function Account() {
   );
 
   const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email || '?';
-  const signOut = async () => { await supabaseBrowser().auth.signOut(); window.location.href = '/'; };
+  const signOut = async () => { await supabaseBrowser().auth.signOut(); forgetUser(); window.location.href = '/'; };
   return (
     <div className="acct" ref={ref}>
       <button type="button" className="acct-btn" aria-label="Your account" aria-expanded={open} onClick={() => setOpen((o) => !o)}>

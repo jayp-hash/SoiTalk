@@ -772,7 +772,7 @@ function Done({ scene, reg, voice, player, madeItems, spiceIdx, item, user, repl
         </button>
         {/* A calendar file does nothing inside Instagram/TikTok/LINE: there, saving by email is the one action */}
         {!inApp && (
-          <a className="dn-remind" href={reminderIcs(scene)} download="soi-talk-tomorrow.ics">
+          <a className="dn-remind" href={reminderIcs(scene)} download="soi-talk-tomorrow.ics" onClick={() => track('reminder_calendar', { scene: scene.id })}>
             <CalIcon /> Remind me tomorrow
           </a>
         )}

@@ -19,7 +19,8 @@ function lessonIds() {
   return [...src.slice(start).matchAll(/^ {2}(?:'([\w-]+)'|([\w]+)): \{$/gm)].map((m) => m[1] || m[2]);
 }
 
-const day = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+// The local date, like the app's dayKey (an ISO/UTC date broke the tests between midnight and 7am in Bangkok)
+const day = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 
 // A returning learner: the first lesson two days ago, a few words met.
 function returningLearner(words = ['ไม่', 'เอา', 'ถุง', 'ใบเสร็จ', 'ช้อน', 'ค่ะ', 'ขอ', 'น้ำเปล่า', 'ขวด', 'สอง', 'สาม', 'ฉัน', 'ชอบ', 'กิน', 'กาแฟ', 'แก้ว', 'คุณ', 'เขา', 'นอน'], extra = {}) {

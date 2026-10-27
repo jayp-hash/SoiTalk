@@ -5,16 +5,28 @@
 // Every pair here needs a native check before release (see the pull request).
 
 export const CLASSIFIERS = [
-  { ex: 'two men', th: 'คน', rom: 'khon', for: 'People', hint: 'คน (khon) is for people.', also: '' },
-  { ex: 'two dogs', th: 'ตัว', rom: 'dtuaa', for: 'Animals, clothes, tables and chairs', hint: 'ตัว (dtuaa) is for animals, and also clothes, tables and chairs.', also: '' },
-  { ex: 'two chargers', th: 'อัน', rom: 'an', for: 'Small things with no special word', hint: 'อัน (an) is for small things with no special counting word.', also: 'When you are not sure, Thais often use อัน (an).' },
-  { ex: 'two bottles of water', th: 'ขวด', rom: 'khùat', for: 'Bottles, and things that come in bottles', hint: 'ขวด (khùat) is for bottles, and anything sold in a bottle.', also: '' },
-  { ex: 'two coffees', th: 'แก้ว', rom: 'gâaew', for: 'Drinks, by the glass or cup', hint: 'แก้ว (gâaew) is for drinks counted by the glass or cup.', also: 'The empty glass itself is counted with ใบ (bai).' },
-  { ex: 'two plates of fried rice', th: 'จาน', rom: 'jaan', for: 'Food, by the plate', hint: 'จาน (jaan) is for food counted by the plate.', also: 'The empty plate itself is counted with ใบ (bai).' },
-  { ex: 'two bags', th: 'ใบ', rom: 'bai', for: 'Flat or hollow things', hint: 'ใบ (bai) is for flat or hollow things: bags, tickets, cards, hats, boxes.', also: '' },
-  { ex: 'two cars', th: 'คัน', rom: 'khan', for: 'Vehicles you drive or ride', hint: 'คัน (khan) is for vehicles you drive or ride.', also: 'Textbooks also use คัน (khan) for spoons and umbrellas; in Bangkok you will often hear อัน (an).' },
-  { ex: 'two books', th: 'เล่ม', rom: 'lêm', for: 'Books', hint: 'เล่ม (lêm) is for books, notebooks and passports.', also: '' },
-  { ex: 'two slices of cake', th: 'ชิ้น', rom: 'chín', for: 'Pieces', hint: 'ชิ้น (chín) is for pieces: a slice of cake or pizza, a piece of chicken.', also: '' },
+  { ex: 'two men', group: 'people', unit: 'people', th: 'คน', rom: 'khon', for: 'People', hint: 'คน (khon) is for people.', also: '' },
+  { ex: 'two dogs', group: 'people', unit: 'animals or clothes', th: 'ตัว', rom: 'dtuaa', for: 'Animals, clothes, tables and chairs', hint: 'ตัว (dtuaa) is for animals, and also clothes, tables and chairs.', also: '' },
+  { ex: 'two chargers', group: 'things', unit: 'things', th: 'อัน', rom: 'an', for: 'Small things with no special word', hint: 'อัน (an) is for small things with no special counting word.', also: 'When you are not sure, Thais often use อัน (an).' },
+  { ex: 'two bottles of water', group: 'food', unit: 'bottles', th: 'ขวด', rom: 'khùat', for: 'Bottles, and things that come in bottles', hint: 'ขวด (khùat) is for bottles, and anything sold in a bottle.', also: '' },
+  { ex: 'two coffees', group: 'food', unit: 'cups', th: 'แก้ว', rom: 'gâaew', for: 'Drinks, by the glass or cup', hint: 'แก้ว (gâaew) is for drinks counted by the glass or cup.', also: 'The empty glass itself is counted with ใบ (bai).' },
+  { ex: 'two plates of fried rice', group: 'food', unit: 'plates', th: 'จาน', rom: 'jaan', for: 'Food, by the plate', hint: 'จาน (jaan) is for food counted by the plate.', also: 'The empty plate itself is counted with ใบ (bai).' },
+  { ex: 'two bags', group: 'things', unit: 'bags or boxes', th: 'ใบ', rom: 'bai', for: 'Flat or hollow things', hint: 'ใบ (bai) is for flat or hollow things: bags, tickets, cards, hats, boxes.', also: '' },
+  { ex: 'two cars', group: 'people', unit: 'vehicles', th: 'คัน', rom: 'khan', for: 'Vehicles you drive or ride', hint: 'คัน (khan) is for vehicles you drive or ride.', also: 'Textbooks also use คัน (khan) for spoons and umbrellas; in Bangkok you will often hear อัน (an).' },
+  { ex: 'two books', group: 'things', unit: 'books', th: 'เล่ม', rom: 'lêm', for: 'Books', hint: 'เล่ม (lêm) is for books, notebooks and passports.', also: '' },
+  { ex: 'two slices of cake', group: 'food', unit: 'pieces', th: 'ชิ้น', rom: 'chín', for: 'Pieces', hint: 'ชิ้น (chín) is for pieces: a slice of cake or pizza, a piece of chicken.', also: '' },
+  // Street classifiers (round 1 of the 27 Oct rebuild; panel draft, native check needed)
+  { ex: 'two bowls of noodle soup', group: 'food', unit: 'bowls', th: 'ชาม', rom: 'chaam', for: 'Food served in a bowl', hint: 'ชาม (chaam) is for food served in a bowl: noodle soup, tom yum, rice porridge.', also: 'The empty bowl itself is counted with ใบ (bai).' },
+  { ex: 'five pork skewers', group: 'food', unit: 'sticks', th: 'ไม้', rom: 'máai', for: 'Anything on a stick', hint: 'ไม้ (máai) means stick: use it for anything on a skewer.', also: '' },
+  { ex: 'two mangoes', group: 'food', unit: 'whole ones', th: 'ลูก', rom: 'lûuk', for: 'Whole fruit, and balls', hint: 'ลูก (lûuk) is for whole fruit, and balls.', also: '' },
+  { ex: 'two bags of ice', group: 'food', unit: 'bags', th: 'ถุง', rom: 'thǔng', for: 'Things sold in a bag', hint: 'ถุง (thǔng) is for things sold in a bag: ice, cut fruit, snacks.', also: 'A bag you carry, like a handbag, is counted with ใบ (bai).' },
+];
+
+// Learn list groups, in this order
+export const GROUPS = [
+  { id: 'food', en: 'Food and drink' },
+  { id: 'things', en: 'Things' },
+  { id: 'people', en: 'People, animals and vehicles' },
 ];
 
 // img = /public/classifiers/<img>.webp. Pictures always show the drink or food, never an empty container.
@@ -27,29 +39,29 @@ export const NOUNS = [
   { th: 'หมา', rom: 'mǎa', en: 'dog', cls: 'ตัว', img: 'dog' },
   { th: 'แมว', rom: 'maaeo', en: 'cat', cls: 'ตัว', img: 'cat' },
   { th: 'ปลา', rom: 'bplaa', en: 'fish', cls: 'ตัว', img: 'fish' },
-  { th: 'ไก่', rom: 'gài', en: 'chicken (the bird)', cls: 'ตัว', img: 'chicken' },
+  { th: 'ไก่', rom: 'gài', en: 'chicken (the bird)', cls: 'ตัว', img: 'chicken', practice: false },
   { th: 'เสื้อ', rom: 'sûeaa', en: 'shirt', cls: 'ตัว', img: 'shirt' },
   { th: 'กางเกง', rom: 'gaang-geeng', en: 'trousers', cls: 'ตัว', img: 'trousers' },
   { th: 'โต๊ะ', rom: 'dtó', en: 'table', cls: 'ตัว', img: 'table' },
   { th: 'เก้าอี้', rom: 'gâo-îi', en: 'chair', cls: 'ตัว', img: 'chair' },
   { th: 'ที่ชาร์จ', rom: 'thîi-cháat', en: 'charger', cls: 'อัน', img: 'charger' },
   { th: 'รีโมท', rom: 'rii-mòot', en: 'remote control', cls: 'อัน', img: 'remote' },
-  { th: 'ไม้บรรทัด', rom: 'mái ban-thát', en: 'ruler', cls: 'อัน', img: 'ruler' },
+  { th: 'ไม้บรรทัด', rom: 'máai ban-thát', en: 'ruler', cls: 'อัน', img: 'ruler' },
   { th: 'น้ำเปล่า', rom: 'náam-bplàao', en: 'water', cls: 'ขวด', img: 'water' },
   { th: 'โค้ก', rom: 'khóok', en: 'cola', cls: 'ขวด', img: 'cola' },
   { th: 'นม', rom: 'nom', en: 'milk', cls: 'ขวด', img: 'milk' },
   { th: 'แชมพู', rom: 'chaaem-phuu', en: 'shampoo', cls: 'ขวด', img: 'shampoo' },
-  { th: 'กาแฟ', rom: 'gaa-faae', en: 'coffee', cls: 'แก้ว', img: 'coffee' },
-  { th: 'ชาเย็น', rom: 'chaa-yen', en: 'Thai iced tea', cls: 'แก้ว', img: 'thaitea' },
-  { th: 'ชาเขียว', rom: 'chaa-khǐao', en: 'green tea', cls: 'แก้ว', img: 'greentea' },
-  { th: 'น้ำปั่น', rom: 'náam-bpàn', en: 'smoothie', cls: 'แก้ว', img: 'smoothie' },
+  { th: 'กาแฟ', rom: 'gaa-faae', en: 'coffee', cls: 'แก้ว', img: 'coffee', many: 'coffees' },
+  { th: 'ชาเย็น', rom: 'chaa-yen', en: 'Thai iced tea', cls: 'แก้ว', img: 'thaitea', many: 'Thai iced teas' },
+  { th: 'ชาเขียว', rom: 'chaa-khǐao', en: 'green tea', cls: 'แก้ว', img: 'greentea', many: 'green teas' },
+  { th: 'น้ำปั่น', rom: 'náam-bpàn', en: 'smoothie', cls: 'แก้ว', img: 'smoothie', many: 'smoothies' },
   { th: 'ข้าวผัด', rom: 'khâao-phàt', en: 'fried rice', cls: 'จาน', img: 'friedrice' },
   { th: 'ผัดไทย', rom: 'phàt-thai', en: 'pad thai', cls: 'จาน', img: 'padthai' },
   { th: 'ผัดกะเพรา', rom: 'phàt-gà-phrao', en: 'pad kra pao', cls: 'จาน', img: 'kraphao' },
   { th: 'ส้มตำ', rom: 'sôm-dtam', en: 'som tam', cls: 'จาน', img: 'somtam' },
   { th: 'กระเป๋า', rom: 'grà-bpǎo', en: 'bag', cls: 'ใบ', img: 'bag' },
   { th: 'ตั๋ว', rom: 'dtǔaa', en: 'ticket', cls: 'ใบ', img: 'ticket' },
-  { th: 'บัตร', rom: 'bàt', en: 'card', cls: 'ใบ', img: 'card' },
+  { th: 'บัตร', rom: 'bàt', en: 'card', cls: 'ใบ', img: 'card', practice: false },
   { th: 'หมวก', rom: 'mùak', en: 'hat', cls: 'ใบ', img: 'hat' },
   { th: 'กล่อง', rom: 'glàawng', en: 'box', cls: 'ใบ', img: 'box' },
   { th: 'รถ', rom: 'rót', en: 'car', cls: 'คัน', img: 'car' },
@@ -62,7 +74,22 @@ export const NOUNS = [
   { th: 'เค้ก', rom: 'khéek', en: 'cake (a slice)', cls: 'ชิ้น', img: 'cake' },
   { th: 'พิซซ่า', rom: 'phít-sâa', en: 'pizza (a slice)', cls: 'ชิ้น', img: 'pizza' },
   { th: 'ไก่ทอด', rom: 'gài-thâawt', en: 'fried chicken (a piece)', cls: 'ชิ้น', img: 'friedchicken' },
+  // Street nouns (27 Oct): native check needed
+  { th: 'ก๋วยเตี๋ยว', rom: 'gǔay-dtǐao', en: 'noodle soup', cls: 'ชาม', img: 'noodles' },
+  { th: 'ต้มยำ', rom: 'dtôm-yam', en: 'tom yum', cls: 'ชาม', img: 'tomyum' },
+  { th: 'โจ๊ก', rom: 'jóok', en: 'rice porridge', cls: 'ชาม', img: 'jok' },
+  { th: 'หมูปิ้ง', rom: 'mǔu-bpîng', en: 'grilled pork skewer', cls: 'ไม้', img: 'mooping' },
+  { th: 'ไส้กรอก', rom: 'sâi-gràawk', en: 'sausage on a stick', cls: 'ไม้', img: 'sausage' },
+  { th: 'สะเต๊ะ', rom: 'sà-dté', en: 'satay', cls: 'ไม้', img: 'satay' },
+  { th: 'มะม่วง', rom: 'má-mûang', en: 'mango', cls: 'ลูก', img: 'mango' },
+  { th: 'มะพร้าว', rom: 'má-práao', en: 'coconut', cls: 'ลูก', img: 'coconut' },
+  { th: 'แตงโม', rom: 'dtaeng-moo', en: 'watermelon', cls: 'ลูก', img: 'watermelon' },
+  { th: 'น้ำแข็ง', rom: 'náam-khǎeng', en: 'ice', cls: 'ถุง', img: 'ice' },
+  { th: 'ผลไม้', rom: 'phǒn-lá-máai', en: 'cut fruit', cls: 'ถุง', img: 'fruitbag' },
+  { th: 'กล้วยทอด', rom: 'glûay-thâawt', en: 'fried banana', cls: 'ถุง', img: 'friedbanana' },
 ];
+// Nouns used in practice rounds (textbook ones stay in Learn only)
+export const PRACTICE_NOUNS = NOUNS.filter((n) => n.practice !== false);
 
 // Numbers for the activities: 2 to 5. One works differently: classifier + เดียว is "just one" (ขวดเดียว),
 // classifier + หนึ่ง (spoken นึง) is "a / one" (กาแฟหนึ่งแก้ว). Taught in the sentences, not the reels (Thai Teacher, 24 Oct).
@@ -74,20 +101,42 @@ export const NUMBERS = [
 ];
 
 // Practice levels (Jay, 24 Oct): each level changes the task, not the labels. No blurring.
-export const LEVELS = [
-  { n: 1, name: 'Level 1', rule: 'Recognise: one classifier. Pictures with the Thai word and romanization. Tap or drag the ones that take it.' },
-  { n: 2, name: 'Level 2', rule: 'Listen: two classifiers that are easy to mix up. Pictures only: tap one to hear it, then sort it into its circle.' },
-  { n: 3, name: 'Level 3', rule: 'Build the phrase: pictures only, instructions in Thai. Build the phrase yourself: thing, number, classifier.' },
+// Find the matches: each level changes the task, not the labels (panel, 27 Oct)
+export const MATCH_LEVELS = [
+  { n: 1, name: 'Level 1', rule: 'See it: one classifier. Each card shows the thing and its Thai name. Tap or drag the ones that take this classifier.' },
+  { n: 2, name: 'Level 2', rule: 'Read it: two classifiers that are easy to mix up. Cards show only the Thai word; the picture appears when you get it right.' },
+  { n: 3, name: 'Level 3', rule: 'Hear it: two classifiers. Cards only play the word. Listen, then put it in its circle.' },
+];
+// How many? (the slot machine)
+export const SLOT_LEVELS = [
+  { n: 1, name: 'Level 1', rule: 'The vendor asks "How many?" with the classifier. Find the thing on your order that takes it, then set the number.' },
+  { n: 2, name: 'Level 2', rule: 'The vendor asks "What can I get you?". Set the number and the right classifier for what you want.' },
+  { n: 3, name: 'Level 3', rule: 'Say the whole order: set the thing, the number and the classifier.' },
 ];
 
-// Classifiers learners mix up (Thai Teacher, 24 Oct): used for wrong choices and Level 2 pairs.
+// Classifiers learners mix up (Thai Teacher): used for wrong choices and Level 2 and 3 pairs.
 export const CONFUSE = {
-  'คน': ['ตัว'], 'ตัว': ['ชิ้น', 'คน'], 'อัน': ['ใบ', 'คัน'], 'ขวด': ['แก้ว'], 'แก้ว': ['ขวด', 'ใบ'],
-  'จาน': ['ชิ้น', 'ใบ'], 'ใบ': ['อัน', 'เล่ม'], 'คัน': ['อัน'], 'เล่ม': ['ใบ'], 'ชิ้น': ['จาน', 'ตัว'],
+  'คน': ['ตัว'], 'ตัว': ['ชิ้น', 'คน'], 'อัน': ['ใบ', 'คัน'], 'ขวด': ['ถุง', 'แก้ว'], 'แก้ว': ['ขวด', 'ใบ'],
+  'จาน': ['ชาม', 'ชิ้น'], 'ใบ': ['อัน', 'เล่ม'], 'คัน': ['อัน'], 'เล่ม': ['ใบ'], 'ชิ้น': ['จาน', 'ไม้'],
+  'ชาม': ['จาน', 'แก้ว'], 'ไม้': ['ชิ้น', 'อัน'], 'ลูก': ['ถุง', 'อัน'], 'ถุง': ['ใบ', 'ขวด'],
 };
-export const PAIRS = [['ขวด', 'แก้ว'], ['จาน', 'ชิ้น'], ['ตัว', 'ชิ้น'], ['ใบ', 'อัน'], ['คัน', 'อัน'], ['คน', 'ตัว'], ['เล่ม', 'ใบ']];
-// Nouns that look alike but take different classifiers (a live chicken vs a piece of fried chicken)
-export const TWINS = { 'ไก่': 'ไก่ทอด', 'ไก่ทอด': 'ไก่', 'กาแฟ': 'น้ำเปล่า', 'น้ำเปล่า': 'กาแฟ', 'เค้ก': 'ข้าวผัด', 'ข้าวผัด': 'เค้ก' };
+// No ขวด/แก้ว pair: without a picture, น้ำเปล่า or โค้ก can take either (Thai Teacher, 27 Oct)
+// Removed ลูก/ถุง and จาน/ชิ้น (27 Oct, Thai Teacher): with no picture, ผลไม้ and ไก่ทอด fit both
+export const PAIRS = [['จาน', 'ชาม'], ['ไม้', 'ชิ้น'], ['ใบ', 'อัน'], ['คัน', 'อัน'], ['คน', 'ตัว'], ['เล่ม', 'ใบ'], ['ขวด', 'ถุง']];
+// Things that look alike but take different classifiers (a glass of coffee vs a bottle of water)
+export const TWINS = {
+  'กาแฟ': 'น้ำเปล่า', 'น้ำเปล่า': 'กาแฟ', 'ก๋วยเตี๋ยว': 'ข้าวผัด', 'ข้าวผัด': 'ก๋วยเตี๋ยว',
+  'มะม่วง': 'ผลไม้', 'ผลไม้': 'มะม่วง', 'ไก่ทอด': 'สะเต๊ะ', 'สะเต๊ะ': 'ไก่ทอด', 'เค้ก': 'พิซซ่า',
+};
+
+// The slot machine's vendor. Only things you buy from a stall or shop.
+export const VENDOR_CLS = ['ขวด', 'แก้ว', 'จาน', 'ชาม', 'ไม้', 'ลูก', 'ถุง', 'ชิ้น'];
+export const ASK_WHAT = { th: 'รับอะไรดีคะ', rom: 'ráp à-rai dii khá', en: 'What can I get you?' };
+// "How many <classifier>?": เอากี่ขวดคะ (the vendor's voice is female, so คะ)
+export const askHowMany = (cls) => {
+  const c = classifierOf(cls);
+  return { th: `เอากี่${cls}คะ`, rom: `ao gìi ${c.rom} khá`, en: `How many ${c.unit}?` };
+};
 
 // One everyday sentence per noun (Thai Teacher draft, 24 Oct; every line needs a native check).
 // Stored neutral (ฉัน, no polite ending); renderSay() puts it in the learner's register.
@@ -106,10 +155,10 @@ export const SAY = {
   'เสื้อ': S('Three shirts. Can you give me a discount?', [['ซื้อ', 'súue'], ['เสื้อ', 'sûeaa', 'noun'], ['สาม', 'sǎam', 'num'], ['ตัว', 'dtuaa', 'cls'], [' ลดได้ไหม', 'lót dâai mǎi']], true),
   'กางเกง': S('Can I try on two pairs of trousers?', [['ขอลอง', 'khǎaw laawng'], ['กางเกง', 'gaang-geeng', 'noun'], ['สอง', 'sǎawng', 'num'], ['ตัว', 'dtuaa', 'cls']]),
   'โต๊ะ': S('How many tables does this room have?', [['ห้องนี้มี', 'hâwng níi mii'], ['โต๊ะ', 'dtó', 'noun'], ['กี่', 'gìi', 'num'], ['ตัว', 'dtuaa', 'cls']], true),
-  'เก้าอี้': S('Two more chairs, please.', [['ขอ', 'khǎaw'], ['เก้าอี้', 'gâo-îi', 'noun'], ['เพิ่มอีก', 'phôoem ìik'], ['สอง', 'sǎawng', 'num'], ['ตัว', 'dtuaa', 'cls']]),
+  'เก้าอี้': S('Two more chairs, please.', [['ขอ', 'khǎaw'], ['เก้าอี้', 'gâo-îi', 'noun'], ['เพิ่มอีก', 'phôeem ìik'], ['สอง', 'sǎawng', 'num'], ['ตัว', 'dtuaa', 'cls']]),
   'ที่ชาร์จ': S('Can I borrow a charger?', [['ขอยืม', 'khǎaw yuuem'], ['ที่ชาร์จ', 'thîi-cháat', 'noun'], ['อัน', 'an', 'cls'], ['หนึ่ง', 'nùeng', 'num'], ['ได้ไหม', 'dâai mǎi']], true),
   'รีโมท': S('One of the air-con remotes is missing.', [['รีโมท', 'rii-mòot', 'noun'], ['แอร์หายไป', 'aae hǎai bpai'], ['อัน', 'an', 'cls'], ['หนึ่ง', 'nùeng', 'num']]),
-  'ไม้บรรทัด': S('Two rulers, please.', [['ขอ', 'khǎaw'], ['ไม้บรรทัด', 'mái ban-thát', 'noun'], ['สอง', 'sǎawng', 'num'], ['อัน', 'an', 'cls']]),
+  'ไม้บรรทัด': S('Two rulers, please.', [['ขอ', 'khǎaw'], ['ไม้บรรทัด', 'máai ban-thát', 'noun'], ['สอง', 'sǎawng', 'num'], ['อัน', 'an', 'cls']]),
   'น้ำเปล่า': S('Two bottles of water, please.', [['ขอ', 'khǎaw'], ['น้ำเปล่า', 'náam-bplàao', 'noun'], ['สอง', 'sǎawng', 'num'], ['ขวด', 'khùat', 'cls']]),
   'โค้ก': S('Just one Coke, please.', [['ขอ', 'khǎaw'], ['โค้ก', 'khóok', 'noun'], ['ขวด', 'khùat', 'cls'], ['เดียว', 'diao', 'num']]),
   'นม': S('I bought two bottles of milk at 7-Eleven.', [['ซื้อ', 'súue'], ['นม', 'nom', 'noun'], ['สอง', 'sǎawng', 'num'], ['ขวด', 'khùat', 'cls'], ['ที่เซเว่น', 'thîi see-wên']]),
@@ -126,7 +175,7 @@ export const SAY = {
   'ตั๋ว': S('Two tickets, please.', [['ขอ', 'khǎaw'], ['ตั๋ว', 'dtǔaa', 'noun'], ['สอง', 'sǎawng', 'num'], ['ใบ', 'bai', 'cls']]),
   'บัตร': S('Can I pay with two cards?', [['ใช้', 'chái'], ['บัตร', 'bàt', 'noun'], ['สอง', 'sǎawng', 'num'], ['ใบ', 'bai', 'cls'], ['ได้ไหม', 'dâai mǎi']], true),
   'หมวก': S('How much for two hats?', [['หมวก', 'mùak', 'noun'], ['สอง', 'sǎawng', 'num'], ['ใบ', 'bai', 'cls'], [' ราคาเท่าไหร่', 'raa-khaa thâo-rài']], true),
-  'กล่อง': S('Two more boxes, please.', [['ขอ', 'khǎaw'], ['กล่อง', 'glàawng', 'noun'], ['เพิ่มอีก', 'phôoem ìik'], ['สอง', 'sǎawng', 'num'], ['ใบ', 'bai', 'cls']]),
+  'กล่อง': S('Two more boxes, please.', [['ขอ', 'khǎaw'], ['กล่อง', 'glàawng', 'noun'], ['เพิ่มอีก', 'phôeem ìik'], ['สอง', 'sǎawng', 'num'], ['ใบ', 'bai', 'cls']]),
   'รถ': S('How many cars can I park with this unit?', [['ห้องนี้จอด', 'hâwng níi jàawt'], ['รถ', 'rót', 'noun'], ['ได้', 'dâai'], ['กี่', 'gìi', 'num'], ['คัน', 'khan', 'cls']], true),
   'มอเตอร์ไซค์': S('Call two motorbikes.', [['เรียก', 'rîak'], ['มอเตอร์ไซค์', 'maaw-dtoe-sai', 'noun'], ['สอง', 'sǎawng', 'num'], ['คัน', 'khan', 'cls']]),
   'จักรยาน': S("We'd like to rent two bicycles.", [['ขอเช่า', 'khǎaw châo'], ['จักรยาน', 'jàk-grà-yaan', 'noun'], ['สอง', 'sǎawng', 'num'], ['คัน', 'khan', 'cls']]),
@@ -137,6 +186,19 @@ export const SAY = {
   'เค้ก': S('Two slices of cake to go, please.', [['ขอ', 'khǎaw'], ['เค้ก', 'khéek', 'noun'], ['สอง', 'sǎawng', 'num'], ['ชิ้น', 'chín', 'cls'], [' กลับบ้าน', 'glàp bâan']]),
   'พิซซ่า': S('There are two slices of pizza left.', [['พิซซ่า', 'phít-sâa', 'noun'], ['เหลือ', 'lǔea'], ['สอง', 'sǎawng', 'num'], ['ชิ้น', 'chín', 'cls']]),
   'ไก่ทอด': S('Five pieces of fried chicken, please.', [['ขอ', 'khǎaw'], ['ไก่ทอด', 'gài-thâawt', 'noun'], ['ห้า', 'hâa', 'num'], ['ชิ้น', 'chín', 'cls']]),
+  // Street nouns (27 Oct panel draft; native check needed)
+  'ก๋วยเตี๋ยว': S('Two bowls of noodle soup, no coriander.', [['ขอ', 'khǎaw'], ['ก๋วยเตี๋ยว', 'gǔay-dtǐao', 'noun'], ['สอง', 'sǎawng', 'num'], ['ชาม', 'chaam', 'cls'], [' ไม่ใส่ผักชี', 'mâi sài phàk-chii']]),
+  'ต้มยำ': S('Just one bowl of tom yum is enough.', [['ต้มยำ', 'dtôm-yam', 'noun'], ['ชาม', 'chaam', 'cls'], ['เดียว', 'diao', 'num'], ['ก็พอ', 'gâaw phaaw']]),
+  'โจ๊ก': S('One bowl of rice porridge with egg, please.', [['ขอ', 'khǎaw'], ['โจ๊ก', 'jóok', 'noun'], ['ชาม', 'chaam', 'cls'], ['นึง', 'nueng', 'num'], ['ใส่ไข่', 'sài khài']]),
+  'หมูปิ้ง': S("I'll take five pork skewers.", [['เอา', 'ao'], ['หมูปิ้ง', 'mǔu-bpîng', 'noun'], ['ห้า', 'hâa', 'num'], ['ไม้', 'máai', 'cls']]),
+  'ไส้กรอก': S('Two sausage sticks to go, please.', [['ขอ', 'khǎaw'], ['ไส้กรอก', 'sâi-gràawk', 'noun'], ['สอง', 'sǎawng', 'num'], ['ไม้', 'máai', 'cls'], [' กลับบ้าน', 'glàp bâan']]),
+  'สะเต๊ะ': S('I ate five satay skewers.', [['ฉันกิน', 'chǎn gin'], ['สะเต๊ะ', 'sà-dté', 'noun'], ['ไป', 'bpai'], ['ห้า', 'hâa', 'num'], ['ไม้', 'máai', 'cls']]),
+  'มะม่วง': S('Three mangoes for 100, OK?', [['มะม่วง', 'má-mûang', 'noun'], ['สาม', 'sǎam', 'num'], ['ลูก', 'lûuk', 'cls'], ['ร้อย', 'rói'], ['ได้ไหม', 'dâai mǎi']], true),
+  'มะพร้าว': S('Just one coconut, please.', [['ขอ', 'khǎaw'], ['มะพร้าว', 'má-práao', 'noun'], ['ลูก', 'lûuk', 'cls'], ['เดียว', 'diao', 'num']]),
+  'แตงโม': S('Is this watermelon sweet?', [['แตงโม', 'dtaeng-moo', 'noun'], ['ลูก', 'lûuk', 'cls'], ['นี้', 'níi'], ['หวานไหม', 'wǎan mǎi']], true),
+  'น้ำแข็ง': S('One more bag of ice, please.', [['ขอ', 'khǎaw'], ['น้ำแข็ง', 'náam-khǎeng', 'noun'], ['เพิ่มอีก', 'phôeem ìik'], ['ถุง', 'thǔng', 'cls'], ['นึง', 'nueng', 'num']]),
+  'ผลไม้': S('Two bags of cut fruit.', [['เอา', 'ao'], ['ผลไม้', 'phǒn-lá-máai', 'noun'], ['สอง', 'sǎawng', 'num'], ['ถุง', 'thǔng', 'cls']]),
+  'กล้วยทอด': S('Fried bananas are 20 baht a bag, right?', [['กล้วยทอด', 'glûay-thâawt', 'noun'], ['ถุง', 'thǔng', 'cls'], ['ละ', 'lá'], ['ยี่สิบ', 'yîi-sìp'], ['ใช่ไหม', 'châi mǎi']], true),
 };
 
 // Words that may be tapped on their own inside a sentence or a tile bank
@@ -174,5 +236,11 @@ export function allClassifierLines() {
     for (const x of say.parts) s.add(x.th.trim());
   }
   for (const w of [...NUMBERS, ...EXTRA_WORDS]) s.add(w.th);
+  // The slot machine: the vendor's questions and your answers
+  s.add(ASK_WHAT.th); s.add(ASK_WHAT.th.replace(/คะ$/, '')); s.add('ได้');
+  for (const c of CLASSIFIERS) {
+    const q = askHowMany(c.th).th; s.add(q); s.add(q.replace(/คะ$/, ''));
+    for (const num of NUMBERS) s.add(`เอา${num.th}${c.th}`);
+  }
   return s;
 }
