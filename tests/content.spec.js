@@ -61,6 +61,17 @@ test('classifiers data is complete', async () => {
 // Romanization: the same Thai word is spelled one way across lessons, patterns and the word list.
 // Words already spelled two ways wait in tests/romanization-known.json for Jay to pick one.
 // Full list any time: node tests/romanization.js
+// The "er" rule (Jay, 27 Oct): เดิน dern, เงิน ngern, เจอ jer; เ-ย is oei (เคย khoei, เลย loei).
+// No romanization anywhere (course, Say it today, word list, sentences) may use the old oe spelling.
+test('the er sound is written er everywhere', () => {
+  const { collect } = require('./romanization');
+  const pairs = collect();
+  const old = pairs.filter((p) => /o\p{M}*e(?!\p{M}*i)/u.test(p.rom.normalize('NFD')));
+  expect(old.map((p) => `${p.th} ${p.rom} (${p.where})`), 'Use er (dern), or oei for เ-ย (khoei)').toEqual([]);
+  const has = (th, rom) => pairs.some((p) => p.th === th && p.rom === rom);
+  expect(has('เดิน', 'dern') || pairs.some((p) => p.rom.split(' ').includes('dern'))).toBe(true);
+});
+
 test('every Thai word is romanized one way', async ({}, testInfo) => {
   const { collect, conflicts, report } = require('./romanization');
   const pairs = collect();

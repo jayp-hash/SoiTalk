@@ -350,7 +350,7 @@ const GO_WHEN = [
 ];
 // How you go. places: where it makes sense (nobody takes a taxi to 7-Eleven)
 const GO_HOW = [
-  { parts: [{ th: 'เดิน', rom: 'doeen' }], th: 'เดิน', ing: 'walking', places: ['เซเว่น', 'ตลาด'] },
+  { parts: [{ th: 'เดิน', rom: 'dern' }], th: 'เดิน', ing: 'walking', places: ['เซเว่น', 'ตลาด'] },
   { parts: [{ th: 'นั่ง', rom: 'nâng' }, { th: 'รถไฟฟ้า', rom: 'rót-fai-fáa' }], th: 'นั่งรถไฟฟ้า', ing: 'taking the Skytrain', places: ['ตลาด', 'ห้าง', 'ทำงาน', 'สนามบิน', 'โรงพยาบาล'] },
   { parts: [{ th: 'นั่ง', rom: 'nâng' }, { th: 'แท็กซี่', rom: 'tháek-sîi' }], th: 'นั่งแท็กซี่', ing: 'taking a taxi', places: ['ตลาด', 'ห้าง', 'ทำงาน', 'สนามบิน', 'โรงพยาบาล'] },
   { parts: [{ th: 'นั่ง', rom: 'nâng' }, { th: 'วิน', rom: 'win' }], th: 'นั่งวิน', ing: 'taking a motorbike taxi', places: ['ตลาด', 'ห้าง', 'ทำงาน', 'โรงพยาบาล'] },
@@ -572,7 +572,7 @@ const ASK_GO = {
   3: { parts: [W('ไปยังไง', 'bpai yang-ngai')], en: 'How are you getting there?', group: 'how' },
 };
 const ASK_PRICE = [
-  { parts: [W('เลือกได้เลย', 'lûeaak dâai loeei')], en: 'Pick whatever you like!', group: 'pick', stmt: true },
+  { parts: [W('เลือกได้เลย', 'lûeaak dâai loei')], en: 'Pick whatever you like!', group: 'pick', stmt: true },
   { parts: [W('รับอะไรดี', 'ráp à-rai dii')], en: 'What can I get you?', group: 'what' },
 ];
 // Who the friend asks about: you, your mom, your dad, your friend (Teacher: คุณแม่ when asking about yours)
@@ -646,7 +646,7 @@ const ALIKE = {
 };
 const ALIKE_ROM = {
   'โรงพยาบาล': 'roong-phá-yaa-baan', 'สนามบิน': 'sà-nǎam-bin', 'ตลาด': 'dtà-làat', 'พรุ่งนี้': 'phrûng-níi', 'วันนี้': 'wan-níi', 'เย็นนี้': 'yen-níi',
-  'แท็กซี่': 'tháek-sîi', 'รถเมล์': 'rót-mee', 'วิน': 'win', 'เดิน': 'doeen', 'ไม่': 'mâi', 'มา': 'maa', 'มะพร้าว': 'má-práao', 'ไก่ทอด': 'gài-thâawt',
+  'แท็กซี่': 'tháek-sîi', 'รถเมล์': 'rót-mee', 'วิน': 'win', 'เดิน': 'dern', 'ไม่': 'mâi', 'มา': 'maa', 'มะพร้าว': 'má-práao', 'ไก่ทอด': 'gài-thâawt',
   'ถุง': 'thǔng', 'ชิ้น': 'chín', 'ขวด': 'khùat', 'นะ': 'ná', 'ที่ไหน': 'thîi-nǎi',
   'ทำงาน': 'tham-ngaan', 'มาก': 'mâak', 'ปกติ': 'bpòk-gà-dtì', 'จาน': 'jaan', 'แก้ว': 'gâaew', 'ฟัง': 'fang', 'ดู': 'duu', 'เพลง': 'phleeng', 'หนัง': 'nǎng' };
 export const alikeFor = (th) => (ALIKE[th] ? { th: ALIKE[th], rom: ALIKE_ROM[ALIKE[th]] } : null);

@@ -2779,3 +2779,7 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 /* The hint takes no room until there is something to say */
 .px-v2 .px-hint:not(.on) { height: 6px; padding: 0; }
 .px-v2 .px-hint.on { height: auto; min-height: 0; }
+
+/* Reading tips (27 Oct): one quiet line under the conversation, once per sound */
+.st-readtip { margin: 12px 2px 0; font: 500 13.5px/1.4 var(--font-body), sans-serif; color: #5B6472; animation: cl-fade .25s ease; }
+.st-readtip span { margin-right: 4px; padding: 1px 7px; border-radius: 99px; background: #E6ECF7; color: #0E2E63; font: 800 11.5px/1.5 var(--font-body), sans-serif; text-transform: uppercase; letter-spacing: .03em; }

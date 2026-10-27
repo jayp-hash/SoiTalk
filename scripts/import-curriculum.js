@@ -76,15 +76,24 @@ function sheetRows(ws) {
 // the way expats recognise it: น้อย nói, นิดหน่อย nít-nòi, อร่อย à-ròi, ซอย soi
 // (the workbook writes náawi, nít-nàawi, à-ràwi, saawy). The tone mark is kept.
 // Word spellings Jay picked (26 Oct 2026): เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa, อันนี้ an-níi,
-// เลี้ยวซ้าย líaao sáai, วินมอเตอร์ไซค์ win maaw-dtoe-sai.
+// เลี้ยวซ้าย líaao sáai, วินมอเตอร์ไซค์ win maaw-dter-sai.
+// The "er" rule (Jay, 27 Oct 2026): the vowel in เดิน, เงิน, เจอ is written er, tone mark on the e
+// (the workbook writes oe, ooe, oee: doeen, phôeem, joee). เ-ย is written oei, tone mark on the o
+// (เคย khoei, เลย loei, เผย phǒei). Short and long are not told apart. Thai teacher + expat panel, 27 Oct.
+const er = (s) => String(s).normalize('NFD')
+  .replace(/(?:o\p{M}*){1,2}(?:e\p{M}*){1,2}(i(?!\p{L}))?/gu, (m, i) => {
+    const mark = (m.match(/\p{M}/u) || [''])[0];
+    return i ? `o${mark}ei` : `e${mark}r`;
+  })
+  .normalize('NFC');
 const OI_TONE = { a: 'o', 'à': 'ò', 'á': 'ó', 'â': 'ô', 'ǎ': 'ǒ' };
-const ROM_FIX = { 'diaao': 'diao', 'gâaeo': 'gâaew', 'dtǔa': 'dtǔaa' };
-const rom = (s) => (s ? String(s).normalize('NFC')
+const ROM_FIX = { 'diaao': 'diao', 'gâaeo': 'gâaew', 'dtǔa': 'dtǔaa', 'aaep-bpêrn': 'áep-bpêrn' };
+const rom = (s) => (s ? er(s)
   .replace(/([aàáâǎ])a?w[iy](?=$|[\s\-.,?!])/g, (_, v) => `${OI_TONE[v]}i`)
-  .replace(/(?<![\p{L}\p{M}])(diaao|gâaeo|dtǔa)(?![\p{L}\p{M}])/gu, (w) => ROM_FIX[w])
+  .replace(/(?<![\p{L}\p{M}])(diaao|gâaeo|dtǔa|aaep-bpêrn)(?![\p{L}\p{M}])/gu, (w) => ROM_FIX[w])
   .replace(/(?<![\p{L}\p{M}-])an níi(?![\p{L}\p{M}])/gu, 'an-níi')
   .replace(/(?<![\p{L}\p{M}-])líaao-sáai(?![\p{L}\p{M}])/gu, 'líaao sáai')
-  .replace(/(?<![\p{L}\p{M}-])win-maaw-dtoe-sai(?![\p{L}\p{M}])/gu, 'win maaw-dtoe-sai') : s);
+  .replace(/(?<![\p{L}\p{M}-])win-maaw-dter-sai(?![\p{L}\p{M}])/gu, 'win maaw-dter-sai') : s);
 
 const col = (row, startsWith) => {
   const key = Object.keys(row).find((k) => k.toLowerCase().startsWith(startsWith.toLowerCase()));

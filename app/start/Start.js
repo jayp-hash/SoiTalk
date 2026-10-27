@@ -26,7 +26,12 @@ import { SCENES, DEFAULT_SCENE, replyParts, followParts, missionParts, joinTh, j
 const STEPS = ['scene', 'parts', 'swap', 'listen', 'check', 'done'];
 const FIRST_KEY = 'tsc-first-session';   // { scene, made, day }
 export const SCENES_KEY = 'tsc-scenes';  // { <scene id>: day finished }
-const HINTS_KEY = 'tsc-lesson-hints'; // { hear, swap }: one-time hints already used
+const HINTS_KEY = 'tsc-lesson-hints'; // { hear, swap, read-th, read-ph, read-er }: one-time hints already used
+const READ_TIPS = [
+  { key: 'read-th', test: /(^|[\s-])(th|kh)/, text: 'th, kh: t, k with a puff of air. Thonglor = Tong-lor.' },
+  { key: 'read-ph', test: /(^|[\s-])ph/, text: 'ph: p with a puff of air, never f. Phrom Phong = Prom Pong.' },
+  { key: 'read-er', test: /er/, text: 'er sounds like "her" without the r.' },
+];
 export const MISSION_KEY = 'tsc-mission'; // { scene, th, rom, en, text, day, done }
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 
@@ -182,6 +187,12 @@ export default function Start({ sceneId }) {
   const parts = replyParts(scene, item, reg);
   const ask = scene.staff.ask(item);
   const spiceParts = fu ? followParts(scene, spiceIdx, reg) : null;
+  // Reading the romanization (27 Oct, panel): one tip at a time, on the first lesson where that sound appears,
+  // under the conversation once it has been heard. Seen once per learner.
+  const readTip = (() => {
+    const roms = [ask.rom, ...(ask.words || []).map((w) => w.rom), ...parts.map((x) => x.rom), ...(fu ? [fu.staff.rom, ...(spiceParts || []).map((x) => x.rom)] : [])].filter(Boolean).join(' ');
+    return READ_TIPS.find((t) => !hints[t.key] && t.test.test(roms)) || null;
+  })();
   // Some answers don't go with some items (no "not sweet" Thai iced tea): fall back to the first
   useEffect(() => {
     if (fu && (fu.answers[spiceIdx].notFor || []).includes(item.th)) setSpiceIdx(0);
@@ -556,8 +567,9 @@ export default function Start({ sceneId }) {
               </div>
             )}
             </div>
+            {readTip && heard && <p className="st-readtip" role="note"><span>Tip</span> {readTip.text}</p>}
             <button type="button" className={`st-cta${nudge ? ' is-nudge' : ''}${player.playing === 'both' && !heard ? ' is-busy' : ''}`} disabled={!regChosen} onClick={() => {
-              if (heard) { track('said_it_lesson', { scene: scene.id }); go('parts'); } else if (player.playing !== 'both') hearAll();
+              if (heard) { track('said_it_lesson', { scene: scene.id }); if (readTip) hintDone(readTip.key); go('parts'); } else if (player.playing !== 'both') hearAll();
             }}>{!regChosen ? 'Choose woman or man above' : heard ? 'I said it ✓' : player.playing === 'both' ? 'Listening…' : 'Hear the conversation'}</button>
           </section>
         )}
