@@ -182,7 +182,7 @@ export const SCENES = {
     plate: { th: 'ตลาด', rom: 'dtà-làat', en: 'Market' },
     promise: 'Ask how much',
     minutes: 3,
-    staff: { who: 'The vendor', ask: () => ({ th: 'เลือกได้เลยค่ะ', rom: 'lûeaak dâai loeei khâ', en: 'Pick whatever you like!', words: [{ th: 'เลือก', rom: 'lûeaak' }, { th: 'ได้', rom: 'dâai' }, { th: 'เลย', rom: 'loeei' }, { th: 'ค่ะ', rom: 'khâ' }] }) },
+    staff: { who: 'The vendor', ask: () => ({ th: 'เลือกได้เลยค่ะ', rom: 'lûeaak dâai loei khâ', en: 'Pick whatever you like!', words: [{ th: 'เลือก', rom: 'lûeaak' }, { th: 'ได้', rom: 'dâai' }, { th: 'เลย', rom: 'loei' }, { th: 'ค่ะ', rom: 'khâ' }] }) },
     question: true,
     reply: [
       { slot: true },
@@ -200,7 +200,7 @@ export const SCENES = {
       staff: { th: 'กิโลละห้าสิบบาทค่ะ', rom: 'gì-loo lá hâa-sìp bàat khâ', en: 'Fifty baht a kilo.', words: [{ th: 'กิโล', rom: 'gì-loo' }, { th: 'ละ', rom: 'lá' }, { th: 'ห้าสิบ', rom: 'hâa-sìp' }, { th: 'บาท', rom: 'bàat' }, { th: 'ค่ะ', rom: 'khâ' }] },
       answers: [
         // Spoken Thai: เอากิโลนึง, not the textbook เอาหนึ่งกิโล (Thai Teacher, 22 Oct)
-        { key: 'one', adj: 'a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }, { th: 'นึง', rom: 'nueng', en: 'one' }], en: "I'll take a kilo." },
+        { key: 'one', adj: 'a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }, { th: 'นึง', rom: 'nùeng', en: 'one' }], en: "I'll take a kilo." },
         { key: 'half', adj: 'half a kilo', parts: [{ th: 'เอา', rom: 'ao', en: 'take' }, { th: 'ครึ่ง', rom: 'khrûeng', en: 'half' }, { th: 'กิโล', rom: 'gì-loo', en: 'kilo' }], en: "I'll take half a kilo." },
       ],
       wrong: 'Too expensive.', // a listening option only
@@ -278,7 +278,7 @@ export const SCENES = {
       { th: 'ร้านขายยา', rom: 'ráan-khǎai-yaa', en: 'pharmacy', a: 'the pharmacy' },
     ],
     followUp: {
-      staff: { th: 'เดินตรงไปแล้วเลี้ยวซ้ายค่ะ', rom: 'doeen dtrong-bpai láaeo líaao sáai khâ', en: 'Walk straight, then turn left.', words: [{ th: 'เดิน', rom: 'doeen' }, { th: 'ตรงไป', rom: 'dtrong-bpai' }, { th: 'แล้ว', rom: 'láaeo' }, { th: 'เลี้ยว', rom: 'líaao' }, { th: 'ซ้าย', rom: 'sáai' }, { th: 'ค่ะ', rom: 'khâ' }] },
+      staff: { th: 'เดินตรงไปแล้วเลี้ยวซ้ายค่ะ', rom: 'dern dtrong-bpai láaeo líaao sáai khâ', en: 'Walk straight, then turn left.', words: [{ th: 'เดิน', rom: 'dern' }, { th: 'ตรงไป', rom: 'dtrong-bpai' }, { th: 'แล้ว', rom: 'láaeo' }, { th: 'เลี้ยว', rom: 'líaao' }, { th: 'ซ้าย', rom: 'sáai' }, { th: 'ค่ะ', rom: 'khâ' }] },
       answers: [
         { key: 'check', adj: 'check', question: true, parts: [{ th: 'ซ้าย', rom: 'sáai', en: 'left' }, { th: 'ใช่', rom: 'châi', en: 'correct' }, { th: 'ไหม', rom: 'mǎi', en: '(question)' }], en: 'Left, is that right?' },
         { key: 'thanks', adj: 'thanks', parts: [{ th: 'ขอบคุณ', rom: 'khàawp-khun', en: 'thank you' }], en: 'Thank you.' },
@@ -298,7 +298,7 @@ export const SCENES = {
   taxi: {
     id: 'taxi',
     place: 'At the motorbike taxi stand',
-    plate: { th: 'วินมอเตอร์ไซค์', rom: 'win maaw-dtoe-sai', en: 'Motorbike taxi' },
+    plate: { th: 'วินมอเตอร์ไซค์', rom: 'win maaw-dter-sai', en: 'Motorbike taxi' },
     promise: 'Get home by motorbike taxi',
     minutes: 2,
     staffVoice: 'male',
@@ -358,7 +358,7 @@ export const SCENES = {
       staff: { th: 'กินข้าวหรือยังคะ', rom: 'gin khâao rǔue yang khá', en: 'Have you eaten yet?', words: [{ th: 'กิน', rom: 'gin' }, { th: 'ข้าว', rom: 'khâao' }, { th: 'หรือ', rom: 'rǔue' }, { th: 'ยัง', rom: 'yang' }, { th: 'คะ', rom: 'khá' }] },
       answers: [
         { key: 'yes', adj: 'eaten', parts: [{ th: 'กิน', rom: 'gin', en: 'eat' }, { th: 'แล้ว', rom: 'láaeo', en: 'already' }], en: 'Yes, I have.' },
-        { key: 'notyet', adj: 'not yet', parts: [{ th: 'ยัง', rom: 'yang', en: 'not yet' }, { th: 'เลย', rom: 'loeei', en: '(at all)' }], en: 'Not yet.' },
+        { key: 'notyet', adj: 'not yet', parts: [{ th: 'ยัง', rom: 'yang', en: 'not yet' }, { th: 'เลย', rom: 'loei', en: '(at all)' }], en: 'Not yet.' },
       ],
       wrong: "I'm from Canada.", // a listening option only
     },

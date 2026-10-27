@@ -23,6 +23,8 @@ const SoundIcon = ({ on }) => <svg viewBox="0 0 24 24" fill="none" stroke="curre
 // What each level lets you do, said plainly at the end of a round
 const CAN_DO = {
   like: { 1: "You can say what people like, and don't like.", 2: 'You can say where and when people like doing things.', 3: 'You can say when, and why, people like doing things.' },
+  go: { 1: "You can say where you're going.", 2: "You can say where you're going, and when.", 3: 'You can say how you get there.' },
+  price: { 1: 'You can ask how much something is.', 2: 'You can ask the price of one.', 3: 'You can ask the price of an amount.' },
   order: { 1: 'You can order food and drinks, with the right counting word.', 2: 'You can order two things at once.', 3: 'You can order, and answer when they ask how you want it.' },
 };
 
@@ -60,11 +62,20 @@ export default function Practice({ p, level, lex, onLearn }) {
   const audio = usePlayer();
   const [autoplay, setAutoplay] = useState(true);
   useEffect(() => { setAutoplay(readStore('tsc-autoplay', true) !== false); }, []);
-  const toggleSound = () => setAutoplay((v) => { writeStore('tsc-autoplay', !v); if (v) audio.stop(); return !v; });
+  // Turning sound off while their line plays must not leave the round stuck on "Listen" (bug found 27 Oct)
+  const toggleSound = () => setAutoplay((v) => {
+    writeStore('tsc-autoplay', !v);
+    if (v) {
+      audio.stop();
+      setRound((r) => (r && r.phase === 'listen' ? { ...r, phase: r.queue[r.pos].quiz && !r.queue[r.pos].retry ? 'quiz' : 'build' } : r));
+    }
+    return !v;
+  });
 
   // ---- Build a round ----
   const build = () => practiceExchanges(p.id, level).map((ex, i) => {
-    const ask = { parts: [...ex.ask.parts, { th: askEnding.th, rom: askEnding.rom }], en: ex.ask.en, group: ex.ask.group };
+    const end = ex.ask.stmt ? particleFor('female', false) : askEnding;
+    const ask = { parts: [...ex.ask.parts, { th: end.th, rom: end.rom }], en: ex.ask.en, group: ex.ask.group, stmt: !!ex.ask.stmt };
     let reply;
     if (ex.follow) reply = { parts: [...ex.follow.reply, { th: ending.th, rom: ending.rom, slot: 'ending' }], en: ex.follow.replyEn, follow: true };
     else { const s = level.make(ex.v); reply = { parts: s.parts, en: s.en }; }
@@ -79,7 +90,22 @@ export default function Practice({ p, level, lex, onLearn }) {
       const w = alikeFor(n.th);
       if (w && !need.some((x) => x.th === w.th) && !wrong.some((x) => x.th === w.th)) wrong.push({ th: w.th, rom: w.rom || lex[w.th]?.rom || '' });
     }
-    const tiles = shuffle([...need, ...wrong.slice(0, Math.max(2, 12 - need.length))]).map((t, k) => ({ ...t, id: k }));
+    // For women, the ending is a real choice: offer the other one (ค่ะ vs คะ)
+    const endIdx = reply.parts.findIndex((x) => x.slot === 'ending');
+    if (endIdx >= 0 && gap[endIdx] && reg !== 'male') {
+      const other = reply.parts[endIdx].th === 'คะ' ? { th: 'ค่ะ', rom: 'khâ' } : { th: 'คะ', rom: 'khá' };
+      if (!wrong.some((w) => w.th === other.th)) wrong.unshift(other);
+    }
+    // At least 3 more tiles than gaps (panel, 27 Oct): fill from the same slots in other sentences of this level
+    for (let i = 0; i < 12 && wrong.length < Math.max(3, need.length); i++) {
+      const other = level.make(level.random());
+      for (const x of other.parts) {
+        if (x.slot === 'fixed' || x.slot === 'ending' || need.some((n) => n.th === x.th) || wrong.some((w) => w.th === x.th)) continue;
+        wrong.push({ th: x.th, rom: rom(x) });
+        break;
+      }
+    }
+    const tiles = shuffle([...need, ...wrong.slice(0, Math.max(3, Math.min(need.length, 12 - need.length)))]).map((t, k) => ({ ...t, id: k }));
     return { id: i, ask, reply, gap, tiles, quiz: i === 1, meanings: askMeanings(ask, p.id) };
   });
 
@@ -102,7 +128,9 @@ export default function Practice({ p, level, lex, onLearn }) {
     const ready = () => setRound((r) => (r && r.phase === 'listen' ? { ...r, phase: r.queue[r.pos].quiz && !r.queue[r.pos].retry ? 'quiz' : 'build' } : r));
     if (!autoplay) { const t = setTimeout(ready, 400); return () => clearTimeout(t); }
     audio.play(`t${round.pos}`, sentenceThai(cur.ask), 'female', { onEnd: () => setTimeout(ready, 250) });
-    return undefined;
+    // If the audio is slow or never ends, the tiles still come
+    const fallback = setTimeout(ready, 6000);
+    return () => clearTimeout(fallback);
   }, [round?.pos, round?.phase === 'listen']); // eslint-disable-line react-hooks/exhaustive-deps
 
   const roundRef = useRef(round);
@@ -113,7 +141,8 @@ export default function Practice({ p, level, lex, onLearn }) {
   const nextGap = cur ? gapIdx[round.filled.length] : -1;
 
   const tap = (t) => {
-    if (round.phase !== 'build' || round.used.includes(t.id)) return;
+    // Ignore extra taps once every gap is filled (a quick double tap)
+    if (round.phase !== 'build' || round.used.includes(t.id) || round.filled.length >= gapIdx.length) return;
     const want = cur.reply.parts[nextGap];
     if (t.th !== want.th) { setRound({ ...round, wrong: t, missed: true, misses: round.missed ? round.misses : round.misses + 1 }); return; }
     const filled = [...round.filled, t.th]; const used = [...round.used, t.id];
@@ -159,10 +188,18 @@ export default function Practice({ p, level, lex, onLearn }) {
   const dots = Array.from({ length: round.total }, (_, i) => i < Math.min(round.pos, round.total));
 
   return (
-    <section className="pm-card px-card" data-level={level.n} ref={cardRef}>
+    <section className="pm-card px-card px-v2" data-level={level.n} ref={cardRef}>
       <div className="pm-band">
         <span>{p.short || p.title}</span>
-        <span className="px-dots" aria-label={`${Math.min(round.pos, round.total)} of ${round.total} done`}>{dots.map((d, i) => <i key={i} className={d ? 'on' : ''} />)}</span>
+        <span className="px-band-r">
+          <span className="px-dots" role="img" aria-label={`${Math.min(round.pos, round.total)} of ${round.total} done`}>{dots.map((d, i) => <i key={i} className={d ? 'on' : ''} />)}</span>
+          {!done && (
+            <button type="button" className={`px-sound${autoplay ? '' : ' off'}`} onClick={toggleSound}
+              aria-label={autoplay ? 'Lines play by themselves. Turn off' : 'Lines are silent until you tap play. Turn on'} title={autoplay ? 'Sound on' : 'Sound off'}>
+              <SoundIcon on={autoplay} />
+            </button>
+          )}
+        </span>
       </div>
       <div className="px-body">
         {done ? (
@@ -178,80 +215,72 @@ export default function Practice({ p, level, lex, onLearn }) {
             <p className="px-cando">{CAN_DO[p.id]?.[level.n]}</p>
             <p className="px-note">{clean ? 'This sign is yours. It comes back in a few days, to keep it fresh.' : `${round.misses} ${round.misses === 1 ? 'reply' : 'replies'} needed a second try. A round with no misses earns the sign.`}</p>
             <div className="px-end-actions">
-              <button type="button" className="pm-lever" onClick={() => setRun((n) => n + 1)}>Practise again</button>
-              <button type="button" className="px-link" onClick={onLearn}>Back to Learn</button>
+              <a className="pm-lever" href="/today">Back to Today</a>
+              <button type="button" className="px-link" onClick={() => setRun((n) => n + 1)}>Practise again</button>
             </div>
           </div>
         ) : (
           <>
-            <div className="px-left">
-              <div className="px-top">
-                <div className="pm-sound">
-                  <button type="button" className={`pm-play${audio.playing === 'replay' ? ' on' : ''}`} aria-label="Play their line again"
+            <div className="px-them" aria-live="polite">
+              <div className="px-them-band">{lastThem?.stmt ? 'They say' : 'They ask'}</div>
+              <div className="px-them-body">
+                <div className="pm-sound is-col">
+                  <button type="button" className={`pm-play${audio.playing === 'replay' || audio.playing === `t${round.pos}` ? ' on' : ''}`} aria-label="Play their line again"
                     onClick={() => audio.play('replay', sentenceThai(lastThem), 'female')}><PlayIcon /></button>
                   <button type="button" className={`pm-slow${audio.playing === 'slow' ? ' on' : ''}`} aria-label="Play their line slowly"
                     onClick={() => audio.play('slow', sentenceThai(lastThem), 'female', { slow: true })}><SlowIcon /></button>
                 </div>
-                <button type="button" className={`px-sound${autoplay ? '' : ' off'}`} onClick={toggleSound}
-                  aria-label={autoplay ? 'Lines play by themselves. Turn off' : 'Lines are silent until you tap play. Turn on'} title={autoplay ? 'Sound on' : 'Sound off'}>
-                  <SoundIcon on={autoplay} />
-                </button>
-              </div>
-              <div className="px-chat" ref={chatRef}>
-                {round.log.map((m) => (
-                  <div key={m.key} className={`px-msg ${m.side}`}>
-                    <button type="button" className={`px-msg-play${audio.playing === m.key ? ' on' : ''}`} aria-label="Play"
-                      onClick={() => audio.play(m.key, sentenceThai(m), m.side === 'them' ? 'female' : myVoice)}><PlayIcon /></button>
-                    <div className="px-msg-text">
-                      <span className="th" lang="th">{m.parts.map((x) => x.th).join('')}</span>
-                      <span className="rom">{m.parts.map(rom).filter(Boolean).join(' ')}</span>
-                      <BlurEn as="span" className="en" text={m.en} />
-                    </div>
-                  </div>
-                ))}
+                <div className="px-them-text" key={lastThem?.key}>
+                  {round.phase === 'quiz' ? <span className="en is-hidden">English after you answer</span> : <BlurEn as="span" className="en" text={lastThem.en} />}
+                  <span className="th" lang="th">{lastThem.parts.map((x) => x.th).join('')}</span>
+                  <span className="rom">{lastThem.parts.map(rom).filter(Boolean).join(' ')}</span>
+                </div>
               </div>
             </div>
-            <div className="px-right">
-              <p className="px-task">{round.phase === 'quiz' ? 'What did they ask?' : round.phase === 'listen' ? 'Listen…' : <>Answer: <b>{cur.reply.en}</b></>}</p>
-              <div className={`px-slots${round.phase === 'listen' || round.phase === 'quiz' ? ' is-waiting' : ''}`} aria-label="Your answer">
-                {cur.reply.parts.map((x, k) => {
-                  const g = cur.gap[k];
-                  const i = gapIdx.indexOf(k);
-                  const isFilled = !g || i < round.filled.length || round.phase === 'reply';
-                  return (
-                    <span key={k} className={`px-slot${g ? ' is-gap' : ''}${g && isFilled ? ' is-done' : ''}${k === nextGap && round.phase === 'build' ? ' is-next' : ''}`}>
-                      <span className="th" lang="th">{isFilled && round.phase !== 'listen' && round.phase !== 'quiz' ? x.th : (g ? ' ' : x.th)}</span>
-                      <span className="rom">{isFilled && round.phase !== 'listen' && round.phase !== 'quiz' ? rom(x) : (g ? ' ' : rom(x))}</span>
-                    </span>
-                  );
-                })}
-              </div>
-              <p className={`px-hint${hint ? ' on' : ''}`} role="status">{hint || ' '}</p>
-              <div className="px-bank">
-                {round.phase === 'quiz' ? (
-                  <div className="px-quiz">
-                    {cur.meanings.map((m) => (
-                      <button key={m} type="button" className={`px-opt${round.wrong?.en === m ? ' is-wrong' : ''}`} onClick={() => answerQuiz(m)}>{m}</button>
-                    ))}
-                  </div>
-                ) : round.phase === 'listen' ? (
-                  <p className="px-wait">{autoplay ? 'Listen to what they say…' : 'Tap ▶ to hear it.'}</p>
-                ) : (
-                  <div className="px-tiles">
-                    {cur.tiles.map((t) => {
-                      const want = cur.reply.parts[nextGap];
-                      const isHint = round.wrong && want && t.th === want.th && !round.used.includes(t.id);
-                      return (
-                        <button key={`${cur.id}-${t.id}`} type="button"
-                          className={`px-tile${round.used.includes(t.id) ? ' is-used' : ''}${round.wrong?.id === t.id ? ' is-wrong' : ''}${isHint ? ' is-hint' : ''}`}
-                          disabled={round.phase !== 'build' || round.used.includes(t.id)} onClick={() => tap(t)}>
-                          <span className="th" lang="th">{t.th}</span>
-                          <span className="rom">{t.rom || ' '}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+            <div className="px-you">
+              <div className="px-you-band">You say</div>
+              <div className="px-you-body">
+                <p className="px-task">{round.phase === 'quiz' ? (cur.ask.stmt ? 'What did they say?' : 'What did they ask?') : round.phase === 'listen' ? 'Listen…' : <><span>Say:</span> <b>{cur.reply.en}</b></>}</p>
+                <div className={`px-slots${round.phase === 'listen' || round.phase === 'quiz' ? ' is-waiting' : ''}`} aria-label="Your answer">
+                  {cur.reply.parts.map((x, k) => {
+                    const g = cur.gap[k];
+                    const i = gapIdx.indexOf(k);
+                    const isFilled = !g || i < round.filled.length || round.phase === 'reply';
+                    return (
+                      <span key={k} data-want={g ? x.th : undefined} className={`px-slot${g ? ' is-gap' : ''}${g && isFilled ? ' is-done' : ''}${k === nextGap && round.phase === 'build' ? ' is-next' : ''}`}>
+                        <span className="th" lang="th">{isFilled && round.phase !== 'listen' && round.phase !== 'quiz' ? x.th : (g ? ' ' : x.th)}</span>
+                        <span className="rom">{isFilled && round.phase !== 'listen' && round.phase !== 'quiz' ? rom(x) : (g ? ' ' : rom(x))}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+                <p className={`px-hint${hint ? ' on' : ''}`} role="status">{hint || ' '}</p>
+                <div className="px-bank">
+                  {round.phase === 'quiz' ? (
+                    <div className="px-quiz">
+                      {cur.meanings.map((m) => (
+                        <button key={m} type="button" data-ok={m === cur.ask.en ? '1' : undefined} className={`px-opt${round.wrong?.en === m ? ' is-wrong' : ''}`} onClick={() => answerQuiz(m)}>{m}</button>
+                      ))}
+                    </div>
+                  ) : round.phase === 'listen' ? (
+                    <p className="px-wait">{autoplay ? 'Listen to what they say…' : 'Tap ▶ to hear it.'}</p>
+                  ) : (
+                    <div className="px-tiles">
+                      {cur.tiles.map((t) => {
+                        const want = cur.reply.parts[nextGap];
+                        const isHint = round.wrong && want && t.th === want.th && !round.used.includes(t.id);
+                        return (
+                          <button key={`${cur.id}-${t.id}`} type="button"
+                            data-th={t.th} className={`px-tile${round.used.includes(t.id) ? ' is-used' : ''}${round.wrong?.id === t.id ? ' is-wrong' : ''}${isHint ? ' is-hint' : ''}`}
+                            disabled={round.phase !== 'build' || round.used.includes(t.id)} onClick={() => tap(t)}>
+                            <span className="th" lang="th">{t.th}</span>
+                            <span className="rom">{t.rom || ' '}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </>

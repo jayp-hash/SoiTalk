@@ -4,7 +4,7 @@ import Practice from './Practice';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { audioVersion, SLOW_RATE } from '../lib/audioVersion';
 import { readStore, writeStore } from '../lib/progress';
-import { laddersInRegister, sentenceThai } from '../lib/patterns';
+import { laddersInRegister, sentenceThai, swapValue } from '../lib/patterns';
 import { getRegister, particleFor } from '../lib/register';
 
 // Sentence patterns (Jay, 20 Oct 2026): pick a pattern (sidebar on wide
@@ -68,30 +68,41 @@ export default function SimplePatterns({ lex }) {
   const closeKhao = () => { setKhaoSeen(true); writeStore('tsc-hint-khao', true); };
   const hintSeen = () => { setHint(false); writeStore('tsc-hint-patterns', true); };
 
-  const [s, setS] = useState(null);      // the sentence on screen (picked in the browser)
+  const [v, setV] = useState(null);      // the values behind the sentence (so one word can be swapped)
+  // The sentence on screen. Values from the previous pattern can't build this one's sentence, so wait for new ones.
+  const s = useMemo(() => { if (!v) return null; try { return level.make(v); } catch { return null; } }, [v, level]);
   const [spin, setSpin] = useState(false); // true while the changing words fade out
   const [fresh, setFresh] = useState(0);   // bumps when a new sentence lands, to fade it in
   const timer = useRef(0);
-  useEffect(() => { setS(level.make(level.random())); setSpin(false); }, [pid, lvl]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setV(level.random()); setSpin(false); setSwapped(-1); }, [pid, lvl]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const choosePattern = (id) => { audio.stop(); setHelp(false); setPid(id); setLvl(1); };
+  const choosePattern = (id) => { audio.stop(); setHelp(false); setSwapped(-1); setPid(id); setLvl(1); };
   const pull = () => {
     if (spin) return;
     if (hint) hintSeen();
     audio.stop();
-    let next = null;
-    for (let i = 0; i < 20 && (!next || (s && sentenceThai(next) === sentenceThai(s))); i++) next = level.make(level.random());
+    let next = null; let nv = null;
+    for (let i = 0; i < 20 && (!next || (s && sentenceThai(next) === sentenceThai(s))); i++) { nv = level.random(); next = level.make(nv); }
     // Calm swap (Jay, 20 Oct): the changing words fade out, the new sentence
     // fades in. Nothing jumps around while it changes.
-    setSpin(true);
+    setSpin(true); setSwapped(-1);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      setSpin(false); setS(next); setFresh((n) => n + 1);
+      setSpin(false); setV(nv); setFresh((n) => n + 1);
       audio.play(sentenceThai(next));
     }, 220);
   };
 
+  // Tap a coloured word: swap just that word, and hear the new sentence (panel, 27 Oct)
+  const [swapped, setSwapped] = useState(-1);
+  const swap = (key, i) => {
+    if (spin) return;
+    const nv = swapValue(p.id, v, key); if (!nv) return;
+    if (hint) hintSeen();
+    audio.stop(); setV(nv); setSwapped(i);
+    audio.play(sentenceThai(level.make(nv)));
+  };
   const shown = s;
   return (
     <div className="pm-layout">
@@ -162,6 +173,10 @@ export default function SimplePatterns({ lex }) {
                   onClick={() => audio.play(sentenceThai(s), true, true)} aria-label={audio.playing === 'slow' ? 'Stop' : 'Play slowly'}>
                   <SlowIcon />
                 </button>
+                {/* One Shuffle button beside play and slow (principle 15): a whole new sentence */}
+                <button type="button" className={`pm-slow pm-shuffle${spin ? ' is-pulling' : ''}`} onClick={pull} disabled={!s} aria-label="New sentence" title="New sentence">
+                  <AgainIcon />
+                </button>
               </div>
               <div className="pm-key">
                 <span className="kl"><span className="th" lang="th">{p.key.th}</span><i>{p.key.rom}</i></span>
@@ -169,14 +184,20 @@ export default function SimplePatterns({ lex }) {
               </div>
             </div>
             <div key={fresh} className={`pm-sentence${spin ? ' is-out' : ''}${fresh ? ' is-in' : ''}`} aria-live="polite">
-              {shown && shown.parts.map((x, i) => (
+              {shown && shown.parts.map((x, i) => (x.key && swapValue(p.id, v, x.key) ? (
+                <button key={`${i}-${x.th}`} type="button" className={`pm-tile is-slot is-swap${swapped === i ? ' is-new' : ''}`} onClick={() => swap(x.key, i)} aria-label={`Swap ${x.rom || lex[x.th]?.rom || x.th}`}>
+                  <span className="th" lang="th">{x.th}</span>
+                  <span className="rom">{x.rom || lex[x.th]?.rom || '\u00a0'}</span>
+                </button>
+              ) : (
                 <span key={i} className={`pm-tile${isChangeable(x.slot) ? ' is-slot' : ''}`}>
                   <span className="th" lang="th">{x.th}</span>
                   <span className="rom">{x.rom || lex[x.th]?.rom || '\u00a0'}</span>
                 </span>
-              ))}
+              )))}
             </div>
             <BlurEn className={`pm-en${spin ? ' is-out' : ''}`} text={s ? s.en : '\u00a0'} />
+            {level.adds && <p className="pm-adds">Level {level.n}: {level.adds}</p>}
           </div>
           {!khaoSeen && !spin && s?.parts.some((x) => x.th === 'เขา') && (
             <div className="pm-tip" role="note">
@@ -186,17 +207,12 @@ export default function SimplePatterns({ lex }) {
           )}
         </section>
 
-        <div className="pm-lever-wrap">
-        <button type="button" className={`pm-lever${hint ? ' is-hinted' : ''}${spin ? ' is-pulling' : ''}`} onClick={pull} disabled={!s}>
-          <AgainIcon /> New sentence
-        </button>
         {hint && (
-          <div className="pm-hint" role="note">
-            <span><b>Tap New sentence</b> for new words in the same shape. Play it, then say it out loud.</span>
+          <div className="pm-hint pm-hint-card" role="note">
+            <span><b>Tap a coloured word</b> to swap it, or the circular arrows for a whole new sentence. Play it, then say it out loud.</span>
             <button type="button" aria-label="Got it, hide this tip" onClick={hintSeen}>×</button>
           </div>
         )}
-        </div>
         </>)}
       </div>
     </div>

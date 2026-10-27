@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '../../lib/supabase-browser';
+import { track } from '../../lib/analytics';
 
 // Google and the email link both send people back here. The Supabase
 // client reads the one-time code from the address bar and turns it into
@@ -17,6 +18,10 @@ export default function AuthCallback() {
     let done = false;
     const go = () => {
       if (done) return; done = true;
+      // Google and email links land here (the 6-digit code is counted on the sign-in page)
+      let method = 'email_link';
+      try { method = localStorage.getItem('tsc-signin-method') || 'email_link'; localStorage.removeItem('tsc-signin-method'); } catch {}
+      track('signin_done', { method });
       let next = '/today';
       try { next = localStorage.getItem('tsc-after-signin') || '/today'; localStorage.removeItem('tsc-after-signin'); } catch {}
       window.location.replace(next);

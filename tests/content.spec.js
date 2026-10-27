@@ -37,13 +37,14 @@ test('classifiers data is complete', async () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'classifiers.js'), 'utf8').replace(/^export /gm, '');
   const { CLASSIFIERS, NOUNS, SAY, CONFUSE } = new Function(`${src}; return { CLASSIFIERS, NOUNS, SAY, CONFUSE };`)();
   const cls = new Set(CLASSIFIERS.map((c) => c.th));
-  expect(CLASSIFIERS).toHaveLength(10);
+  expect(CLASSIFIERS.length).toBeGreaterThanOrEqual(10);
   for (const n of NOUNS) {
     expect(cls.has(n.cls), `${n.th} has an unknown classifier`).toBe(true);
     expect(n.rom && n.en, `${n.th} needs romanization and English`).toBeTruthy();
     expect(fs.existsSync(path.join(__dirname, '..', 'public', 'classifiers', `${n.img}.webp`)), `${n.th} picture`).toBe(true);
   }
-  for (const c of CLASSIFIERS) expect(NOUNS.filter((n) => n.cls === c.th).length, `${c.th} needs at least 3 nouns`).toBeGreaterThanOrEqual(3);
+  for (const c of CLASSIFIERS) expect(NOUNS.filter((n) => n.cls === c.th && n.practice !== false).length, `${c.th} needs at least 3 practice nouns`).toBeGreaterThanOrEqual(3);
+  for (const c of CLASSIFIERS) expect(c.group && c.unit, `${c.th} needs a group and a unit`).toBeTruthy();
   // Every noun has an everyday sentence that uses it with its own classifier
   for (const n of NOUNS) {
     const say = SAY[n.th];
@@ -60,6 +61,17 @@ test('classifiers data is complete', async () => {
 // Romanization: the same Thai word is spelled one way across lessons, patterns and the word list.
 // Words already spelled two ways wait in tests/romanization-known.json for Jay to pick one.
 // Full list any time: node tests/romanization.js
+// The "er" rule (Jay, 27 Oct): เดิน dern, เงิน ngern, เจอ jer; เ-ย is oei (เคย khoei, เลย loei).
+// No romanization anywhere (course, Say it today, word list, sentences) may use the old oe spelling.
+test('the er sound is written er everywhere', () => {
+  const { collect } = require('./romanization');
+  const pairs = collect();
+  const old = pairs.filter((p) => /o\p{M}*e(?!\p{M}*i)/u.test(p.rom.normalize('NFD')));
+  expect(old.map((p) => `${p.th} ${p.rom} (${p.where})`), 'Use er (dern), or oei for เ-ย (khoei)').toEqual([]);
+  const has = (th, rom) => pairs.some((p) => p.th === th && p.rom === rom);
+  expect(has('เดิน', 'dern') || pairs.some((p) => p.rom.split(' ').includes('dern'))).toBe(true);
+});
+
 test('every Thai word is romanized one way', async ({}, testInfo) => {
   const { collect, conflicts, report } = require('./romanization');
   const pairs = collect();
@@ -90,4 +102,23 @@ test('romanization follows the spellings Jay picked', () => {
     ...files.flatMap((f) => (f.includes(`${path.sep}data${path.sep}`) ? [] : code(fs.readFileSync(f, 'utf8')).split('\n').map((l, i) => (old.test(l) ? `${path.relative(APP, f)}:${i + 1}` : null)).filter(Boolean))),
   ];
   expect(hits, 'Old spellings (náawi, à-ràwi, saawy, diaao, gâaeo, dtǔa, an níi, líaao-sáai, win-maaw-dtoe-sai)').toEqual([]);
+});
+
+// Every sentence pattern level builds a sentence, every time (a bad random pick once left Going places L3 blank)
+test('every pattern level always builds a sentence', async () => {
+  const fs = require('fs'); const path = require('path');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'lib', 'patterns.js'), 'utf8').replace(/^export /gm, '');
+  const { LADDERS, swapValue } = new Function(`${src}; return { LADDERS, swapValue };`)();
+  for (const p of LADDERS) for (const level of p.levels) for (let i = 0; i < 300; i++) {
+    const v = level.random();
+    const s = level.make(v);
+    expect(s.parts.length, `${p.id} L${level.n}`).toBeGreaterThan(1);
+    expect(s.parts.every((x) => x.th), `${p.id} L${level.n}: empty word`).toBe(true);
+    expect(s.en, `${p.id} L${level.n}: English`).toMatch(/^[A-Z].*[.?]$/);
+    // Swapping any coloured word gives a sentence too
+    for (const key of [...new Set(s.parts.map((x) => x.key).filter(Boolean))]) {
+      const nv = swapValue(p.id, v, key);
+      if (nv) expect(level.make(nv).parts.every((x) => x.th), `${p.id} L${level.n} swap ${key}`).toBe(true);
+    }
+  }
 });

@@ -15,6 +15,8 @@ const SCREENS = [
   ['words (lesson done today)', '/vocabulary', lessonDone],
   ['patterns', '/patterns', returningLearner()],
   ['classifiers', '/classifiers', null],
+  ['classifiers matching', '/classifiers?mode=practice&act=match&level=1', null],
+  ['classifiers how many', '/classifiers?mode=practice&act=slots&level=3', null],
   ['sign in', '/signin', null],
   ['first lesson', '/start', null],
 ];

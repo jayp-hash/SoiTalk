@@ -283,13 +283,13 @@ const LIKE_EXTRA = [
 
 function ladderLike({ who, neg, doing, place, when, extra }) {
   const parts = [
-    { slot: 'who', th: who.th, ...(who.rom ? { rom: who.rom } : {}) },
-    ...(neg ? [{ slot: 'neg', th: 'ไม่' }] : []),
+    { slot: 'who', key: 'who', th: who.th, ...(who.rom ? { rom: who.rom } : {}) },
+    ...(neg ? [{ slot: 'neg', key: 'neg', th: 'ไม่' }] : []),
     { slot: 'fixed', th: 'ชอบ' },
-    ...(doing.words || [doing.th]).map((th) => ({ slot: 'doing', th })),
-    ...(place ? [{ slot: 'fixed', th: 'ที่' }, { slot: 'place', th: place.th }] : []),
-    ...(when ? [{ slot: 'when', th: when.th }] : []),
-    ...(extra ? extra.parts.map((x) => ({ slot: 'extra', ...x })) : []),
+    ...(doing.words || [doing.th]).map((th) => ({ slot: 'doing', key: 'doing', th })),
+    ...(place ? [{ slot: 'fixed', th: 'ที่' }, { slot: 'place', key: 'place', th: place.th }] : []),
+    ...(when ? [{ slot: 'when', key: 'when', th: when.th }] : []),
+    ...(extra ? extra.parts.map((x) => ({ slot: 'extra', key: 'extra', ...x })) : []),
   ];
   const verb = neg ? (who.third ? "doesn't like" : "don't like") : (who.third ? 'likes' : 'like');
   const en = `${who.en} ${verb} ${doing.en}${place ? ` ${place.en}` : ''}${when ? ` ${when.en}` : ''}${extra ? ` ${extra.en}` : ''}.`;
@@ -314,9 +314,9 @@ function amt(n, thing) {
 }
 function ladderOrder({ thing, number, thing2, number2, extra }) {
   const parts = [
-    { slot: 'fixed', th: 'ขอ' }, { slot: 'thing', th: thing.th }, { slot: 'number', th: number.th, ...(number.rom ? { rom: number.rom } : {}) }, { slot: 'fixed', th: thing.counter },
-    ...(extra ? [{ slot: 'extra', th: extra.th, rom: extra.rom }] : []),
-    ...(thing2 ? [{ slot: 'fixed', th: 'กับ', rom: 'gàp' }, { slot: 'thing', th: thing2.th }, { slot: 'number', th: number2.th, ...(number2.rom ? { rom: number2.rom } : {}) }, { slot: 'fixed', th: thing2.counter }] : []),
+    { slot: 'fixed', th: 'ขอ' }, { slot: 'thing', key: 'thing', th: thing.th }, { slot: 'number', key: 'number', th: number.th, ...(number.rom ? { rom: number.rom } : {}) }, { slot: 'fixed', th: thing.counter },
+    ...(extra ? [{ slot: 'extra', key: 'extra', th: extra.th, rom: extra.rom }] : []),
+    ...(thing2 ? [{ slot: 'fixed', th: 'กับ', rom: 'gàp' }, { slot: 'thing', key: 'thing2', th: thing2.th }, { slot: 'number', key: 'number2', th: number2.th, ...(number2.rom ? { rom: number2.rom } : {}) }, { slot: 'fixed', th: thing2.counter }] : []),
   ];
   let en = amt(number, thing) + (extra ? `, ${extra.en}${thing2 ? ',' : ''}` : '') + (thing2 ? ` and ${amt(number2, thing2)}` : '');
   en = `${en.charAt(0).toUpperCase()}${en.slice(1)}, please.`;
@@ -325,6 +325,72 @@ function ladderOrder({ thing, number, thing2, number2, extra }) {
 
 const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
 const SOFT = THING.filter((t) => !t.alcohol); // the lever never picks alcohol on its own
+
+// ---- Pattern: Going places, ไป (bpai). 27 Oct panel draft: native check needed ----
+const GO_WHO = [
+  { th: 'ฉัน', rom: 'chǎn', en: 'I', be: "I'm", third: false },
+  { th: 'เรา', rom: 'rao', en: 'We', be: "We're", third: false },
+  { th: 'เพื่อน', rom: 'phûeaan', en: 'My friend', be: 'My friend is', third: true },
+  { th: 'แม่', rom: 'mâae', en: 'Mom', be: 'Mom is', third: true },
+];
+const GO_WHO_PICK = [GO_WHO[0], GO_WHO[0], ...GO_WHO];
+const GO_PLACE = [
+  { th: 'ตลาด', rom: 'dtà-làat', en: 'the market' },
+  { th: 'ห้าง', rom: 'hâang', en: 'the mall' },
+  { th: 'ทำงาน', rom: 'tham-ngaan', en: 'work', going: 'heading to work' },
+  { th: 'สนามบิน', rom: 'sà-nǎam-bin', en: 'the airport' },
+  { th: 'โรงพยาบาล', rom: 'roong-phá-yaa-baan', en: 'the hospital' },
+  { th: 'เซเว่น', rom: 'see-wên', en: '7-Eleven' },
+];
+const GO_WHEN = [
+  { th: 'วันนี้', rom: 'wan-níi', en: 'today' },
+  { th: 'พรุ่งนี้', rom: 'phrûng-níi', en: 'tomorrow' },
+  { th: 'เย็นนี้', rom: 'yen-níi', en: 'this evening' },
+  { th: 'วันเสาร์', rom: 'wan-sǎo', en: 'on Saturday' },
+];
+// How you go. places: where it makes sense (nobody takes a taxi to 7-Eleven)
+const GO_HOW = [
+  { parts: [{ th: 'เดิน', rom: 'dern' }], th: 'เดิน', ing: 'walking', places: ['เซเว่น', 'ตลาด'] },
+  { parts: [{ th: 'นั่ง', rom: 'nâng' }, { th: 'รถไฟฟ้า', rom: 'rót-fai-fáa' }], th: 'นั่งรถไฟฟ้า', ing: 'taking the Skytrain', places: ['ตลาด', 'ห้าง', 'ทำงาน', 'สนามบิน', 'โรงพยาบาล'] },
+  { parts: [{ th: 'นั่ง', rom: 'nâng' }, { th: 'แท็กซี่', rom: 'tháek-sîi' }], th: 'นั่งแท็กซี่', ing: 'taking a taxi', places: ['ตลาด', 'ห้าง', 'ทำงาน', 'สนามบิน', 'โรงพยาบาล'] },
+  { parts: [{ th: 'นั่ง', rom: 'nâng' }, { th: 'วิน', rom: 'win' }], th: 'นั่งวิน', ing: 'taking a motorbike taxi', places: ['ตลาด', 'ห้าง', 'ทำงาน', 'โรงพยาบาล'] },
+  { parts: [{ th: 'นั่ง', rom: 'nâng' }, { th: 'รถเมล์', rom: 'rót-mee' }], th: 'นั่งรถเมล์', ing: 'taking the bus', places: ['ตลาด', 'ห้าง', 'ทำงาน', 'โรงพยาบาล'] },
+];
+function ladderGo({ who, will, place, when, how }) {
+  const parts = [
+    { slot: 'who', key: 'who', th: who.th, rom: who.rom },
+    ...(will ? [{ slot: 'fixed', th: 'จะ', rom: 'jà' }] : []),
+    ...(how ? how.parts.map((x) => ({ slot: 'doing', key: 'how', ...x })) : []),
+    { slot: 'fixed', th: 'ไป', rom: 'bpai' },
+    { slot: 'place', key: 'place', th: place.th, rom: place.rom },
+    ...(when ? (when.parts || [when]).map((x) => ({ slot: 'when', key: 'when', th: x.th, rom: x.rom })) : []),
+  ];
+  // "How are you getting there?" is about this trip, so: I'm taking the Skytrain to the mall.
+  const en = how
+    ? `${who.be} ${how.ing} to ${place.en}.`
+    : `${who.be} ${place.going || `going to ${place.en}`}${when ? ` ${when.en}` : ''}.`;
+  return { parts, en };
+}
+
+// ---- Pattern: Asking prices, เท่าไหร่ (thâo-rài). Builds on the Classifiers tab. Native check needed ----
+const PRICE_THING = [
+  { th: 'มะม่วง', rom: 'má-mûang', cls: 'ลูก', clsRom: 'lûuk', the: 'are the mangoes', one: 'one mango', many: 'mangoes' },
+  { th: 'หมูปิ้ง', rom: 'mǔu-bpîng', cls: 'ไม้', clsRom: 'máai', the: 'are the pork skewers', one: 'one pork skewer', many: 'pork skewers' },
+  { th: 'น้ำเปล่า', rom: 'náam-bplàao', cls: 'ขวด', clsRom: 'khùat', the: 'is the water', one: 'one bottle of water', many: 'bottles of water' },
+  { th: 'ชาเย็น', rom: 'chaa-yen', cls: 'แก้ว', clsRom: 'gâaew', the: 'is the Thai iced tea', one: 'one Thai iced tea', many: 'Thai iced teas' },
+  { th: 'กล้วยทอด', rom: 'glûay-thâawt', cls: 'ถุง', clsRom: 'thǔng', the: 'are the fried bananas', one: 'one bag of fried bananas', many: 'bags of fried bananas' },
+];
+const PRICE_NUM = [{ th: 'สอง', rom: 'sǎawng', en: 'two' }, { th: 'สาม', rom: 'sǎam', en: 'three' }, { th: 'สี่', rom: 'sìi', en: 'four' }, { th: 'ห้า', rom: 'hâa', en: 'five' }];
+function ladderPrice({ thing, each, number }) {
+  const parts = [
+    { slot: 'thing', key: 'thing', th: thing.th, rom: thing.rom },
+    ...(number ? [{ slot: 'number', key: 'number', th: number.th, rom: number.rom }, { slot: 'counter', th: thing.cls, rom: thing.clsRom }] : []),
+    ...(each && !number ? [{ slot: 'counter', th: thing.cls, rom: thing.clsRom }, { slot: 'fixed', th: 'ละ', rom: 'lá' }] : []),
+    { slot: 'fixed', th: 'เท่าไหร่', rom: 'thâo-rài' },
+  ];
+  const en = number ? `How much for ${number.en} ${thing.many}?` : each ? `How much is ${thing.one}?` : `How much ${thing.the}?`;
+  return { parts, en, q: true };
+}
 export const LADDERS = [
   {
     id: 'like', title: 'Likes and dislikes', short: 'Likes and dislikes', key: { th: 'ชอบ', rom: 'châawp', en: 'to like' },
@@ -365,14 +431,75 @@ export const LADDERS = [
         }, make: ladderOrder },
     ],
   },
+  {
+    id: 'go', title: 'Going places', short: 'Going places', key: { th: 'ไป', rom: 'bpai', en: 'to go' },
+    levels: [
+      { n: 1, name: 'Level 1', rule: 'Who + ไป (bpai, go) + a place.', slots: ['who', 'place'],
+        random: () => ({ who: pickOne(GO_WHO_PICK), place: pickOne(GO_PLACE) }), make: ladderGo },
+      { n: 2, name: 'Level 2', adds: 'Adds จะ (jà, will) and when', rule: 'Add จะ (jà, will) before ไป, and when at the end.', slots: ['who', 'place', 'when'],
+        random: () => ({ who: pickOne(GO_WHO_PICK), will: true, place: pickOne(GO_PLACE.filter((p) => p.th !== 'เซเว่น')), when: pickOne(GO_WHEN) }), make: ladderGo },
+      { n: 3, name: 'Level 3', adds: 'Adds how you get there', rule: 'Say how you go, before ไป: เดิน (doeen, walk) or นั่ง (nâng, ride) + the transport.', slots: ['who', 'how', 'place'],
+        random: () => { const how = pickOne(GO_HOW); const pl = pickOne(how.places); return { who: pickOne(GO_WHO_PICK), how, place: GO_PLACE.find((p) => p.th === pl) }; }, make: ladderGo },
+    ],
+  },
+  {
+    id: 'price', title: 'Asking prices', short: 'Asking prices', key: { th: 'เท่าไหร่', rom: 'thâo-rài', en: 'how much' },
+    levels: [
+      { n: 1, name: 'Level 1', rule: 'The thing + เท่าไหร่ (thâo-rài, how much).', slots: ['thing'],
+        random: () => ({ thing: pickOne(PRICE_THING) }), make: ladderPrice },
+      { n: 2, name: 'Level 2', adds: 'Adds "each": classifier + ละ (lá)', rule: 'Ask the price of one: the thing + its classifier + ละ (lá, each) + เท่าไหร่.', slots: ['thing'],
+        random: () => ({ thing: pickOne(PRICE_THING), each: true }), make: ladderPrice },
+      { n: 3, name: 'Level 3', adds: 'Adds how many', rule: 'Ask about an amount: the thing + number + classifier + เท่าไหร่.', slots: ['thing', 'number'],
+        random: () => ({ thing: pickOne(PRICE_THING), number: pickOne(PRICE_NUM) }), make: ladderPrice },
+    ],
+  },
 ];
+// What each existing level adds (shown under the sentence on Learn)
+LADDERS[0].levels[1].adds = 'Adds where and when';
+LADDERS[0].levels[2].adds = 'Adds a time or a reason';
+LADDERS[1].levels[1].adds = 'Adds a second thing with กับ (gàp)';
+LADDERS[1].levels[2].adds = 'Adds how you want it';
+
+// Tap a coloured word to swap just that word: the options for each key, given the other values
+const LADDER_OPTIONS = {
+  like: {
+    who: () => WHO, neg: () => [false, true], when: () => WHEN,
+    doing: (v) => (v.place ? DOING.filter((d) => d.places.includes(v.place.th)) : DOING),
+    place: (v) => PLACE.filter((x) => v.doing.places.includes(x.th)),
+    extra: (v) => LIKE_EXTRA.filter((e) => !(v.neg && e.kind === 'why')),
+  },
+  order: {
+    thing: (v) => SOFT.filter((t) => t.th !== v.thing2?.th && (!v.extra || extrasFor(t).length)), number: () => NUMBER,
+    thing2: (v) => SOFT.filter((t) => t.th !== v.thing.th), number2: () => [ONE, ...NUMBER],
+    extra: (v) => extrasFor(v.thing),
+  },
+  go: {
+    who: () => GO_WHO, when: () => GO_WHEN,
+    place: (v) => GO_PLACE.filter((p) => (v.how ? v.how.places.includes(p.th) : !(v.will && p.th === 'เซเว่น'))),
+    how: (v) => GO_HOW.filter((h) => h.places.includes(v.place.th)),
+  },
+  price: { thing: () => PRICE_THING, number: () => PRICE_NUM },
+};
+// The next option for one key (never the same as now). Returns new values, or null if there's no other choice.
+export function swapValue(patternId, v, key) {
+  const opts = (LADDER_OPTIONS[patternId]?.[key] || (() => []))(v);
+  if (key === 'neg') return { ...v, neg: !v.neg };
+  const same = (o) => o === v[key] || (o?.th !== undefined && o.th === v[key]?.th && (o.en || '') === (v[key]?.en || ''));
+  const i = opts.findIndex(same);
+  const others = opts.filter((o) => !same(o));
+  if (!others.length) return null;
+  const next = i >= 0 ? opts[(i + 1) % opts.length] : others[0];
+  const out = { ...v, [key]: next };
+  if (key === 'thing' && v.extra) out.extra = extrasFor(next)[0];
+  return out;
+}
 
 // In the learner's register (ผม for men, and the polite ending last)
 export function laddersInRegister(reg, particleFor) {
   return LADDERS.map((p) => ({ ...p, levels: p.levels.map((l) => ({ ...l, make: (v) => {
     const s = l.make(v);
     const parts = s.parts.map((x) => (reg === 'male' && x.th === 'ฉัน' ? { ...x, th: 'ผม' } : x));
-    const e = particleFor(reg, false);
+    const e = particleFor(reg, !!s.q);
     return { ...s, parts: [...parts, { slot: 'ending', th: e.th, rom: e.rom }] };
   } })) }));
 }
@@ -388,6 +515,16 @@ function allLadderSentences() {
       out.add(sentenceThai(ladderLike({ who, neg, doing, place, when })));
       for (const extra of LIKE_EXTRA) out.add(sentenceThai(ladderLike({ who, neg, doing, place, when, extra })));
     }
+  }
+  for (const who of GO_WHO) for (const place of GO_PLACE) {
+    out.add(sentenceThai(ladderGo({ who, place })));
+    for (const when of GO_WHEN) out.add(sentenceThai(ladderGo({ who, will: true, place, when })));
+    for (const how of GO_HOW) out.add(sentenceThai(ladderGo({ who, how, place })));
+  }
+  for (const thing of PRICE_THING) {
+    out.add(sentenceThai(ladderPrice({ thing })));
+    out.add(sentenceThai(ladderPrice({ thing, each: true })));
+    for (const number of PRICE_NUM) out.add(sentenceThai(ladderPrice({ thing, number })));
   }
   for (const thing of THING) for (const number of NUMBER) {
     const extras = [null, ...extrasFor(thing)];
@@ -425,6 +562,18 @@ const ASK_MEANINGS = [
   { en: 'Normal sweetness?', group: 'sweet' }, { en: 'With ice?', group: 'ice' }, { en: 'Do you want it spicy?', group: 'spicy' },
   { en: 'For here or to go?', group: 'togo' }, { en: 'What do you like doing?', group: 'likewhat' }, { en: 'Where do you live?', group: 'where' },
   { en: 'Do you like it?', group: 'likeit' },
+  { en: 'Where are you going?', group: 'wherego' }, { en: 'How are you getting there?', group: 'how' },
+  { en: 'Pick whatever you like!', group: 'pick' }, { en: 'What time is it?', group: 'time' },
+];
+// Going places and Asking prices: what the other person says first (native check needed)
+const ASK_GO = {
+  1: { parts: [W('ไปไหน', 'bpai nǎi')], en: 'Where are you going?', group: 'wherego' },
+  2: { parts: [W('จะไปไหน', 'jà bpai nǎi')], en: 'Where are you going?', group: 'wherego' },
+  3: { parts: [W('ไปยังไง', 'bpai yang-ngai')], en: 'How are you getting there?', group: 'how' },
+};
+const ASK_PRICE = [
+  { parts: [W('เลือกได้เลย', 'lûeaak dâai loei')], en: 'Pick whatever you like!', group: 'pick', stmt: true },
+  { parts: [W('รับอะไรดี', 'ráp à-rai dii')], en: 'What can I get you?', group: 'what' },
 ];
 // Who the friend asks about: you, your mom, your dad, your friend (Teacher: คุณแม่ when asking about yours)
 const PRACTICE_WHO = [
@@ -452,6 +601,11 @@ export function practiceExchanges(patternId, level) {
       const v = { ...level.random(), who: p.who };
       out.push({ v, ask: likeAsk(p, v) });
     }
+  } else if (patternId === 'go') {
+    // They ask you, so you answer about yourself (ฉัน)
+    for (let i = 0; i < 3; i++) out.push({ v: { ...level.random(), who: GO_WHO[0] }, ask: ASK_GO[level.n] });
+  } else if (patternId === 'price') {
+    for (let i = 0; i < 3; i++) out.push({ v: level.random(), ask: pickOneP(ASK_PRICE) });
   } else {
     const ask = () => pickOneP(ASK_ORDER);
     if (level.n === 3) {
@@ -466,10 +620,14 @@ export function practiceExchanges(patternId, level) {
   return out;
 }
 // Three English meanings for "What did they ask?": the answer + two from other groups
-const MEANING_GROUPS = { like: ['likewhat', 'likeit', 'where', 'else'], order: ['what', 'many', 'else', 'sweet', 'ice', 'spicy', 'togo'] };
+const MEANING_GROUPS = {
+  like: ['likewhat', 'likeit', 'where', 'else', 'wherego'], order: ['what', 'many', 'else', 'sweet', 'ice', 'spicy', 'togo'],
+  go: ['wherego', 'how', 'where', 'time', 'likewhat'], price: ['pick', 'what', 'many', 'else', 'togo'],
+};
+// Four choices (house rule: at least 4 in any quiz)
 export function askMeanings(ask, patternId) {
   const allowed = MEANING_GROUPS[patternId] || ASK_MEANINGS.map((m) => m.group);
-  const others = ASK_MEANINGS.filter((m) => m.group !== ask.group && allowed.includes(m.group)).sort(() => Math.random() - 0.5).slice(0, 2).map((m) => m.en);
+  const others = ASK_MEANINGS.filter((m) => m.group !== ask.group && allowed.includes(m.group)).sort(() => Math.random() - 0.5).slice(0, 3).map((m) => m.en);
   return [ask.en, ...others].sort(() => Math.random() - 0.5);
 }
 // Wrong tiles: same slot, sounds or looks alike, and ruled out by the English you're shown
@@ -481,9 +639,16 @@ const ALIKE = {
   'ขวด': 'จาน', 'แก้ว': 'จาน', 'จาน': 'แก้ว', 'ชาม': 'แก้ว', // a clearly wrong counter (Teacher: never แก้ว vs ขวด)
   'แม่': 'พ่อ', 'พ่อ': 'แม่', 'เพื่อน': 'แม่', 'น้อย': 'มาก', 'หวาน': 'ปกติ', 'เผ็ด': 'หวาน', 'น้ำแข็ง': 'น้ำเปล่า',
   'ตอนเช้า': 'ตอนเย็น', 'ตอนเย็น': 'ตอนเช้า', 'สนุก': 'สบาย', 'สบาย': 'สนุก',
+  'สนามบิน': 'โรงพยาบาล', 'โรงพยาบาล': 'สนามบิน', 'เซเว่น': 'ตลาด', 'วันนี้': 'พรุ่งนี้', 'พรุ่งนี้': 'เย็นนี้', 'เย็นนี้': 'พรุ่งนี้',
+  'รถไฟฟ้า': 'แท็กซี่', 'แท็กซี่': 'รถเมล์', 'รถเมล์': 'วิน', 'วิน': 'แท็กซี่', 'นั่ง': 'เดิน', 'จะ': 'ไม่', 'ไป': 'มา',
+  'มะม่วง': 'มะพร้าว', 'หมูปิ้ง': 'ไก่ทอด', 'กล้วยทอด': 'ไก่ทอด', 'ลูก': 'ถุง', 'ไม้': 'ชิ้น', 'ถุง': 'ขวด', 'ละ': 'นะ', 'เท่าไหร่': 'ที่ไหน',
   'บ้าน': 'ร้าน', 'ร้าน': 'บ้าน', 'ตลาด': 'ห้าง', 'ห้าง': 'ตลาด', 'สวน': 'ทะเล', 'ทะเล': 'สวน', 'โรงเรียน': 'คอนโด', 'คอนโด': 'บ้าน', 'ร้านอาหาร': 'ร้าน',
 };
-const ALIKE_ROM = { 'ทำงาน': 'tham-ngaan', 'มาก': 'mâak', 'ปกติ': 'bpòk-gà-dtì', 'จาน': 'jaan', 'แก้ว': 'gâaew', 'ฟัง': 'fang', 'ดู': 'duu', 'เพลง': 'phleeng', 'หนัง': 'nǎng' };
+const ALIKE_ROM = {
+  'โรงพยาบาล': 'roong-phá-yaa-baan', 'สนามบิน': 'sà-nǎam-bin', 'ตลาด': 'dtà-làat', 'พรุ่งนี้': 'phrûng-níi', 'วันนี้': 'wan-níi', 'เย็นนี้': 'yen-níi',
+  'แท็กซี่': 'tháek-sîi', 'รถเมล์': 'rót-mee', 'วิน': 'win', 'เดิน': 'dern', 'ไม่': 'mâi', 'มา': 'maa', 'มะพร้าว': 'má-práao', 'ไก่ทอด': 'gài-thâawt',
+  'ถุง': 'thǔng', 'ชิ้น': 'chín', 'ขวด': 'khùat', 'นะ': 'ná', 'ที่ไหน': 'thîi-nǎi',
+  'ทำงาน': 'tham-ngaan', 'มาก': 'mâak', 'ปกติ': 'bpòk-gà-dtì', 'จาน': 'jaan', 'แก้ว': 'gâaew', 'ฟัง': 'fang', 'ดู': 'duu', 'เพลง': 'phleeng', 'หนัง': 'nǎng' };
 export const alikeFor = (th) => (ALIKE[th] ? { th: ALIKE[th], rom: ALIKE_ROM[ALIKE[th]] } : null);
 
 // Every practice line, for /api/speak's list of allowed text (endings are stripped there)
@@ -493,5 +658,7 @@ export function allPracticeSentences() {
   for (const a of ASK_ORDER) out.add(j(a.parts));
   for (const f of Object.values(FOLLOW_UP)) { out.add(j(f.parts)); out.add(j(f.reply)); }
   for (const p of PRACTICE_WHO) for (const doing of DOING) for (const neg of [false, true]) out.add(j(likeAsk(p, { neg, doing }).parts));
+  for (const a of [...Object.values(ASK_GO), ...ASK_PRICE]) out.add(j(a.parts));
+  for (const w of Object.keys(ALIKE_ROM)) out.add(w);
   return out;
 }

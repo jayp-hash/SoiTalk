@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from './supabase-browser';
+import { identify } from './analytics';
 
 // The signed-in person, or null. `ready` is false until we've checked.
 export function useUser() {
@@ -12,5 +13,6 @@ export function useUser() {
     const { data: sub } = db.auth.onAuthStateChange((_event, session) => { setUser(session?.user ?? null); setReady(true); });
     return () => sub.subscription.unsubscribe();
   }, []);
+  useEffect(() => { if (user?.id) identify(user.id); }, [user?.id]);
   return { user, ready };
 }

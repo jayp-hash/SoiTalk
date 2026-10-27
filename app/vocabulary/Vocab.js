@@ -116,7 +116,7 @@ function TopicPage({ words, allPct, onOpen }) {
             {lesson.doneToday
               ? <><b>Tomorrow:</b> {tomorrowLine(next)}</>
               : started
-              ? <>{learnedAll} words met, {knownAll} known. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
+              ? <>{learnedAll} words met{knownAll > 0 ? `, ${knownAll} known` : ''}. Next up: <span lang="th">{words[firstGap]?.thai}</span> ({words[firstGap]?.romanization}), {shortMeaning(words[firstGap]?.english)}.</>
               : <>A few new words a day, most useful first. First up: <span lang="th">สวัสดี</span> (sà-wàt-dii), hello.</>}
           </span>
           {started && !lesson.doneToday && <span className="tp-bar" aria-hidden="true"><i style={{ width: `${(learnedAll / words.length) * 100}%` }} /></span>}

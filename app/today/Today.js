@@ -215,7 +215,7 @@ function Mission({ onSaid }) {
       <div className="row">
         <button type="button" className="yes" onClick={() => {
           writeStore(MISSION_DAYS_KEY, { ...readStore(MISSION_DAYS_KEY, {}), [todayKey()]: m.scene });
-          save({ done: true }); onSaid?.();
+          save({ done: true }); onSaid?.(); track('said_it_real', { scene: m.scene, where: 'today' });
         }}>Yes, I said it ★</button>
         <button type="button" className="no" onClick={() => save({ snooze: todayKey() })}>Not yet</button>
       </div>

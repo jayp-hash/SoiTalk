@@ -425,7 +425,7 @@ export const SAY_IT = [
    "กิน",
    "เลย"
   ],
-  "rom": "gin loeei",
+  "rom": "gin loei",
   "en": "Go ahead and eat.",
   "where": "When the food arrives and others are waiting for you."
  },
@@ -469,7 +469,7 @@ export const SAY_IT = [
    "เยอะ",
    "มาก"
   ],
-  "rom": "yóe mâak",
+  "rom": "yér mâak",
   "en": "That's a lot!",
   "where": "When a big portion arrives."
  },
@@ -552,7 +552,7 @@ export const SAY_IT = [
    "ได้",
    "เลย"
   ],
-  "rom": "dâai loeei",
+  "rom": "dâai loei",
   "en": "Sure!",
   "where": "When someone suggests something and you're happy with it."
  },
@@ -578,7 +578,7 @@ export const SAY_IT = [
    "อยู่",
    "ไหน"
   ],
-  "rom": "win maaw-dtoe-sai yùu nǎi",
+  "rom": "win maaw-dter-sai yùu nǎi",
   "en": "Where is the motorbike taxi stand?",
   "where": "When you're somewhere new."
  },
@@ -601,7 +601,7 @@ export const SAY_IT = [
    "อยู่",
    "ไหม"
   ],
-  "rom": "bpòeet yùu mǎi",
+  "rom": "bpèrt yùu mǎi",
   "en": "Are you open?",
   "where": "Before sitting down at a shop or stall."
  },

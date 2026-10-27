@@ -32,7 +32,7 @@ export default function SignIn() {
   };
 
   const google = async () => {
-    setError(''); track('signin_click', { method: 'google' });
+    setError(''); track('signin_click', { method: 'google' }); try { localStorage.setItem('tsc-signin-method', 'google'); } catch {}
     const { error } = await supabaseBrowser().auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: back() },
@@ -42,7 +42,7 @@ export default function SignIn() {
 
   const sendLink = async (e) => {
     e?.preventDefault?.();
-    setStatus('sending'); setError(''); track('signin_click', { method: 'email' });
+    setStatus('sending'); setError(''); track('signin_click', { method: 'email' }); try { localStorage.setItem('tsc-signin-method', 'email_link'); } catch {}
     const { error } = await supabaseBrowser().auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: back() },
