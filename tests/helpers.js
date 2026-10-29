@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 const TONE = fs.readFileSync(path.join(__dirname, 'fixtures', 'tone.mp3'));
+// A 0.4 second clip for the lesson walk: the walk checks layout, not sound, and the
+// conversation plays every line, so the full 2 second tone made each lesson wait ~10 seconds.
+const SHORT_TONE = fs.readFileSync(path.join(__dirname, 'fixtures', 'tone-short.mp3'));
 
 // The screen sizes every check runs at: two phones and two laptop windows.
 const SIZES = {
@@ -37,14 +40,29 @@ function returningLearner(words = ['ไม่', 'เอา', 'ถุง', 'ใ�
 }
 
 // Prepare a page: silent audio, optional saved progress (set once, before the first load).
-async function preparePage(page, store = null) {
-  await page.route('**/api/speak**', (r) => r.fulfill({ status: 200, body: TONE, headers: { 'content-type': 'audio/mpeg' } }));
+// { shortAudio: true } swaps every clip for a 0.4 second one.
+async function preparePage(page, store = null, { shortAudio = false } = {}) {
+  const body = shortAudio ? SHORT_TONE : TONE;
+  await page.route('**/api/speak**', (r) => r.fulfill({ status: 200, body, headers: { 'content-type': 'audio/mpeg' } }));
   if (store) {
     await page.addInitScript((s) => {
       if (sessionStorage.getItem('seeded')) return;
       try { for (const [k, v] of Object.entries(s)) localStorage.setItem(k, JSON.stringify(v)); sessionStorage.setItem('seeded', '1'); } catch (e) { /* private mode */ }
     }, store);
   }
+}
+
+// Wait until the screen has stopped moving: every entrance animation and transition has
+// finished (endless ones, like a pulsing play button, are ignored). Never longer than maxMs.
+// Faster than a fixed pause, and it still waits as long as a slow animation needs.
+async function settle(page, maxMs = 1500) {
+  await page.evaluate(async (max) => {
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await frame();
+    const finite = document.getAnimations().filter((a) => a.playState === 'running' && a.effect && a.effect.getComputedTiming().endTime !== Infinity);
+    await Promise.race([Promise.all(finite.map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, max))]);
+    await frame();
+  }, maxMs);
 }
 
 // Layout checks used everywhere. Returns a list of problems (empty = fine).
@@ -69,4 +87,4 @@ async function layoutProblems(page, ctaSelector) {
   }, ctaSelector);
 }
 
-module.exports = { SIZES, lessonIds, returningLearner, preparePage, layoutProblems, day };
+module.exports = { SIZES, lessonIds, returningLearner, preparePage, settle, layoutProblems, day };

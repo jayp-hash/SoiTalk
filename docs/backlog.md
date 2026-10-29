@@ -5,7 +5,6 @@ To add something, write one line under **Ready** (or under **Needs Jay** if a de
 When an item is done, Claude moves it to **Done** with the pull request link.
 
 ## Ready
-1. **Lesson test on every size.** The lesson walk runs every lesson on a phone but only some on the small phone and the laptop. Run all lessons at all three sizes once the run time allows (under 10 minutes on GitHub).
 
 ## Needs Jay
 - **Journey 1 (metro check-in):** answer the 4 questions on the board, then build Quick practice, Replay a lesson, and a quick check after a new-words-only session.
@@ -13,6 +12,7 @@ When an item is done, Claude moves it to **Done** with the pull request link.
 - **Native check** of lessons 1 to 10 (Thai lines, romanization, endings).
 
 ## Done
+- 27 Oct: lesson test on every size: all 10 lessons are walked on the phone, the small phone and the laptop (30 walks, was 16). A short sound clip and waiting for animations instead of fixed pauses make each walk twice as fast, so the run time stays about the same ([PR #7](https://github.com/jayp-hash/SoiTalk/pull/7)).
 - 27 Oct: the "er" rule (Jay; Thai teacher + expat panel): the vowel in เดิน, เงิน, เจอ is written er everywhere (dern, ngern, jer, phêrm, bpèrt, yér, maaw-dter-sai), and เ-ย is oei (เคย khoei, เลย loei). Short and long are not told apart. Course, Say it today, test word list and the import script all follow it; a test fails if "oe" comes back. Live word list follows after the next import. Also นึง is nùeng.
 - 27 Oct: pre-launch polish from the 26 Oct review: navy main and play buttons everywhere, Classifiers list corners fixed, no "0 known" on Words, landing no longer promises day-coloured streaks; analytics: one person across devices (PostHog identify), Google and email-link sign-ins counted, "Yes, I said it" on Today counted, calendar reminder taps and the landing reason picker counted. Slot machine test made steadier.
 - 26 Oct: romanization as Jay picked: the "oi" sound is written oi everywhere (nói, nít-nòi, à-ròi, rói, soi), and เดียว diao, แก้ว gâaew, ตั๋ว dtǔaa, อันนี้ an-níi, เลี้ยวซ้าย líaao sáai, วินมอเตอร์ไซค์ win maaw-dtoe-sai. The import script now does the same, so the live word list matches after the next import ([PR #4](https://github.com/jayp-hash/SoiTalk/pull/4)).

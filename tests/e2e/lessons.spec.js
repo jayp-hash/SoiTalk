@@ -1,15 +1,11 @@
 // Walks every lesson from start to the Done screen, and on every step checks that
 // the main button can be seen without scrolling and nothing sticks out sideways.
 const { test, expect } = require('@playwright/test');
-const { SIZES, lessonIds, preparePage, layoutProblems, day } = require('../helpers');
+const { SIZES, lessonIds, preparePage, settle, layoutProblems, day } = require('../helpers');
 
 const LESSONS = lessonIds();
-// Every lesson on a phone; a few on the small phone and the laptop window to keep the run short.
-const RUNS = [
-  ...LESSONS.map((id) => [id, 'phone']),
-  ...LESSONS.filter((_, i) => i % 3 === 1).map((id) => [id, 'smallPhone']),
-  ...LESSONS.filter((_, i) => i % 3 === 2).map((id) => [id, 'laptop']),
-];
+// Every lesson on all three sizes: phone, small phone and the laptop window.
+const RUNS = ['phone', 'smallPhone', 'laptop'].flatMap((sizeName) => LESSONS.map((id) => [id, sizeName]));
 
 const store = { 'tsc-register-chosen': true, 'tsc-first-session': { scene: '7eleven', made: ['ถุง', 'หลอด', 'ช้อน'], day: day(1) } };
 
@@ -27,11 +23,11 @@ for (const [id, sizeName] of RUNS) {
   test(`lesson ${id} on a ${sizeName}`, async ({ page }) => {
     const size = SIZES[sizeName];
     await page.setViewportSize(size);
-    await preparePage(page, store);
+    await preparePage(page, store, { shortAudio: true });
     await page.goto(id === '7eleven' ? '/start' : `/start/${id}`);
     const problems = [];
     const check = async (step) => {
-      await page.waitForTimeout(700); // let entrance animations settle
+      await settle(page); // let entrance animations finish
       for (const p of await layoutProblems(page, '.st-cta, .dn-save .st-cta')) problems.push(`${step}: ${p}`);
     };
     const cta = () => page.locator('.st-cta:visible').first();
@@ -57,7 +53,8 @@ for (const [id, sizeName] of RUNS) {
         await check('word by word'); await cta().click();
       } else if (t === 'Now make your own') {
         await check('make your own');
-        for (let i = 0; i < 2; i++) { await page.locator('.st-bubble.is-swap, .st-tile.is-swap').first().click({ force: true }); await page.waitForTimeout(900); }
+        // The swapped word grows for a moment on a timer (not an animation), so wait for it to shrink back.
+        for (let i = 0; i < 2; i++) { await page.locator('.st-bubble.is-swap, .st-tile.is-swap').first().click({ force: true }); await page.waitForFunction(() => !document.querySelector('.is-flash')); await settle(page); }
         await check('make your own done'); await cta().click();
       } else if (t.startsWith('What')) {
         await check(`question (${t})`);
