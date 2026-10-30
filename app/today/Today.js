@@ -1,5 +1,6 @@
 'use client';
 import { track } from '../lib/analytics';
+import { reminderIcs, inAppBrowser, CalIcon } from '../lib/reminder';
 import { audioVersion } from '../lib/audioVersion';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Deck from '../vocabulary/Deck';
@@ -84,7 +85,7 @@ function Week({ days, said = {} }) {
     const done = !!days[dayKey(t)]?.done;
     const star = said[dayKey(t)] != null;
     cells.push(
-      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': 'var(--soi, #1D4FA0)' }}>
+      <li key={back} className={`${done ? 'done' : ''}${back === 0 ? ' today' : ''}`} style={{ '--day': done ? THAI_DAY[new Date(t).getDay()].color : 'var(--soi, #1D4FA0)' }}>
         <button type="button" className="day" onClick={() => show(back)}
           aria-label={`${d.full}, ${d.rom}${back === 0 ? ', today' : ''}${done ? ', goal done' : ''}${star ? ', said it out loud' : ''}`}>
           {peek === back && <span className="day-peek" role="tooltip">{d.rom} · {d.full}</span>}
@@ -227,7 +228,8 @@ function Mission({ onSaid }) {
 // to use today (from the lesson) with "I said it to someone", and tomorrow.
 function DoneToday({ day, next, onSaid }) {
   const [m, setM] = useState(null);
-  useEffect(() => { setM(readStore('tsc-mission', null)); }, []);
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => { setM(readStore('tsc-mission', null)); setInApp(inAppBrowser()); }, []);
   const mine = m && m.day === todayKey() ? m : null;
   const said = () => {
     writeStore(MISSION_DAYS_KEY, { ...readStore(MISSION_DAYS_KEY, {}), [todayKey()]: mine.scene });
@@ -237,10 +239,9 @@ function DoneToday({ day, next, onSaid }) {
   return (
     <section className="today-donecard" aria-label="Done for today">
       <h2>Done for today ✓</h2>
-      <p className="today-donecard-sub">{day.full} is filled in on your week.</p>
       {mine && (
         <div className="today-line">
-          <span className="today-line-lbl">Your line to say today</span>
+          <span className="today-line-lbl">Say it today</span>
           <span className="th" lang="th">{mine.th}</span>
           {mine.rom && <span className="rom">{mine.rom}</span>}
           <span className="en">{mine.en}</span>
@@ -250,7 +251,14 @@ function DoneToday({ day, next, onSaid }) {
             : <button type="button" className="today-line-btn" onClick={said}>I said it to someone ★</button>}
         </div>
       )}
-      <p className="today-tomorrow"><b>Tomorrow:</b> {tomorrowLine(next)}</p>
+      <div className="today-tomorrow-row">
+        <p className="today-tomorrow"><b>Tomorrow:</b> {tomorrowLine(next)}</p>
+        {next && !inApp && (
+          <a className="today-remind" href={reminderIcs({ tomorrow: next.promise })} download="soi-talk-tomorrow.ics" onClick={() => track('reminder_calendar', { scene: next.id, where: 'today' })}>
+            <CalIcon /> Remind me
+          </a>
+        )}
+      </div>
     </section>
   );
 }
@@ -564,12 +572,12 @@ export default function Today({ words, milestones }) {
       )}
       {(
         <div className="today-card">
-          <div className="today-head">
-            <h1 className="today-title">Today</h1>
-            {streak > 0 && (
-              <span className="today-streak" title="Days in a row you finished your review"><i style={{ background: todayColour() }} />{streak} day{streak === 1 ? '' : 's'} in a row</span>
-            )}
-          </div>
+          <h1 className="sr-only">Today</h1>
+          {/* Your week first (Jay, 29 Oct): the menu already says Today, so no big title */}
+          <section className="today-progress is-top" aria-label="Your week">
+            <p className="today-section-label">Your week{streak > 0 ? <span className="today-streak-in"> · <i style={{ background: todayColour() }} />{streak} day{streak === 1 ? '' : 's'} in a row</span> : null}</p>
+            <Week days={days} said={said} />
+          </section>
 
           {/* Yesterday's line: did you get to say it? (only before today's lesson) */}
           {!lessonDoneToday && <Mission onSaid={refreshSaid} />}
@@ -623,10 +631,6 @@ export default function Today({ words, milestones }) {
               onChoose={(r) => { setRegister(r); setReg(r); setChosen(true); setAskReg(false); setStartAfterChoice(true); }} />
           )}
 
-          <section className="today-progress" aria-label="Your progress">
-            <p className="today-section-label">Your week</p>
-            <Week days={days} said={said} />
-          </section>
 
           {extras}
 

@@ -119,7 +119,7 @@ export async function GET(request) {
           style: 0,
           use_speaker_boost: true,
           // Sentences a touch slower than single words; 0.7 is ElevenLabs' slowest
-          speed: slow ? 0.7 : isSentence(text) ? 0.8 : 0.85,
+          speed: slow ? 0.7 : isSentence(text) ? 0.75 : 0.85,
         },
       }),
     });

@@ -2783,3 +2783,63 @@ a.tp-start:focus-visible { outline: 3px solid var(--soi); outline-offset: 3px; }
 /* Reading tips (27 Oct): one quiet line under the conversation, once per sound */
 .st-readtip { margin: 12px 2px 0; font: 500 13.5px/1.4 var(--font-body), sans-serif; color: #5B6472; animation: cl-fade .25s ease; }
 .st-readtip span { margin-right: 4px; padding: 1px 7px; border-radius: 99px; background: #E6ECF7; color: #0E2E63; font: 800 11.5px/1.5 var(--font-body), sans-serif; text-transform: uppercase; letter-spacing: .03em; }
+
+/* ===== Lesson flow v3 (29 Oct, Jay's 7-Eleven review) ===== */
+/* Hover styles only where there is a mouse, so a tapped tile doesn't stay outlined on a phone */
+@media (hover: none) { .st-tile:hover { border-color: inherit; } .st-tile:hover:not(.is-swap) { border-color: #E1E5EC; } }
+/* The English under a word: a dotted line until you tap it (or hover with a mouse). No blur. */
+.st-tile .en.is-hid { filter: none; opacity: 1; color: transparent; border-bottom: 2px dotted #B8C2D3; min-width: 3.2em; line-height: 1.1; user-select: none; }
+@media (hover: hover) { .st-tile:hover .en.is-hid { color: #1f2533; border-bottom-color: transparent; } }
+/* Before the first play the words wait (dimmed, not tappable) */
+.st-tiles.is-locked .st-tile { opacity: .5; cursor: default; }
+/* Replay + slower + "tap any word", shown after the first play; the space is kept so nothing jumps */
+.st-qa { display: flex; align-items: center; gap: 12px; min-height: 58px; margin: 4px 2px 0; visibility: hidden; opacity: 0; transition: opacity .25s; }
+.st-qa.is-on { visibility: visible; opacity: 1; }
+.st-qa > span { font: 700 14.5px/1.3 var(--font-body), sans-serif; color: #4f5868; }
+.st-qa.is-conv { min-height: 0; margin-top: 10px; }
+.st-qa .st-play { width: 52px; height: 52px; }
+/* The swap tile pulses if it hasn't been used for a few seconds */
+@keyframes st-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(29,79,160,0); transform: none; } 6% { box-shadow: 0 0 0 6px rgba(29,79,160,.28); transform: scale(1.04); } 12% { box-shadow: 0 0 0 0 rgba(29,79,160,0); transform: none; } 18% { box-shadow: 0 0 0 6px rgba(29,79,160,.28); transform: scale(1.04); } 24% { box-shadow: 0 0 0 0 rgba(29,79,160,0); transform: none; } }
+.st-tile.is-pulse { animation: st-pulse 3s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .st-tile.is-pulse { animation: none; box-shadow: 0 0 0 4px rgba(29,79,160,.3); } }
+
+/* Done: the reward. Today's dot fills with Thailand's colour of the day. */
+.dn-hero { display: grid; justify-items: center; gap: 6px; padding: 20px 16px 18px; text-align: center; }
+.dn-cheer { margin: 0; font: 800 26px/1.2 var(--font-display, var(--font-body)), sans-serif; color: var(--soi-ink, #0E2E63); }
+.dn-cheer i { font: italic 700 18px/1 var(--font-body), sans-serif; color: #5B6472; }
+.dn-count { margin: 0; font: 700 16px/1.35 var(--font-body), sans-serif; color: #4f5868; }
+.dn-week { width: 100%; max-width: 420px; margin-top: 10px; }
+.dn-week ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.dn-week li { display: grid; justify-items: center; gap: 5px; }
+.dn-week .dot { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; border: 2px solid #C3CAD6; background: #fff; color: #fff; font: 800 18px/1 var(--font-body), sans-serif; transition: background .35s, border-color .35s; }
+.dn-week li.done .dot { background: var(--day); border-color: var(--day); }
+.dn-week li.today .dot { width: 48px; height: 48px; border: 3px solid var(--day); }
+.dn-week li.today.is-pop .dot { animation: dn-pop .6s cubic-bezier(.3,1.6,.5,1); box-shadow: 0 0 0 6px color-mix(in srgb, var(--day) 25%, transparent); }
+@keyframes dn-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+.dn-week .lbl { font: 700 11.5px/1 var(--font-body), sans-serif; color: #6b7385; }
+.dn-week li.today .lbl { color: var(--day); font-weight: 800; }
+.dn-week-msg { margin: 10px 0 0; font: 800 17px/1 var(--font-body), sans-serif; color: var(--day); opacity: 0; transform: translateY(6px); transition: opacity .35s .2s, transform .35s .2s; }
+.dn-week-msg.is-on { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .dn-week li.today.is-pop .dot { animation: none; } }
+.dn-next { margin: 14px 4px 0; font: 600 15.5px/1.4 var(--font-body), sans-serif; color: #4f5868; text-align: center; }
+.dn-next b { color: #1f2533; }
+
+/* Today: the week first, compact */
+.today-progress.is-top { border-top: 0; padding-top: 0; gap: 10px; margin-bottom: 4px; }
+.today-progress.is-top .today-section-label { margin-top: 0; display: flex; align-items: center; gap: 4px; }
+.today-streak-in { display: inline-flex; align-items: center; gap: 6px; text-transform: none; letter-spacing: 0; font: 800 13px/1 var(--font-body), sans-serif; color: var(--soi-ink, #0E2E63); }
+.today-streak-in i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.today-progress.is-top .today-week .dot { width: 34px; height: 34px; font-size: 13px; }
+.today-tomorrow-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.today-tomorrow-row .today-tomorrow { margin: 0; }
+.today-remind { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 99px; border: 2px solid var(--soi, #1D4FA0); color: var(--soi, #1D4FA0); font: 800 14px/1 var(--font-body), sans-serif; text-decoration: none; }
+/* Done hero sits on the blue soi sign: light text, see-through empty days,
+   and a white ring so every day colour (even Friday blue) stands out. */
+.dn-hero .dn-count { color: #E6EEFA; font: 700 16px/1.35 var(--font-body), sans-serif; }
+.dn-hero .dn-week .dot { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.5); }
+.dn-hero .dn-week li.done .dot { background: var(--day); border-color: #fff; }
+.dn-hero .dn-week .lbl { color: #C9D7EF; }
+.dn-hero .dn-week li.today .lbl, .dn-hero .dn-week-msg { color: #fff; }
+/* Conversation: slow button and the reading tip share one row, so nothing hides under the sticky button */
+.st-qa-text { display: grid; gap: 4px; }
+.st-qa-text .st-readtip { margin: 0; }
