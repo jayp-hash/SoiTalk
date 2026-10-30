@@ -5,7 +5,10 @@
 // so their cached clips are reused and don't cost new audio.
 // Turtle speed. The voice service ignores slower speeds, so the browser
 // slows the clip down itself (pitch kept). Used by every turtle button.
-export const SLOW_RATE = 0.75;
+// 29 Oct (Jay: echo on the slow male voice): 0.75 stretched the clip hard enough to
+// echo on the deeper voice. 0.85 on top of the voice's own 0.7 is still clearly slow.
+export const SLOW_RATE = 0.85;
 
 export const isSentence = (text = '') => text.replace(/\s/g, '').length > 8;
-export const audioVersion = (text = '', slow = false) => (slow || isSentence(text) ? 3 : 2);
+// Version 4 (29 Oct, Jay: "a little fast to start"): sentences at speed 0.75. Slow clips keep version 3.
+export const audioVersion = (text = '', slow = false) => (slow ? 3 : isSentence(text) ? 4 : 2);

@@ -108,7 +108,8 @@ export function usePlayer() {
       if (!src || !a) continue;
       setIdx(i); setProgress(0);
       a.src = src;
-      const rate = c.slow ? SLOW_RATE : 1;
+      // Male voice: no extra browser slow-down (Jay heard an echo). Its own 0.7 speed is enough.
+      const rate = c.slow && c.voice !== 'male' ? SLOW_RATE : 1;
       a.defaultPlaybackRate = rate; a.playbackRate = rate;
       await new Promise((res) => {
         a.onended = res; a.onerror = res;
@@ -126,7 +127,8 @@ export function usePlayer() {
       });
       if (token.current !== my) return false;
       setProgress(0);
-      await new Promise((res) => setTimeout(res, 250));
+      // A real pause between two people speaking (Jay, 29 Oct: it felt rushed)
+      await new Promise((res) => setTimeout(res, clips.length > 1 ? 650 : 250));
     }
     if (token.current !== my) return false;
     set(null, false); setIdx(-1); setProgress(0);
